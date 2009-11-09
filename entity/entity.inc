@@ -1,7 +1,14 @@
 <?php
+// $Id$
 
 /**
- * Interface for EntityControllers compatible with EntityCrud implementations. *
+ * @file
+ * API include file from the entity CRUD API.
+ * See http://drupal.org/project/entity.
+ */
+
+/**
+ * Interface for EntityControllers compatible with EntityCrud implementations.
  */
 interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface {
   
