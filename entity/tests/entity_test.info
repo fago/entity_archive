@@ -1,0 +1,8 @@
+; $Id$
+name = Profile2
+description = Supports configurable user profiles.
+version = VERSION
+core = 7.x
+files[] = entity_test.module
+files[] = entity_test.install
+hidden = TRUE

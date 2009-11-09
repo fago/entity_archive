@@ -1,0 +1,7 @@
+; $Id$
+name = Entity API
+description = CRUD API for entities.
+version = VERSION
+core = 7.x
+files[] = entity.inc
+files[] = entity.test
