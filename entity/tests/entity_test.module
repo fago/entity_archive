@@ -1,0 +1,169 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Test moduel for the entity API.
+ */
+
+spl_autoload_register('entity_test_autoload');
+
+/**
+ * Autoload API includes. Note that the code registry autoload is used only
+ * by the providing API module.
+ */
+function entity_test_autoload($class) {
+  if (stripos($class, 'faces') === 0) {
+    module_load_include('inc', 'entity_test', 'faces');
+  }
+}
+
+/**
+ * Implement hook_entity_info().
+ */
+function entity_test_entity_info() {
+  $return = array(
+    'entity_test' => array(
+      'label' => t('Test Entity'),
+      'entity class' => 'EntityClass',
+      'controller class' => 'EntityCRUDController',
+      'base table' => 'entity_test',
+      'fieldable' => TRUE,
+      'object keys' => array(
+        'id' => 'pid',
+        'bundle' => 'name',
+      ),
+      'bundles' => array(),
+    ),
+  );
+  foreach (entity_test_get_types() as $name => $info) {
+    $return['entity_test']['bundles'][$name] = array(
+      'label' => $info['label'],
+    );
+  }
+  return $return;
+}
+
+/**
+ * Gets an array of all test entity types, keyed by the name.
+ *
+ * @param $name
+ *   If set, the type with the given name is returned.
+ */
+function entity_test_get_types($name = NULL) {
+  $types = drupal_static(__FUNCTION__);
+  if (!isset($types)) {
+    $types = db_select('entity_test_type', 'pt')
+      ->fields('pt')
+      ->orderBy('name')
+      ->execute()
+      ->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+    foreach ($types as &$type) {
+      $data = unserialize($type['data']);
+      unset($type['data']);
+    }
+  }
+  if (isset($name)) {
+    return isset($types[$name]) ? $types[$name] : FALSE;
+  }
+  return $types;
+}
+
+/**
+ * Load multiple test entities based on certain conditions.
+ *
+ * @param $pids
+ *   An array of entity IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {entity} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of test entity objects, indexed by pid.
+ */
+function entity_test_load_multiple($pids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('entity_test', $pids, $conditions, $reset);
+}
+
+/**
+ * Delete multiple test entities.
+ *
+ * @param $pids
+ *   An array of test entity IDs.
+ */
+function entity_test_delete_multiple(array $pids) {
+  entity_get_controller('entity_test')->delete($pids);
+}
+
+/**
+ * Saves a test entity type to the db.
+ *
+ * @param $type
+ *   An array of information about the type.
+ */
+function entity_test_type_save(array $type) {
+  $types = entity_test_get_types();
+  // Save all additional properties to the 'data' field.
+  $data = $type;
+  unset($data['name'], $data['label'], $data['weight'], $data['locked'], $data['data']);
+  $type['data'] = $data;
+
+  if (isset($types[$type['name']])) {
+    // We don't support renaming types.
+    drupal_write_record('entity_test_type', $type, 'name');
+    module_invoke_all('entity_test_type_update', $type);
+  }
+  else {
+    drupal_write_record('entity_test_type', $type);
+    field_attach_create_bundle('entity_test', $type['name']);
+    module_invoke_all('entity_test_type_insert', $type);
+  }
+  drupal_static_reset('entity_test_get_types');
+}
+
+/**
+ * Deletes a test entity type from.
+ */
+function entity_test_type_delete(array $type) {
+  $pids = array_keys(entity_test_load_multiple(FALSE, array('name' => $type['name'])));
+  entity_test_delete_multiple($pids);
+  db_delete('entity_test_type')->condition('name', $type['name'])->execute();
+  // Invoke hook.
+  module_invoke_all('entity_test_type_delete', $type);
+  field_attach_delete_bundle('entity_test', $type['name']);
+}
+
+/**
+ * Implement hook_entity_test_load()
+ */
+function entity_test_entity_test_load($entities) {
+  $types = entity_test_get_types();
+  // Load the entity_test's label.
+  foreach ($entities as $entity) {
+    if (isset($types[$entity->name])) {
+      $entity->label = $types[$entity->name]['label'];
+    }
+  }
+}
+
+/**
+ * Implement hook_field_build_modes().
+ */
+function entity_test_field_build_modes($obj_type) {
+  if ($obj_type == 'entity_test') {
+    return array(
+      'full' => t('Full test entity'),
+    );
+  }
+}
+
+/**
+ * Main class for test entities.
+ */
+class EntityClass extends EntityDB {
+  
+  public function __construct(array $values = array(), $entityType = NULL) {
+    parent::__construct($values, 'entity_test');
+  }
+  
+}

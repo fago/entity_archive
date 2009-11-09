@@ -1,0 +1,10 @@
+<?php
+
+// $Id$
+
+/**
+ * @file
+ * Module for the entity API.
+ *
+ * entity.inc is autoloaded by the code registry, so nothing else todo.
+ */
