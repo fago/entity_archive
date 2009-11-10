@@ -28,8 +28,26 @@ interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface 
 class EntityCRUDController extends DrupalDefaultEntityController implements EntityCRUDControllerInterface {
 
   /**
+   * Builds and executes the query for loading.
+   *
+   * @return The results in a Traversable object.
+   */
+  public function query() {
+    // Build the query.
+    $this->buildQuery();
+    $result = $this->query->execute();
+    if (!empty($this->entityInfo['entity class'])) {
+      $result->setFetchMode(PDO::FETCH_CLASS, $this->entityInfo['entity class'], array(array(), $this->entityType));
+    }
+    return $result;
+  }
+  
+  /**
    * Overridden.
    * @see DrupalDefaultEntityController#load($ids, $conditions)
+   *
+   * In contrast to the parent implementation we factor out query execution, so
+   * fetching can be further customized easily.
    * TODO: auto unserialize() serialized db fields.
    */
   public function load($ids = array(), $conditions = array()) {
@@ -69,14 +87,8 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
     // is set to FALSE (so we load all entities), if there are any ids left to
     // load, if loading a revision, or if $conditions was passed without $ids.
     if ($this->ids === FALSE || $this->ids || $this->revisionId || ($this->conditions && !$passed_ids)) {
-      // Build the query.
-      $this->buildQuery();
-      $result = $this->query->execute();
-      if (!empty($this->entityInfo['entity class'])) {
-        $result->setFetchMode(PDO::FETCH_CLASS, $this->entityInfo['entity class'], array(array(), $this->entityType));
-      }
       $queried_entities = array();
-      foreach ($result as $record) {
+      foreach ($this->query() as $record) {
         $queried_entities[$record->{$this->idKey}] = $record;
       }
     }
@@ -141,18 +153,6 @@ function entity_delete($entity_type, array $ids) {
  */
 interface EntityCRUDInterface {
   
-  /**
-   * Construct an instance.
-   *
-   * @param $values
-   *   An array of values to be assigned to the object properties.
-   * @param $entityType
-   *   The entity type of the instance. This parameter can be used to create
-   *   generic entity classes, but can be ommitted for specific classes.
-   */
-  public function __construct(array $values = array(), $entityType = NULL);
-  
-
   /**
    * Permanently save this entity.
    *
@@ -265,11 +265,11 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
    * Invokes a hook and calls any field API attachers.
    */
   public function invoke($hook) {
-    $info = $this->entityInfo();
-    if (!empty($info['fieldable']) && function_exists($function = 'field_attach_' . $hook)) {
+    if (!empty($this->entityInfo['fieldable']) && function_exists($function = 'field_attach_' . $hook)) {
       $function($this->entityType, $this);
     }
     module_invoke_all($this->entityType . '_' . $hook, $this);
   }
 
 }
+
