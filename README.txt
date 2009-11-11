@@ -85,3 +85,7 @@ function MODULE_autoload($class) {
   * If you want your entity to be fieldable just set 'fieldable' in hook_entity_info
     to TRUE. The field API attachers are called automatically in the entities
     CRUD functions then.
+    
+  * Schema fields marked as 'serialzed' are automatically unserialized upon
+    loading. If the 'merge' attribute is also set to TRUE the unserialized data
+    is automatically "merged" into the entity.
