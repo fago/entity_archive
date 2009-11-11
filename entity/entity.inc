@@ -87,8 +87,22 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
     // is set to FALSE (so we load all entities), if there are any ids left to
     // load, if loading a revision, or if $conditions was passed without $ids.
     if ($this->ids === FALSE || $this->ids || $this->revisionId || ($this->conditions && !$passed_ids)) {
+      $schema = drupal_get_schema($this->entityInfo['base table']);
       $queried_entities = array();
       foreach ($this->query() as $record) {
+        // Care for serialized columns.
+        foreach ($schema['fields'] as $field => $info) {
+          if (!empty($info['serialize']) && isset($record->$field)) {
+            $record->$field = unserialize($record->$field);
+            // Support automatic merging of 'data' fields into the entity.
+            if (!empty($info['merge']) && is_array($record->$field)) {
+              foreach ($record->$field as $key => $value) {
+                $record->$key = $value;
+              }
+              unset($record->$field);
+            }
+          }
+        }
         $queried_entities[$record->{$this->idKey}] = $record;
       }
     }
@@ -117,10 +131,12 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
         $entities = $passed_ids;
       }
     }
-
     return $entities;
   }
-  
+
+  /**
+   * Implements EntityCRUDControllerInterface.
+   */
   public function delete($ids) {
     $entities = $this->load($ids);
 
