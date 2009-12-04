@@ -48,7 +48,6 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
    *
    * In contrast to the parent implementation we factor out query execution, so
    * fetching can be further customized easily.
-   * TODO: auto unserialize() serialized db fields.
    */
   public function load($ids = array(), $conditions = array()) {
     $this->ids = $ids;
