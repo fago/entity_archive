@@ -1,0 +1,170 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Module file for the entity metadata module.
+ */
+
+module_load_include('inc', 'entity_metadata', 'modules/callbacks');
+
+/**
+ * Returns a property wrapper for the given data.
+ *
+ * If an entity is wrapped, the wrapper can be used to retrieve further wrappers
+ * for the entitity properties. For that the wrapper support chaining, e.g. you
+ * can use a node wrapper to get the node authors mail address:
+ *
+ * @code
+ *   echo $wrappedNode->author->mail->value();
+ * @endcode
+ *
+ * @param $type
+ *   The type of the passed data.
+ * @param $data
+ *   The data to wrap. It may be set to NULL, so the wrapper can be used
+ *   without any data for getting information about properties.
+ * @param $info
+ *   Optional. Specify additional information for the passed data:
+ *    - langcode: If the data is language specific, its langauge code. Defaults
+ *      to NULL, what means language neutral.
+ *    - bundle: If an entity is wrapped but not passed, use this key to specify
+ *      the bundle to return a wrapper for.
+ * @return EntityMetadataWrapper
+ *   Dependend on the passed data the right wrapper is returned.
+ */
+function entity_metadata_wrapper($type, $data = FALSE, array $info = array()) {
+  if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
+    return new EntityWrapper($type, $data, $info);
+  }
+  elseif (entity_metadata_list_extract_type($type)) {
+    return new EntityListWrapper($type, $data, $info);
+  }
+  else {
+    return new EntityValueWrapper($type, $data, $info);
+  }
+}
+
+/**
+ * Extracts the contained type for a list type string like list<date>.
+ *
+ * @return
+ *   The contained type or FALSE, if the given type string is no list.
+ */
+function entity_metadata_list_extract_type($type) {
+  if (strpos($type, 'list<') === 0 && $type[strlen($type)-1] == '>') {
+    return substr($type, 5, -1);
+  }
+  return FALSE;
+}
+
+/**
+ * Get the entity property info array of an entity type.
+ *
+ * @see hook_entity_property_info()
+ * @see hook_entity_property_info_alter()
+ *
+ * @param $entity_type
+ *   The entity type, e.g. node, for which the info shall be returned, or NULL
+ *   to return an array with info about all types.
+ */
+function entity_metadata_get_info($entity_type = NULL) {
+  // Use the advanced drupal_static() pattern, since this is called very often.
+  static $drupal_static = array();
+  isset($drupal_static[__FUNCTION__]) || ($drupal_static[__FUNCTION__] = &drupal_static(__FUNCTION__));
+  $info = &$drupal_static[__FUNCTION__];
+
+  if (empty($info)) {
+    if ($cache = cache_get('entity_property_info')) {
+      $info = $cache->data;
+    }
+    else {
+      $info = module_invoke_all('entity_property_info');
+      // Let other modules alter the entity info.
+      drupal_alter('entity_property_info', $info);
+      cache_set('entity_property_info', $info);
+    }
+  }
+  return empty($entity_type) ? $info : $info[$entity_type];
+}
+
+/**
+ * Implements hook_hook_info_alter().
+ */
+function entity_metadata_hook_info_alter(&$hook_info) {
+  $hook_info['entity_property_info'] = array(
+    'group' => 'info',
+  );
+}
+
+/**
+ * Gets the property just as it is set in the entity.
+ */
+function entity_metadata_verbatim_get($entity, array $options, $name) {
+  if (is_array($entity) && isset($entity[$name])) {
+    return $entity[$info['name']];
+  }
+  elseif (is_object($entity) && isset($entity->$name)) {
+    return $entity->$name;
+  }
+  return NULL;
+}
+
+
+/**
+ * Sets the property to the given value. May be used as 'setter callback'.
+ */
+function entity_metadata_verbatim_set(&$entity, $name, $value) {
+  if (is_array($entity)) {
+    $entity[$name] = $value;
+  }
+  elseif (is_object($entity)) {
+    $entity->$name = $value;
+  }
+}
+
+/**
+ * Getter callback for getting an array. Makes sure it's numerically indexed.
+ */
+function entity_metadata_get_list($entity, array $options, $name) {
+  return isset($entity->$name) ? array_values($entity->$name) : array();
+}
+
+/**
+ * Implements hook_field_info_alter().
+ * Defines default property types for core field types.
+ */
+function entity_metadata_field_info_alter(&$field_info) {
+  // Field API lists are key/value pairs but not multiple valued by default.
+  $field_info['list']['property_type'] = 'integer';
+  $field_info['list_boolean']['property_type'] = 'boolean';
+  $field_info['list_number']['property_type'] = 'decimal';
+  $field_info['list_text']['property_type'] = 'text';
+  $field_info['number_integer']['property_type'] = 'integer';
+  $field_info['number_decimal']['property_type'] = 'decimal';
+  $field_info['number_float']['property_type'] = 'decimal';
+  $field_info['text']['property_type'] = 'text';
+  $field_info['text']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
+  $field_info['text_long']['property_type'] = 'text';
+  $field_info['text_long']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
+  $field_info['text_with_summary']['property_type'] = 'text';
+  $field_info['text_with_summary']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function entity_metadata_entity_info_alter(&$entity_info) {
+  $entity_info['comment']['name property'] = 'title';
+  $entity_info['node']['name property'] = 'title';
+
+  // Create a entity for dealing with drupal variables as properties.
+  $entity_info['system'] = array(
+    'label' => t("System information"),
+    // Set some properties to empty arrays to prevent field API errors...
+    'fieldable' => FALSE,
+    'object keys' => array(),
+    'bundles' => array(),
+  );
+}
+

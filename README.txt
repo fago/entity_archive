@@ -4,12 +4,19 @@ Entity APIs
 ------------
 by Wolfgang Ziegler, nuppla@zites.net
 
-This is an API module, only install if you want to run the tests or to force using
-modules to use the latest version. Modules using the API should just ship with
-the include file.
+
+This are API modules, so only install them if you are instructed to do so, you
+want to run the tests or to force using modules to use the latest version of the
+entity CRUD API.
+
 
 This README is for interested developers. If you are not interested in developing,
 you may stop reading now.
+
+
+--------------------------------------------------------------------------------
+                              Entity CRUD API
+--------------------------------------------------------------------------------
 
 
 
@@ -89,3 +96,65 @@ function MODULE_autoload($class) {
   * Schema fields marked as 'serialzed' are automatically unserialized upon
     loading. If the 'merge' attribute is also set to TRUE the unserialized data
     is automatically "merged" into the entity.
+
+    
+    
+
+--------------------------------------------------------------------------------
+                              Entity Metadata
+--------------------------------------------------------------------------------
+
+  * This module introduces a unique place for metadata about entity properties.
+    For that hook_entity_info() already used by core is extended, for details
+    have a look at the doxygen documentation. (not yet there)
+
+  * The metadata about entity properties contains information about the
+    data type and callbacks for how to get and set the data of property. That
+    way the data of an entity can be easily reused, e.g. to export into other
+    data formats like XML.
+
+  * The module provides this metadata for all core modules, contrib modules
+    should provide the data on their own. For that hook_entity_info_alter() can
+    be implemented. When only used for the metadata this implementation may
+    reside in a {YOUR_MODULE}.info.inc include file, which is automatically
+    included once this module is active and the hook is invoked.
+
+  * For making use of this metadata the module provides some wrapper classes
+    which ease getting and setting values. The wrapper support chained usage for
+    retrieving wrappers of entity properties, e.g. to get a node author's mail
+    address one could use:
+    
+       $wrapper = entity_metadata_wrapper('node', $node);
+       $wrapper->author->mail->value();
+       
+       
+    To update the user's mail address one could use
+    
+       $wrapper->author->mail->set('sepp@example.com');
+       
+       or
+       
+       $wrapper->author->mail = 'sepp@example.com'; 
+       
+    The wrappers always return the data as described in the metadata, which may
+    be retrieved directly from hook_entity_info() for from the wrapper:
+    
+       $mail_info = $wrapper->author->mail->info();
+       
+    However to force getting a sanitized value one can use
+       
+       $wrapper->title->value(array('sanitize' => TRUE));
+       
+    to get the sanitized node title. When data is already sanitized, like the
+    node body, one possible wants to get the data as output in the browser. For
+    that one can enable 'decode', so for sanitized data the tags are stripped
+    and the data is decoded before it is returned:
+    
+       $wrapper->body->value(array('decode' => TRUE));
+       
+    That way one always gets the data as shown to the user. However if you
+    really want to get the raw value, even for sanitized textual data, you can
+    do so:
+    
+      $wrapper->body->raw();
+      

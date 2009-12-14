@@ -1,0 +1,323 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Entity Metadata tests.
+ */
+
+/**
+ * Test basic metadata functionality.
+ */
+class EntityMetadataTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Metadata Wrapper',
+      'description' => 'Makes sure metadata wrapper are working right.',
+      'group' => 'Entity',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('entity_metadata');
+    // Create a field having 4 values for testing multiple value support.
+    $this->field_name = drupal_strtolower($this->randomName() . '_field_name');
+    $this->field = array('field_name' => $this->field_name, 'type' => 'text', 'cardinality' => 4);
+    $this->field = field_create_field($this->field);
+    $this->field_id = $this->field['id'];
+    $this->instance = array(
+      'field_name' => $this->field_name,
+      'object_type' => 'node',
+      'bundle' => 'page',
+      'label' => $this->randomName() . '_label',
+      'description' => $this->randomName() . '_description',
+      'weight' => mt_rand(0, 127),
+      'settings' => array(
+        'text_processing' => FALSE,
+      ),
+      'widget' => array(
+        'type' => 'text_textfield',
+        'label' => 'Test Field',
+        'settings' => array(
+          'size' => 64,
+        )
+      )
+    );
+    field_create_instance($this->instance);
+  }
+
+  /**
+   * Creates a user and a node, then tests getting the properties.
+   */
+  function testEntityMetadataWrapper() {
+    $account = $this->drupalCreateUser();
+    // For testing sanitizing give the user a malicious user name
+    $account = user_save($account, array('name' => '<b>BadName</b>'));
+    $title = array(LANGUAGE_NONE => array(array('value' => '<b>Is it bold?<b>')));
+    $body[LANGUAGE_NONE][0] = array('value' => '<b>The body & nothing.</b>');
+    $node = $this->drupalCreateNode(array('uid' => $account->uid, 'name' => $account->name, 'body' => $body, 'title' => $title, 'summary' => ''));
+
+    // First test without sanitizing.
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $this->assertEqual('<b>Is it bold?<b>', $wrapper->title->value(), 'Getting a field value.');
+    $this->assertEqual(node_type_get_name($node->type), $wrapper->{'type-name'}->raw(), 'Getting a raw property value.');
+
+    // Test chaining
+    $this->assertEqual($account->mail, $wrapper->author->mail->value(), 'Testing chained usage.');
+    $this->assertEqual($account->name, $wrapper->author->name->value(), 'Testing chained usage with callback and sanitizing.');
+
+    // Test sanitized output.
+    $options = array('sanitize' => TRUE);
+    $this->assertEqual(check_plain('<b>Is it bold?<b>'), $wrapper->title->value($options), 'Getting sanitized field.');
+    $this->assertEqual(filter_xss($node->name), $wrapper->author->name->value($options), 'Getting sanitized property with getter callback.');
+
+    // Test getting an not existing property
+    try {
+      echo $wrapper->dummy;
+      $this->fail('Getting an not existing property.');
+    }
+    catch (EntityMetadataWrapperException $e) {
+      $this->pass('Getting an not existing property.');
+    }
+
+    // Test setting.
+    $wrapper->uid = 0;
+    $this->assertEqual(0, $wrapper->uid->value(), 'Setting a property.');
+    try {
+      $wrapper->type = 'dummy';
+      $this->fail('Setting an unsupported property.');
+    }
+    catch (EntityMetadataWrapperException $e) {
+      $this->pass('Setting an unsupported property.');
+    }
+
+    // Test getting by the field API processed values like the node body and
+    // whether auto-adding bundle properties works.
+    $this->assertEqual("<p>The body &amp; nothing.</p>\n", $wrapper->body->value(), "Getting processed value.");
+    $this->assertEqual("The body & nothing.\n", $wrapper->body->value(array('decode' => TRUE)), "Decoded value.");
+    $this->assertEqual("<b>The body & nothing.</b>", $wrapper->body->raw(), "Raw body returned.");
+    $info = $wrapper->body->info();
+
+    $wrapper->body->set("<b>The second body.</b>");
+    $this->assertEqual("<p>The second body.</p>\n", $wrapper->body->value(), "Setting a processed field value and reading it again.");
+
+    // Test iterator
+    $type_info = entity_metadata_get_info('node');
+    $this->assertFalse(array_diff(array_keys($type_info['properties']), iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
+  }
+
+  /**
+   * Test supporting multi-valued fields.
+   */
+  function testListMetadataWrappers() {
+    $name = $this->field_name;
+    $values = array();
+    $values[LANGUAGE_NONE][0] = array('value' => '<b>2009-09-05</b>');
+    $values[LANGUAGE_NONE][1] = array('value' => '2009-09-05');
+    $values[LANGUAGE_NONE][2] = array('value' => '2009-08-05');
+
+    $node = $this->drupalCreateNode(array('type' => 'page', $name => $values));
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $this->assertEqual('<b>2009-09-05</b>', $wrapper->{$name}[0]->value(), 'Getting array entry.');
+    $this->assertEqual('2009-09-05', $wrapper->{$name}->get(1)->value(), 'Getting array entry.');
+    $this->assertEqual(3, count($wrapper->{$name}->value()), 'Getting the whole array.');
+
+    // Test sanitizing
+    $this->assertEqual(check_plain('<b>2009-09-05</b>'), $wrapper->{$name}[0]->value(array('sanitize' => TRUE)), 'Getting array entry.');
+
+    // Test iterator
+    $this->assertEqual(iterator_to_array($wrapper->{$name}->getIterator()), array(0, 1, 2), 'Iterator is working.');
+
+    // Make sure changing the array changes the actual entity property.
+    $wrapper->{$name}[0] = '2009-10-05';
+    unset($wrapper->{$name}[1], $wrapper->{$name}[2]);
+    $this->assertEqual($wrapper->{$name}->value(), array('2009-10-05'), 'Setting multiple property values.');
+
+    // Test setting an arbitrary list item.
+    $wrapper = entity_metadata_wrapper('list<date>', $list = array(0 => REQUEST_TIME));
+    $wrapper[1] = strtotime('2009-09-05');
+    $this->assertEqual($wrapper->value(), array(REQUEST_TIME, strtotime('2009-09-05')), 'Setting a list item.');
+  }
+
+  /**
+   * Tests using the wrapper without any data.
+   */
+  function testWithoutData() {
+    $wrapper = entity_metadata_wrapper('node', NULL, array('bundle' => 'page'));
+    $this->assertTrue(isset($wrapper->title), 'Bundle properties have been added.');
+    $info = $wrapper->author->mail->info();
+    $this->assertTrue(!empty($info) && is_array($info) && isset($info['label']), 'Property info returned.');
+  }
+}
+
+/**
+ * Tests provided module integration of the core modules.
+ */
+class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Metadata integration',
+      'description' => 'Tests using metadata wrappers provided for drupal core.',
+      'group' => 'Entity',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('entity_metadata', 'book', 'statistics');
+  }
+
+
+  protected function assertException($wrapper, $name, $text = NULL) {
+    $this->assertTrue(isset($wrapper->$name), 'Property ' . check_plain($name) . ' exists.');
+    $text = isset($text) ? $text : 'Getting the not set property ' . $name . ' throws exception.';
+    try {
+      $wrapper->$name->value();
+      $this->fail($text);
+    }
+    catch (EntityMetadataWrapperException $e) {
+      $this->pass($text);
+    }
+  }
+
+  protected function assertValue($wrapper, $key) {
+    $this->assertTrue($wrapper->$key->value() !== NULL, check_plain($key) . ' property returned.');
+    $info = $wrapper->$key->info();
+    if (!empty($info['raw getter callback'])) {
+      // Also test getting the raw value
+      $this->assertTrue($wrapper->$key->raw() !== NULL, check_plain($key) . ' raw value returned.');
+    }
+  }
+
+  /**
+   * Test book module integration.
+   */
+  function testBookModule() {
+    $title = array(LANGUAGE_NONE => array(array('value' => 'Book 1')));
+    $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'book'));
+    $node2 = $this->drupalCreateNode(array('type' => 'book', 'book' => array('bid' => $node->nid)));
+    $node3 = $this->drupalCreateNode(array('type' => 'page'));
+
+    // Test whether the properties work.
+    $wrapper = entity_metadata_wrapper('node', $node2);
+    $this->assertEqual("Book 1", $wrapper->book->title->value(), "Book title returned.");
+    $this->assertEqual($node->nid, $wrapper->{'book-id'}->value(), "Book id returned.");
+
+    // Try using book properties for no book nodes.
+    $wrapper = entity_metadata_wrapper('node', $node3);
+    $this->assertException($wrapper, 'book');
+  }
+
+  /**
+   * Test properties of a comment.
+   */
+  function testComments() {
+    $title = array(LANGUAGE_NONE => array(array('value' => 'Node 1')));
+    $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'page'));
+    $account = $this->drupalCreateUser();
+    $comment = (object)array(
+      'subject' => 'topic',
+      'comment' => 'text',
+      'comment_format' => 0,
+      'status' => 1,
+      'nid' => $node->nid,
+      'uid' => $account->uid,
+      'cid' => FALSE,
+      'pid' => 0,
+      'homepage' => '',
+      'language' => LANGUAGE_NONE,
+      'hostname' => ip_address(),
+    );
+    comment_save($comment);
+    $wrapper = entity_metadata_wrapper('comment', $comment);
+    foreach ($wrapper as $key) {
+      if ($key != 'parent') {
+        $this->assertValue($wrapper, $key);
+      }
+    }
+    $this->assertException($wrapper, 'parent');
+  }
+
+  /**
+   * Test all properties of a node.
+   */
+  function testNodeProperties() {
+    $title = array(LANGUAGE_NONE => array(array('value' => 'Book 1')));
+    $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'page'));
+    $wrapper = entity_metadata_wrapper('node', $node);
+    foreach ($wrapper as $key) {
+      if ($key != 'book' && $key != 'book-id') {
+        $this->assertValue($wrapper, $key);
+      }
+    }
+    $this->assertException($wrapper, 'book');
+    $this->assertException($wrapper, 'book-id');
+  }
+
+  /**
+   * Tests properties provided by the taxonomy module.
+   */
+  function testTaxonomyProperties() {
+    $vocab = $this->createVocabulary();
+    $term_parent = $this->createTerm($vocab);
+    $term = $this->createTerm($vocab);
+    // This term hasn't all properties set yet, so set them.
+    $term->description = $this->randomString();
+    $term->format = 0;
+    $term->weight = mt_rand(0, 10);
+    $term->parent = array($term_parent->tid);
+    taxonomy_term_save($term);
+
+    $wrapper = entity_metadata_wrapper('taxonomy_term', $term);
+    foreach ($wrapper as $key) {
+      $this->assertValue($wrapper, $key);
+    }
+    // Test vocabulary.
+    foreach ($wrapper->vocabulary as $key) {
+      $this->assertValue($wrapper->vocabulary, $key);
+    }
+  }
+
+  /**
+   * Test all properties of a user.
+   */
+  function testUserProperties() {
+    $account = $this->drupalCreateUser();
+    $wrapper = entity_metadata_wrapper('user', $account);
+    foreach ($wrapper as $key) {
+      $this->assertValue($wrapper, $key);
+    }
+  }
+
+  /**
+   * Test properties provided by system module.
+   */
+  function testSystemProperties() {
+    $wrapper = entity_metadata_wrapper('system', FALSE);
+    foreach ($wrapper as $key) {
+      $this->assertValue($wrapper, $key);
+    }
+    // Test files.
+    $filepath = $this->randomName();
+    file_put_contents($filepath, "content");
+    $this->assertTrue(is_file($filepath), t('The test file exists on the disk.'), 'Create test file');
+    $file = new stdClass();
+    $file->uri = $filepath;
+    $file->filename = basename($file->uri);
+    $file->filemime = 'text/plain';
+    $file->uid = 1;
+    $file->timestamp = REQUEST_TIME;
+    $file->filesize = filesize($file->uri);
+    $file->status = 0;
+    file_save($file);
+
+    $wrapper = entity_metadata_wrapper('file', $file);
+    foreach ($wrapper as $key) {
+      $this->assertValue($wrapper, $key);
+    }
+  }
+}
+
