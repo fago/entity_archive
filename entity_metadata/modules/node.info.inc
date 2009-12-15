@@ -23,7 +23,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['vid'] = array(
     'label' => t("Revision ID"),
     'type' => 'integer',
-    'description' => t("The unique ID of the node's latest revision."),
+    'description' => t("The unique ID of the node's revision."),
   );
   $properties['tnid'] = array(
     'label' => t("Translation set ID"),

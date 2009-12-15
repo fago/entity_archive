@@ -52,6 +52,9 @@
  *       property. Defaults to entity_metadata_verbatim_get().
  *     - 'setter callback': A callback used to set the value of the property.
  *       This is optional, however entity_metadata_verbatim_set() can be used.
+ *     - clear: An array of property names, of which the cache should be cleared
+ *       too once this property is updated. E.g. the author uid property wants
+ *       to have the author property cleared too. Optional.
  *     - 'raw getter callback': For sanitized textual properties, a separate
  *       callback which can be used to retrieve the raw, unprocessed value.
  *     - bundle: If the property is an entity, you may specify the bundle of the
