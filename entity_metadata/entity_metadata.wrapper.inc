@@ -131,7 +131,7 @@ abstract class EntityMetadataWrapper {
    * Clears the data value and the wrapper cache.
    */
   protected function clear() {
-    unset($this->data);
+    $this->data = NULL;
     foreach ($this->cache as $wrapper) {
       $wrapper->clear();
     }

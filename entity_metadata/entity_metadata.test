@@ -106,6 +106,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     // Test iterator
     $type_info = entity_metadata_get_info('node');
     $this->assertFalse(array_diff(array_keys($type_info['properties']), iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
+
+    // Test setting a new node.
+    $wrapper->set($node);
   }
 
   /**
