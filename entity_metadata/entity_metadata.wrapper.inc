@@ -346,6 +346,14 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
   public function getIterator() {
     return new ArrayIterator(array_keys($this->entityInfo['properties']));
   }
+
+  /**
+   * Returns the identifier of the wrapped entity.
+   */
+  public function getIdentifier() {
+    list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
+    return $id;
+  }
 }
 
 /**
