@@ -30,9 +30,7 @@ abstract class EntityMetadataWrapper {
     $this->type = $type;
     $this->data = &$data;
     $this->info = $info + array(
-      'clear' => array(),
       'langcode' => NULL,
-      'getter callback' => 'entity_metadata_verbatim_get',
     );
   }
 
@@ -58,19 +56,6 @@ abstract class EntityMetadataWrapper {
   }
 
   /**
-   * If the wrapped data is language specific, get the language object.
-   *
-   * @return
-   *   The language object or NULL if the data is language neutral.
-   */
-  public function getLanguage() {
-    if (isset($this->info['langcode']) && $list = language_list()) {
-      return $list[$this->info['langcode']];
-    }
-    return NULL;
-  }
-
-  /**
    * Returns the wrapped data. If no options are given the data is returned as
    * described in the info
    *
@@ -83,15 +68,7 @@ abstract class EntityMetadataWrapper {
    */
   public function value(array $options = array()) {
     if (!isset($this->data) && isset($this->info['name'])) {
-      // Retrieve entity from the parent entity.
-      $info = $this->info;
-      if (function_exists($info['getter callback'])) {
-        $options = array('language' => $this->getLanguage(), 'absolute' => TRUE);
-        $this->data = $info['getter callback']($info['parent']->value(), $options, $info['name'], $info['parent']->type);
-      }
-      if (!isset($this->data)) {
-        throw new EntityMetadataWrapperException('Entity property ' . check_plain($info['name']) . " isn't set.");
-      }
+      $this->data = $this->info['parent']->getPropertyValue($this->info['name']);
     }
     elseif (!isset($this->data)) {
       throw new EntityMetadataWrapperException('There is no data set, so you cannot retrieve any values.');
@@ -106,10 +83,7 @@ abstract class EntityMetadataWrapper {
    */
   public function raw() {
     if (isset($this->info['name']) && isset($this->info['parent'])) {
-      if (!empty($this->info['raw getter callback']) && function_exists($function = $this->info['raw getter callback'])) {
-        $options = array('language' => $this->getLanguage(), 'absolute' => TRUE);
-        return $function($this->info['parent']->value(), $options, $this->info['name'], $this->info['parent']->type);
-      }
+      return $this->info['parent']->getPropertyRaw($this->info['name']);
     }
     // Else return the usual value, which should be raw in this case.
     return $this->value();
@@ -140,25 +114,27 @@ abstract class EntityMetadataWrapper {
    */
   public function set($value) {
     if (empty($this->info['parent'])) {
+      $this->clear();
       $this->data = $value;
     }
-    elseif (!empty($this->info['setter callback']) && function_exists($this->info['setter callback'])) {
-      $this->info['setter callback']($this->info['parent']->value(), $this->info['name'], $value, $this->info['langcode'], $this->info['parent']->type);
-      $this->cache = array();
-      // Clear the cache of properties dependent on this value.
-      foreach ($this->info['clear'] as $name) {
-        unset($this->info['parent']->cache[$name]);
-      }
-      unset($this->data);
-    }
     else {
-      throw new EntityMetadataWrapperException('Entity property ' . check_plain($this->info['name']) . " doesn't support writing.");
+      $this->info['parent']->setProperty($this->info['name'], $value);
     }
     return $this;
   }
 
   public function __toString() {
     return isset($this->info) ? 'Property ' . $this->info['name'] : $this->type;
+  }
+
+  /**
+   * Clears the data value and the wrapper cache.
+   */
+  protected function clear() {
+    unset($this->data);
+    foreach ($this->cache as $wrapper) {
+      $wrapper->clear();
+    }
   }
 }
 
@@ -240,7 +216,8 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
     }
     $info = $this->entityInfo['properties'][$name] + array(
       'type' => 'text',
-      'bundle' => NULL,
+      'getter callback' => 'entity_metadata_verbatim_get',
+      'clear' => array(),
     );
     return $info;
   }
@@ -270,12 +247,15 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Gets the language used for retrieving properties.
    *
    * @return String
-   *   The language code of the language or NULL for the default language.
+   *   The language object of the language or NULL for the default language.
    *
    * @see EntityWrapper::language()
    */
   public function getPropertyLanguage() {
-    return $this->langcode;
+    if (isset($this->langcode) && $list = language_list()) {
+      return $list[$this->langcode];
+    }
+    return NULL;
   }
 
   /**
@@ -309,7 +289,51 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Magic method: Set a property.
    */
   public function __set($name, $value) {
-    $this->get($name)->set($value);
+    $this->setProperty($name, $value);
+  }
+
+  /**
+   * Gets the value of a property.
+   */
+  protected function getPropertyValue($name) {
+    $info = $this->getPropertyInfo($name);
+    if (function_exists($info['getter callback'])) {
+      $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
+      return $info['getter callback']($this->value(), $options, $name, $this->type);
+    }
+    throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
+  }
+
+  /**
+   * Gets the raw value of a property.
+   */
+  protected function getPropertyRaw($name) {
+    $info = $this->getPropertyInfo($name);
+    if (!empty($info['raw getter callback']) && function_exists($info['raw getter callback'])) {
+      $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
+      return $info['raw getter callback']($this->value(), $options, $name, $this->type);
+    }
+    return $this->getPropertyValue($name);
+  }
+
+  /**
+   * Sets a property.
+   */
+  protected function setProperty($name, $value) {
+    $info = $this->getPropertyInfo($name);
+    if (!empty($info['setter callback']) && function_exists($info['setter callback'])) {
+      $info['setter callback']($this->value(), $name, $value, $this->langcode, $this->type);
+      $this->get($name)->clear();
+      // Clear the cache of properties dependent on this value.
+      foreach ($info['clear'] as $name) {
+        if (isset($this->cache[$name])) {
+          $this->cache[$name]->clear();
+        }
+      }
+    }
+    else {
+      throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " doesn't support writing.");
+    }
   }
 
   /**
@@ -344,16 +368,38 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   public function get($delta) {
     // Look it up in the cache if possible.
     if (!array_key_exists($delta, $this->cache)) {
-      if ($this->dataAvailable() && isset($this->data[$delta])) {
-        $info = array('parent' => $this, 'delta' => $delta) + $this->info;
+      if (is_numeric($delta)) {
+        $info = array('parent' => $this, 'name' => $delta) + $this->info;
         $type = entity_metadata_list_extract_type($this->type);
-        $this->cache[$delta] = new EntityListItemWrapper($type, $data = NULL, $info);
+        $this->cache[$delta] = entity_metadata_wrapper($type, NULL, $info);
       }
       else {
-        throw new EntityMetadataWrapperException('There is no item with a delta of ' . check_plain($delta) . " for this list.");
+        throw new EntityMetadataWrapperException('There can be only numerical keyed items in a list.');
       }
     }
     return $this->cache[$delta];
+  }
+
+  protected function getPropertyValue($delta) {
+    if ($this->dataAvailable() && isset($this->data[$delta])) {
+      return $this->data[$delta];
+    }
+    throw new EntityMetadataWrapperException('There is no item with a delta of ' . check_plain($delta) . " for this list.");
+  }
+
+  protected function getPropertyRaw($delta) {
+    $list = $this->raw();
+    if (is_array($list) && isset($list[$delta])) {
+      return $list[$delta];
+    }
+    throw new EntityMetadataWrapperException('List entry ' . check_plain($delta) . " isn't set.");
+  }
+
+  protected function setProperty($delta, $value) {
+    if (is_numeric($delta) && $this->dataAvailable()) {
+      $this->data[$delta] = $value;
+      $this->set($this->data);
+    }
   }
 
   /**
@@ -371,56 +417,18 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   public function offsetExists($delta) {
-    return is_numeric($delta) && $this->dataAvailable() && isset($this->data[$delta]);
+    return is_numeric($delta);
   }
 
   public function offsetSet($delta, $value) {
-    if (is_numeric($delta) && $this->dataAvailable()) {
-      $this->data[$delta] = $value;
-      $this->set($this->data);
-    }
+    $this->setProperty($delta, $value);
   }
 
   public function offsetUnset($delta) {
-    if ($this->offsetExists($delta)) {
+    if ($this->offsetExists($delta) && $this->dataAvailable()) {
       unset($this->data[$delta]);
+      $this->set($this->data);
     }
-  }
-}
-
-/**
- * Wraps a list entry.
- */
-class EntityListItemWrapper extends EntityValueWrapper {
-
-  public function value(array $options = array()) {
-    if (!isset($this->data)) {
-      // Get the list from the parent then retrieve the entry.
-      $list = $this->info['parent']->value();
-      if (is_array($list) && isset($list[$this->info['delta']])) {
-        $this->data = $list[$this->info['delta']];
-      }
-      else {
-        throw new EntityMetadataWrapperException('List entry ' . check_plain($this->info['delta']) . " isn't set.");
-      }
-    }
-    return $this->applyOptions($this->data, $options);
-  }
-
-  public function raw() {
-    $list = $this->info['parent']->raw();
-    if (is_array($list) && isset($list[$this->info['delta']])) {
-      return $list[$this->info['delta']];
-    }
-    throw new EntityMetadataWrapperException('List entry ' . check_plain($this->info['delta']) . " isn't set.");
-  }
-
-  /**
-   * Set a new data value.
-   */
-  public function set($value) {
-    $this->info['parent']->__set($this->info['delta'], $value);
-    return $this;
   }
 }
 
