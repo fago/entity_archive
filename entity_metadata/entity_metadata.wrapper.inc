@@ -147,7 +147,7 @@ class EntityValueWrapper extends EntityMetadataWrapper {
    * Overrides EntityMetadataWrapper#applyOptions().
    * Sanitizes or decodes textual data if necessary.
    */
-  protected function applyOptions($data, array $options) {
+  protected function applyOptions(&$data, array $options) {
     if ($this->type == 'text') {
       $info = $this->info + array('sanitized' => FALSE, 'sanitize' => 'check_plain');
       $options += array('sanitize' => FALSE, 'decode' => FALSE);
@@ -297,9 +297,9 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   protected function getPropertyValue($name) {
     $info = $this->getPropertyInfo($name);
-    if (function_exists($info['getter callback'])) {
+    if (function_exists($info['getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['getter callback']($this->value(), $options, $name, $this->type);
+      return $info['getter callback']($this->data, $options, $name, $this->type);
     }
     throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
   }
@@ -309,9 +309,9 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   protected function getPropertyRaw($name) {
     $info = $this->getPropertyInfo($name);
-    if (!empty($info['raw getter callback']) && function_exists($info['raw getter callback'])) {
+    if (!empty($info['raw getter callback']) && function_exists($info['raw getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['raw getter callback']($this->value(), $options, $name, $this->type);
+      return $info['raw getter callback']($this->data, $options, $name, $this->type);
     }
     return $this->getPropertyValue($name);
   }
@@ -321,8 +321,8 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   protected function setProperty($name, $value) {
     $info = $this->getPropertyInfo($name);
-    if (!empty($info['setter callback']) && function_exists($info['setter callback'])) {
-      $info['setter callback']($this->value(), $name, $value, $this->langcode, $this->type);
+    if (!empty($info['setter callback']) && function_exists($info['setter callback']) && $this->dataAvailable()) {
+      $info['setter callback']($this->data, $name, $value, $this->langcode, $this->type);
       $this->get($name)->clear();
       // Clear the cache of properties dependent on this value.
       foreach ($info['clear'] as $name) {
