@@ -226,7 +226,7 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
       return taxonomy_vocabulary_load($term->vid);
 
     case 'parent':
-      if ($parent = array_pop(taxonomy_get_parents($term->tid))) {
+      if (($parents = taxonomy_get_parents($term->tid)) && $parent = array_pop($parents)) {
         return taxonomy_term_load($parent->tid);
       }
       throw new EntityMetadataWrapperException('This term has no parent term.');
@@ -340,7 +340,7 @@ function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $fiel
 /**
  * Callback for setting field property values.
  */
-function entity_metadata_field_property_set(&$object, $name, $value, $langcode, $obj_type) {
+function entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type) {
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
   $object->{$name}[$langcode][0]['value'] = $value;
   unset($object->{$name}[$langcode][0]['safe']);
@@ -349,7 +349,7 @@ function entity_metadata_field_property_set(&$object, $name, $value, $langcode, 
 /**
  * Callback for setting multiple field property values.
  */
-function entity_metadata_field_property_set_multiple(&$object, $name, $values, $langcode, $obj_type) {
+function entity_metadata_field_property_set_multiple($object, $name, $values, $langcode, $obj_type) {
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
   $object->{$name}[$langcode] = array();
   foreach ($values as $key => $value) {

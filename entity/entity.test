@@ -10,7 +10,7 @@
  * Test basic CRUD functionality.
  */
 class EntityCRUDTestCase extends DrupalWebTestCase {
-  
+
   public static function getInfo() {
     return array(
       'name' => 'CRUD',
@@ -18,10 +18,10 @@ class EntityCRUDTestCase extends DrupalWebTestCase {
       'group' => 'Entity',
     );
   }
-  
+
   function setUp() {
     parent::setUp('entity_test', 'locale');
-    
+
     entity_test_type_save(array(
       'name' => 'test',
       'label' => 'label',
@@ -34,7 +34,7 @@ class EntityCRUDTestCase extends DrupalWebTestCase {
     ));
     entity_test_load_multiple(FALSE, array(), TRUE);
   }
-  
+
   /**
    * Tests CRUD.
    */
@@ -47,20 +47,21 @@ class EntityCRUDTestCase extends DrupalWebTestCase {
     $entity->save();
     $entity = new EntityClass(array('name' => 'test', 'uid' => NULL));
     $entity->save();
-    
+
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test')));
-    
+
     $this->assertEqual($entities[0]->name, 'test', 'Created and loaded entity.');
     $this->assertEqual($entities[1]->name, 'test', 'Created and loaded entity.');
-    
-    $loaded = array_pop(entity_test_load_multiple(array($entity->pid)));
+
+    $results = entity_test_load_multiple(array($entity->pid));
+    $loaded = array_pop($results);
     $this->assertEqual($loaded->pid, $entity->pid, 'Loaded the entity unrelated to a user.');
-    
+
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
     $entities[0]->delete();
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
     $this->assertEqual($entities, array(), 'Entity successfully deleted.');
-    
+
     $entity->save();
     $this->assertEqual($entity->pid, $loaded->pid, 'Entity successfully updated.');
 
