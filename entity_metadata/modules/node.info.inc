@@ -37,6 +37,12 @@ function entity_metadata_node_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'clear' => array('author'),
   );
+  $properties['is-new'] = array(
+    'label' => t("Is new"),
+    'type' => 'boolean',
+    'description' => t("Whether the node is new and not saved to the database yet."),
+    'getter callback' => 'entity_metadata_node_get_properties',
+  );
   $properties['type'] = array(
     'label' => t("Content type"),
     'description' => t("The type of the node."),
@@ -63,6 +69,30 @@ function entity_metadata_node_entity_property_info() {
     'getter callback' => 'entity_metadata_node_get_properties',
     'type' => 'uri',
   );
+  $properties['status'] = array(
+    'label' => t("Published"),
+    'description' => t("Whether the node is published."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'type' => 'boolean',
+  );
+  $properties['promote'] = array(
+    'label' => t("Promoted to frontpage"),
+    'description' => t("Whether the node is promoted to the frontpage."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'type' => 'boolean',
+  );
+  $properties['sticky'] = array(
+    'label' => t("Sticky in lists"),
+    'description' => t("Whether the node is displayed at the top of lists in which it appears."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'type' => 'boolean',
+  );
+  $properties['comment'] = array(
+    'label' => t("Comments allowed"),
+    'description' => t("Whether comments are allowed on this node: 0 = no, 1 = closed (read only), 2 = open (read/write)."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'type' => 'integer',
+  );
   $properties['created'] = array(
     'label' => t("Date created"),
     'type' => 'date',
@@ -79,6 +109,8 @@ function entity_metadata_node_entity_property_info() {
     'type' => 'user',
     'description' => t("The author of the node."),
     'getter callback' => 'entity_metadata_node_get_properties',
+    'setter callback' => 'entity_metadata_node_set_properties',
+    'clear' => array('uid'),
   );
   return $info;
 }
