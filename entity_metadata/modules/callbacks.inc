@@ -96,6 +96,9 @@ function entity_metadata_comment_get_node_properties($node, array $options, $nam
  */
 function entity_metadata_node_get_properties($node, array $options, $name, $entity_type) {
   switch ($name) {
+    case 'is-new':
+      return empty($node->nid) || !empty($node->is_new);
+
     case 'type-name':
       return node_type_get_name($node->type);
 
@@ -107,6 +110,17 @@ function entity_metadata_node_get_properties($node, array $options, $name, $enti
 
     case 'author':
       return user_load($node->uid);
+  }
+}
+
+/**
+ * Callback for setting node properties.
+ * @see entity_metadata_node_entity_info_alter()
+ */
+function entity_metadata_node_set_properties($node, $name, $value) {
+  if ($name == 'author') {
+    $node->uid = $value->uid;
+    $node->name = $value->name;
   }
 }
 
@@ -289,16 +303,16 @@ function entity_metadata_field_property_get_multiple($object, array $options, $n
 }
 
 /**
- * Callback for getting the 'safe' value of a field.
+ * Callback for getting the 'safe_value' of a field.
  */
 function entity_metadata_field_property_get_safe($object, array $options, $name, $obj_type) {
   $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
   entity_metadata_field_refresh_sanitized_value($object, $obj_type, $name, $langcode);
-  return $object->{$name}[$langcode][0]['safe'];
+  return $object->{$name}[$langcode][0]['safe_value'];
 }
 
 /**
- * Callback for getting multiple 'safe' values of a field.
+ * Callback for getting multiple 'safe_value' values of a field.
  */
 function entity_metadata_field_property_get_multiple_safe($object, array $options, $name, $obj_type) {
   $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
@@ -306,7 +320,7 @@ function entity_metadata_field_property_get_multiple_safe($object, array $option
   $values = array();
   if (isset($object->{$name}[$langcode])) {
     foreach ($object->{$name}[$langcode] as $delta => $data) {
-      $values[$delta] = $data['safe'];
+      $values[$delta] = $data['safe_value'];
     }
   }
   return $values;
@@ -321,18 +335,19 @@ function _entity_metadata_field_property_get_langcode($object, $options, $name) 
 }
 
 /**
- * Returns the key used to get a sanitized value. If the field implements
- * hook_field_sanitize() the key 'safe' is returned, else it's assumed that
- * the key 'value' is safe.
+ * Makes sure the sanitized 'safe_value' is present.
  */
 function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $field_name, $langcode) {
-  if (!isset($object->{$field_name}[$langcode][0]['safe'])) {
+  if (!isset($object->{$field_name}[$langcode][0]['safe_value'])) {
     $field = field_info_field($field_name);
     list($id, $vid, $bundle) = entity_extract_ids($obj_type, $object);
     $instance = field_info_instance($obj_type, $field_name, $bundle);
 
-    if (function_exists($function = $field['module'] . '_field_sanitize')) {
-      $function($obj_type, $object, $field, $instance, $langcode, $object->{$field_name}[$langcode]);
+    // TODO: Currently this doesn't work for text* field types.
+    // _field_invoke('sanitize', $obj_type, $object, $null, $null, array('language' => $langcode));
+    // This makes it work for text* field types only for now.
+    foreach ($object->{$field_name}[$langcode] as $key => $item) {
+      $object->{$field_name}[$langcode][$key]['safe_value'] = _text_sanitize($instance, $langcode, $item, 'value');
     }
   }
 }
@@ -343,7 +358,7 @@ function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $fiel
 function entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type) {
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
   $object->{$name}[$langcode][0]['value'] = $value;
-  unset($object->{$name}[$langcode][0]['safe']);
+  unset($object->{$name}[$langcode][0]['safe_value']);
 }
 
 /**
