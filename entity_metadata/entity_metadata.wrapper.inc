@@ -194,7 +194,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
       list($id, $vid, $bundle) = entity_extract_ids($type, $this->value());
       $info['bundle'] = $bundle;
     }
-    if (isset($info['bundle'])) {
+    if (isset($info['bundle']) && isset($this->entityInfo['bundles'][$info['bundle']])) {
       $bundle_info = (array)$this->entityInfo['bundles'][$info['bundle']] + array('properties' => array());
       $this->entityInfo['properties'] += $bundle_info['properties'];
     }
