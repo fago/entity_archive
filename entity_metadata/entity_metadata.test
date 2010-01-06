@@ -109,6 +109,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     // Test setting a new node.
     $wrapper->set($node);
+
+    // Test getting options lists.
+    $this->assertEqual($wrapper->type->optionsList(), node_type_get_names(), 'Options list returned.');
   }
 
   /**

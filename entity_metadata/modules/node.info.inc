@@ -46,6 +46,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['type'] = array(
     'label' => t("Content type"),
     'description' => t("The type of the node."),
+    'options list' => 'node_type_get_names',
   );
   $properties['type-name'] = array(
     'label' => t("Content type name"),
@@ -56,6 +57,7 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Language"),
     'description' => t("The language the node is written in."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'options list' => 'entity_metadata_language_list',
   );
   $properties['url'] = array(
     'label' => t("URL"),

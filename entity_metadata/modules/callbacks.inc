@@ -281,6 +281,17 @@ function entity_metadata_user_get_properties($account, array $options, $name, $e
 }
 
 /**
+ * Callback defining an options list for language properties.
+ */
+function entity_metadata_language_list() {
+  $list = array();
+  foreach (language_list() as $language) {
+    $list[$language->language] = t($language->name);
+  }
+  return $list;
+}
+
+/**
  * Callback for getting field property values.
  */
 function entity_metadata_field_property_get($object, array $options, $name, $obj_type) {
@@ -370,4 +381,12 @@ function entity_metadata_field_property_set_multiple($object, $name, $values, $l
   foreach ($values as $key => $value) {
     $object->{$name}[$langcode][$key]['value'] = $value;
   }
+}
+
+/**
+ * Callback returning the options list of a field.
+ */
+function entity_metadata_field_options_list($object, $name, $obj_type) {
+  $field = field_info_field($name);
+  return (array)module_invoke($field['module'], 'options_list', $field);
 }
