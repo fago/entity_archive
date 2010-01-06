@@ -59,6 +59,9 @@
  *       callback which can be used to retrieve the raw, unprocessed value.
  *     - bundle: If the property is an entity, you may specify the bundle of the
  *       retrieved entity. Optional.
+ *     - 'options list': Optionally, a callback that returns a list of key value
+ *       pairs for the property. The callback has to return an array as
+ *       used by hook_options_list().
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in

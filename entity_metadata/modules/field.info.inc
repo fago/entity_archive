@@ -54,6 +54,10 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
       'getter callback' => $is_list ? 'entity_metadata_field_property_get_multiple' : 'entity_metadata_field_property_get',
       'setter callback' => $is_list ? 'entity_metadata_field_property_set_multiple' : 'entity_metadata_field_property_set',
     );
+    // For field types of the list module add in the options list callback.
+    if (strpos($field['type'], 'list') === 0) {
+      $property['options list'] = 'entity_metadata_field_options_list';
+    }
   }
 }
 

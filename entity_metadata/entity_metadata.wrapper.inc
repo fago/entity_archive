@@ -136,6 +136,20 @@ abstract class EntityMetadataWrapper {
       $wrapper->clear();
     }
   }
+
+  /**
+   * Returns the options list specifying possible key value pairs for the
+   * property, if defined.
+   *
+   * @return
+   *   An array as used by hook_options_list() or FALSE.
+   */
+  public function optionsList() {
+    if (isset($this->info['options list']) && function_exists($this->info['options list']) && $this->dataAvailable() && isset($this->info['name'])) {
+      return $this->info['options list']($this->data, $this->info['name'], $this->type);
+    }
+    return FALSE;
+  }
 }
 
 /**
