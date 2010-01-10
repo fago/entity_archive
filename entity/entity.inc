@@ -8,17 +8,40 @@
  */
 
 /**
- * Interface for EntityControllers compatible with EntityCrud implementations.
+ * Defines status codes used for exportable entities.
  */
-interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface {
+if (!defined('ENTITY_IN_DB')) {
+  /**
+   * A bit flag used to let us know if an entity is in the database.
+   */
+  define('ENTITY_IN_DB', 0x01);
   
   /**
-   * Delete permanently saved entities.
-   *
-   * @param $ids
-   *   An array of entity IDs.
+   * A bit flag used to let us know if an entity is a 'default' in code.
    */
-  public function delete($ids);
+  define('ENTITY_IN_CODE', 0x02);
+  
+  /**
+   * A bit flag used to mark entities as fixed, thus not changeable for any
+   * user.
+   */
+  define('ENTITY_FIXED', 0x04);
+}
+
+if (!interface_exists('EntityCRUDControllerInterface')) {
+  /**
+   * Interface for EntityControllers compatible with EntityCrud implementations.
+   */
+  interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface {
+  
+    /**
+     * Delete permanently saved entities.
+     *
+     * @param $ids
+     *   An array of entity IDs.
+     */
+    public function delete($ids);
+  }
 }
 
 /**
@@ -26,6 +49,25 @@ interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface 
  * provides mass delete functionality.
  */
 class EntityCRUDController extends DrupalDefaultEntityController implements EntityCRUDControllerInterface {
+
+  protected $defaultEntities;
+  protected $nameKey, $statusKey;
+
+  /**
+   * Overridden.
+   * @see DrupalDefaultEntityController#__construct()
+   *
+   * Allows specifying a name key serving as uniform identifier for this entity
+   * type while still internally we are using numeric identifieres.
+   */
+  public function __construct($entityType) {
+    parent::__construct($entityType);
+    // Use the name key as primary identifier.
+    $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
+    if (isset($this->entityInfo['exportable'])) {
+      $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+    }
+  }
 
   /**
    * Builds and executes the query for loading.
@@ -41,13 +83,27 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
     }
     return $result;
   }
-  
+
+  protected function buildQuery() {
+    // If we have a separate name key use it to filter for ids in $this->ids.
+    if ($this->ids && $this->nameKey != $this->idKey) {
+      $ids = $this->ids;
+      $this->ids = array();
+      parent::buildQuery();
+      $this->query->condition("base.{$this->nameKey}", $ids, 'IN');
+    }
+    else {
+      parent::buildQuery();
+    }
+  }
+
   /**
    * Overridden.
    * @see DrupalDefaultEntityController#load($ids, $conditions)
    *
    * In contrast to the parent implementation we factor out query execution, so
-   * fetching can be further customized easily.
+   * fetching can be further customized easily. Also we add any in code defined
+   * objects.
    */
   public function load($ids = array(), $conditions = array()) {
     $this->ids = $ids;
@@ -65,7 +121,6 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
       $this->revisionId = FALSE;
     }
 
-
     // Create a new variable which is either a prepared version of the $ids
     // array for later comparison with the entity cache, or FALSE if no $ids
     // were passed. The $ids array is reduced as items are loaded from cache,
@@ -75,11 +130,15 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
     // Try to load entities from the static cache, if the entity type supports
     // static caching.
     if ($this->cache) {
-      $entities += $this->cacheGet($this->ids, $this->conditions);
+      $entities = $this->cacheGet($this->ids, $this->conditions);
       // If any entities were loaded, remove them from the ids still to load.
       if ($passed_ids) {
         $this->ids = array_keys(array_diff_key($passed_ids, $entities));
       }
+    }
+    if (!empty($this->entityInfo['exportable'])) {
+      // Add default entities defined in code.
+      $entities += $this->getDefaults($this->ids, $this->conditions);
     }
 
     // Load any remaining entities from the database. This is the case if $ids
@@ -102,7 +161,16 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
             }
           }
         }
-        $queried_entities[$record->{$this->idKey}] = $record;
+        if (isset($this->statusKey)) {
+          // Care for setting the status key properly.
+          $record->{$this->statusKey} |= ENTITY_IN_DB;
+          $id = $record->{$this->nameKey};
+          if (isset($entities[$id]) && $entities[$id]->{$this->statusKey} & ENTITY_IN_CODE) {
+            $record->{$this->statusKey} |= ENTITY_IN_CODE;
+            unset($entities[$id]);
+          }
+        }
+        $queried_entities[$record->{$this->nameKey}] = $record;
       }
     }
 
@@ -119,16 +187,16 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
       if (!empty($queried_entities) && !$this->revisionId) {
         $this->cacheSet($queried_entities);
       }
-      // Ensure that the returned array is ordered the same as the original
-      // $ids array if this was passed in and remove any invalid ids.
-      if ($passed_ids) {
-        // Remove any invalid ids from the array.
-        $passed_ids = array_intersect_key($passed_ids, $entities);
-        foreach ($entities as $entity) {
-          $passed_ids[$entity->{$this->idKey}] = $entity;
-        }
-        $entities = $passed_ids;
+    }
+    // Ensure that the returned array is ordered the same as the original
+    // $ids array if this was passed in and remove any invalid ids.
+    if ($passed_ids) {
+      // Remove any invalid ids from the array.
+      $passed_ids = array_intersect_key($passed_ids, $entities);
+      foreach ($entities as $entity) {
+        $passed_ids[$entity->{$this->nameKey}] = $entity;
       }
+      $entities = $passed_ids;
     }
     return $entities;
   }
@@ -147,6 +215,56 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
       $entity->invoke('delete');
     }
     $this->resetCache();
+  }
+
+  /**
+   * For exportables call the hook to get all default entities.
+   */
+  protected function getDefaults($ids, $conditions = array()) {
+    if (!isset($this->defaultEntities)) {
+      $this->defaultEntities = array();
+      if (!empty($this->entityInfo['exportable'])) {
+        $this->entityInfo += array('export' => array());
+        $this->entityInfo['export'] += array('default hook' => 'default_' . $this->entityType);
+        if ($hook = $this->entityInfo['export']['default hook']) {
+          $this->defaultEntities = module_invoke_all($hook);
+          drupal_alter($hook, $this->defaultEntities);
+          foreach ($this->defaultEntities as $entity) {
+            $entity->{$this->statusKey} |= ENTITY_IN_CODE;
+          }
+        }
+      }
+    }
+    $entities = $ids ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
+    return $this->applyConditions($entities, $conditions);
+  }
+
+  protected function applyConditions($entities, $conditions = array()) {
+    if ($conditions) {
+      foreach ($entities as $key => $entity) {
+        $entity_values = (array) $entity;
+        if (array_diff_assoc($conditions, $entity_values)) {
+          unset($entities[$key]);
+        }
+      }
+    }
+    return $entities;
+  }
+
+  /**
+   * Overridden.
+   * @see includes/DrupalDefaultEntityController#cacheGet($ids, $conditions)
+   *
+   * If there is nameKey given, we index our entities by this key. This
+   * overrides cacheGet() to respect that when applying $conditions.
+   */
+  protected function cacheGet($ids, $conditions = array()) {
+    return $this->applyConditions(parent::cacheGet($ids), $conditions);
+  }
+
+  public function resetCache() {
+    $this->entityCache = array();
+    unset($this->defaultEntities);
   }
 }
 
@@ -167,7 +285,7 @@ function entity_delete($entity_type, array $ids) {
  * Provides a unique interface for CRUD operations on entites.
  */
 interface EntityCRUDInterface {
-  
+
   /**
    * Permanently save this entity.
    *
@@ -183,12 +301,12 @@ interface EntityCRUDInterface {
   public function delete();
 
   /**
-   * Returns the identifier of this instance.
+   * Returns the internal identifier of this instance.
    *
    * @return
-   *   The identifier or NULL, if this entity hasn't been saved yet.
+   *   The primary ID or NULL, if this entity hasn't been saved yet.
    */
-  public function identifier();
+  public function internalIdentifier();
 
   /**
    * Returns the entity type of this instance.
@@ -208,7 +326,7 @@ interface EntityCRUDInterface {
    *   entity_get_info()
    */
   public function entityInfo();
-  
+
   /**
    * Invokes a hook on behalf the entity. For hooks that have a respective
    * field API attacher like insert/update/.. the attacher is called too.
@@ -233,14 +351,19 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
     $this->entityType = $entityType;
     $this->entityInfo = entity_get_info($entityType);
     $this->idKey = $this->entityInfo['object keys']['id'];
+    $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
     // Set initial values.
     foreach ($values as $key => $value) {
       $this->$key = $value;
     }
   }
-  
-  public function identifier() {
+
+  public function internalIdentifier() {
     return isset($this->{$this->idKey}) ? $this->{$this->idKey} : NULL;
+  }
+
+  public function identifier() {
+    return isset($this->{$this->nameKey}) ? $this->{$this->nameKey} : NULL;
   }
 
   public function entityInfo() {
@@ -266,7 +389,7 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
   }
 
   public function delete() {
-    $id = $this->identifier();
+    $id = $this->internalIdentifier();
     if (isset($id)) {
       db_delete($this->entityInfo['base table'])
         ->condition($this->idKey, $id)
