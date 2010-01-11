@@ -7,32 +7,20 @@
  */
 
 /**
- * Test basic CRUD functionality.
+ * Test basic API.
  */
-class EntityCRUDTestCase extends DrupalWebTestCase {
+class EntityAPITestCase extends DrupalWebTestCase {
 
   public static function getInfo() {
     return array(
-      'name' => 'CRUD',
-      'description' => 'Tests basic CRUD functionality.',
+      'name' => 'Entity API',
+      'description' => 'Tests basic API functionality.',
       'group' => 'Entity',
     );
   }
 
   function setUp() {
-    parent::setUp('entity_test', 'locale');
-
-    entity_test_type_save(array(
-      'name' => 'test',
-      'label' => 'label',
-      'weight' => 0
-    ));
-    entity_test_type_save(array(
-      'name' => 'test2',
-      'label' => 'label2',
-      'weight' => 2
-    ));
-    entity_test_load_multiple(FALSE, array(), TRUE);
+    parent::setUp('entity', 'entity_test');
   }
 
   /**
@@ -68,6 +56,21 @@ class EntityCRUDTestCase extends DrupalWebTestCase {
     // Try deleting multiple test entities by deleting all.
     $pids = array_keys(entity_test_load_multiple(FALSE));
     entity_test_delete_multiple($pids);
+  }
+
+  /**
+   * Test loading entities defined in code.
+   */
+  function testExportables() {
+    $types = entity_load('entity_test_type', array('test', 'test2'));
+    $this->assertEqual($types['test']->label, 'label', 'Default type loaded.');
+    $this->assertTrue($types['test']->status & ENTITY_IN_CODE && !($types['test']->status & ENTITY_IN_DB), 'Default type status is correct.');
+
+    $types['test']->label = 'modified';
+    $types['test']->save();
+    $types = entity_load('entity_test_type', array('test', 'test2'));
+    $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded correctly.');
+    $this->assertTrue($types['test']->status & ENTITY_IN_CODE && $types['test']->status & ENTITY_IN_DB, 'Status of modified type is correct.');
   }
 }
 

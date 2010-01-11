@@ -7,43 +7,31 @@
  */
 
 /**
- * Implement hook_enable().
+ * Implement hook_install().
  */
-function entity_test_enable() {
-  if (!entity_test_get_types('main')) {
-    // Refresh schema cache, needed to let type save work during installation.
-    drupal_get_schema('entity_test_type', TRUE);
-    
-    entity_test_type_save(array(
-      'name' => 'main',
-      'label' => t('Profile'),
-      'weight' => 0,
-      'locked' => TRUE,
-    ));
-    // Auto-create a field for the full name.
-    $field = array(
-      'field_name' => 'entity_test_fullname',
-      'type' => 'text',
-      'cardinality' => 1,
-      'translatable' => FALSE,
-    );
-    field_create_field($field);
-  
-    $instance = array(
-      'object_type' => 'entity_test',
-      'field_name' => 'entity_test_fullname',
-      'bundle' => 'main',
-      'label' => 'Full name',
-      'description' => 'Specify your first and last name.',
-      'widget' => array(
-        'type' => 'text_textfield',
-        'weight' => 0,
-      ),
-    );
-    field_create_instance($instance);
-  }
-}
+function entity_test_install() {
+  // Auto-create a field for the full name.
+  $field = array(
+    'field_name' => 'entity_test_fullname',
+    'type' => 'text',
+    'cardinality' => 1,
+    'translatable' => FALSE,
+  );
+  field_create_field($field);
 
+  $instance = array(
+    'object_type' => 'entity_test',
+    'field_name' => 'entity_test_fullname',
+    'bundle' => 'main',
+    'label' => 'Full name',
+    'description' => 'Specify your first and last name.',
+    'widget' => array(
+      'type' => 'text_textfield',
+      'weight' => 0,
+    ),
+  );
+  field_create_instance($instance);
+}
 
 /**
  * Implement hook_schema().
@@ -85,6 +73,11 @@ function entity_test_schema() {
   $schema['entity_test_type'] = array(
     'description' => 'Stores information about all defined entity_test types.',
     'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique entity_test type ID.',
+      ),
       'name' => array(
         'description' => 'The machine-readable name of this entity_test type.',
         'type' => 'varchar',
@@ -118,9 +111,13 @@ function entity_test_schema() {
         'size' => 'big',
         'serialize' => TRUE,
         'description' => 'A serialized array of additional data related to this entity_test type.',
+        'merge' => TRUE,
       ),
     ),
-    'primary key' => array('name'),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
   );
   return $schema;
 }
