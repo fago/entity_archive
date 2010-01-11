@@ -6,5 +6,19 @@
  * @file
  * Module for the entity API.
  *
- * entity.inc is autoloaded by the code registry, so nothing else todo.
+ * entity.inc is autoloaded by the code registry for us.
  */
+
+spl_autoload_register('entity_autoload');
+
+/**
+ * Autoload API includes. Note that the code registry autoload is used only
+ * by the providing API module.
+ */
+function entity_autoload($class) {
+  if (stripos($class, 'faces') === 0) {
+    module_load_include('inc', 'entity', 'faces');
+  }
+}
+
+module_load_include('inc', 'entity', 'entity');

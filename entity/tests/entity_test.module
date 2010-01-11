@@ -6,18 +6,6 @@
  * Test moduel for the entity API.
  */
 
-spl_autoload_register('entity_test_autoload');
-
-/**
- * Autoload API includes. Note that the code registry autoload is used only
- * by the providing API module.
- */
-function entity_test_autoload($class) {
-  if (stripos($class, 'faces') === 0) {
-    module_load_include('inc', 'entity_test', 'faces');
-  }
-}
-
 /**
  * Implement hook_entity_info().
  */
@@ -26,7 +14,7 @@ function entity_test_entity_info() {
     'entity_test' => array(
       'label' => t('Test Entity'),
       'entity class' => 'EntityClass',
-      'controller class' => 'EntityCRUDController',
+      'controller class' => 'EntityAPIController',
       'base table' => 'entity_test',
       'fieldable' => TRUE,
       'object keys' => array(
@@ -34,14 +22,39 @@ function entity_test_entity_info() {
         'bundle' => 'name',
       ),
       'bundles' => array(),
+      'bundle keys' => array(
+        'bundle' => 'name',
+      ),
     ),
   );
+  $return['entity_test_type'] = array(
+    'label' => t('Test entity type'),
+    'entity class' => 'EntityDB',
+    'controller class' => 'EntityAPIController',
+    'base table' => 'entity_test_type',
+    'fieldable' => FALSE,
+    'bundle of' => 'entity_test',
+    'exportable' => TRUE,
+    'object keys' => array(
+      'id' => 'id',
+      'name' => 'name',
+    ),
+  );
+  return $return;
+}
+
+/**
+ * Implement hook_entity_info_alter().
+ *
+ * Use this hook to specify entity test bundles to avoid a recursion, as loading
+ * the entity test types needs the entity info too.
+ */
+function entity_test_entity_info_alter(&$entity_info) {
   foreach (entity_test_get_types() as $name => $info) {
-    $return['entity_test']['bundles'][$name] = array(
-      'label' => $info['label'],
+    $entity_info['entity_test']['bundles'][$name] = array(
+      'label' => $info->label,
     );
   }
-  return $return;
 }
 
 /**
@@ -51,18 +64,7 @@ function entity_test_entity_info() {
  *   If set, the type with the given name is returned.
  */
 function entity_test_get_types($name = NULL) {
-  $types = drupal_static(__FUNCTION__);
-  if (!isset($types)) {
-    $types = db_select('entity_test_type', 'pt')
-      ->fields('pt')
-      ->orderBy('name')
-      ->execute()
-      ->fetchAllAssoc('name', PDO::FETCH_ASSOC);
-    foreach ($types as &$type) {
-      $data = unserialize($type['data']);
-      unset($type['data']);
-    }
-  }
+  $types = entity_load('entity_test_type', isset($name) ? array($name) : FALSE);
   if (isset($name)) {
     return isset($types[$name]) ? $types[$name] : FALSE;
   }
@@ -96,74 +98,48 @@ function entity_test_delete_multiple(array $pids) {
 }
 
 /**
- * Saves a test entity type to the db.
- *
- * @param $type
- *   An array of information about the type.
+ * Implement hook_entity_test_type_presave().
  */
-function entity_test_type_save(array $type) {
-  $types = entity_test_get_types();
-  // Save all additional properties to the 'data' field.
-  $data = $type;
-  unset($data['name'], $data['label'], $data['weight'], $data['locked'], $data['data']);
-  $type['data'] = $data;
-
-  if (isset($types[$type['name']])) {
-    // We don't support renaming types.
-    drupal_write_record('entity_test_type', $type, 'name');
-    module_invoke_all('entity_test_type_update', $type);
-  }
-  else {
-    drupal_write_record('entity_test_type', $type);
-    field_attach_create_bundle('entity_test', $type['name']);
-    module_invoke_all('entity_test_type_insert', $type);
-  }
-  drupal_static_reset('entity_test_get_types');
+function entity_test_entity_test_type_presave($type) {
+  $data = get_object_vars($type);
+  unset($data['name'], $data['label'], $data['weight'], $data['locked'], $data['data'], $data['status']);
+  $type->data = $data;
 }
 
-/**
- * Deletes a test entity type from.
- */
-function entity_test_type_delete(array $type) {
-  $pids = array_keys(entity_test_load_multiple(FALSE, array('name' => $type['name'])));
-  entity_test_delete_multiple($pids);
-  db_delete('entity_test_type')->condition('name', $type['name'])->execute();
-  // Invoke hook.
-  module_invoke_all('entity_test_type_delete', $type);
-  field_attach_delete_bundle('entity_test', $type['name']);
-}
 
 /**
- * Implement hook_entity_test_load()
+ * Implement hook_default_entity_test_type().
  */
-function entity_test_entity_test_load($entities) {
-  $types = entity_test_get_types();
-  // Load the entity_test's label.
-  foreach ($entities as $entity) {
-    if (isset($types[$entity->name])) {
-      $entity->label = $types[$entity->name]['label'];
-    }
-  }
-}
+function entity_test_default_entity_test_type() {
+  $types['main'] = new EntityDB(array(
+      'name' => 'main',
+      'label' => t('Main test type'),
+      'weight' => 0,
+      'locked' => TRUE,
+  ), 'entity_test_type');
 
-/**
- * Implement hook_field_build_modes().
- */
-function entity_test_field_build_modes($obj_type) {
-  if ($obj_type == 'entity_test') {
-    return array(
-      'full' => t('Full test entity'),
-    );
-  }
+  // Types used during CRUD testing.
+  $types['test'] = new EntityDB(array(
+    'name' => 'test',
+    'label' => 'label',
+    'weight' => 0,
+  ), 'entity_test_type');
+  $types['test2'] = new EntityDB(array(
+      'name' => 'test2',
+      'label' => 'label2',
+      'weight' => 2,
+  ), 'entity_test_type');
+
+  return $types;
 }
 
 /**
  * Main class for test entities.
  */
 class EntityClass extends EntityDB {
-  
+
   public function __construct(array $values = array(), $entityType = NULL) {
     parent::__construct($values, 'entity_test');
   }
-  
+
 }
