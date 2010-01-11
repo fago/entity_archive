@@ -3,7 +3,7 @@
 
 /**
  * @file
- * API include file from the entity CRUD API.
+ * API include file from the entity API.
  * See http://drupal.org/project/entity.
  */
 
@@ -15,12 +15,12 @@ if (!defined('ENTITY_IN_DB')) {
    * A bit flag used to let us know if an entity is in the database.
    */
   define('ENTITY_IN_DB', 0x01);
-  
+
   /**
    * A bit flag used to let us know if an entity is a 'default' in code.
    */
   define('ENTITY_IN_CODE', 0x02);
-  
+
   /**
    * A bit flag used to mark entities as fixed, thus not changeable for any
    * user.
@@ -28,12 +28,12 @@ if (!defined('ENTITY_IN_DB')) {
   define('ENTITY_FIXED', 0x04);
 }
 
-if (!interface_exists('EntityCRUDControllerInterface')) {
+if (!interface_exists('EntityAPIControllerInterface')) {
   /**
-   * Interface for EntityControllers compatible with EntityCrud implementations.
+   * Interface for EntityControllers compatible with the entity API.
    */
-  interface EntityCRUDControllerInterface extends DrupalEntityControllerInterface {
-  
+  interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
+
     /**
      * Delete permanently saved entities.
      *
@@ -42,13 +42,67 @@ if (!interface_exists('EntityCRUDControllerInterface')) {
      */
     public function delete($ids);
   }
+
+  /**
+   * Provides an interface for entites using the entity API.
+   */
+  interface EntityAPIInterface {
+
+    /**
+     * Permanently save this entity.
+     *
+     * @return
+     *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
+     *   SAVED_UPDATED is returned depending on the operation performed.
+     */
+    public function save();
+
+    /**
+     * Permanently delete this entity.
+     */
+    public function delete();
+
+    /**
+     * Returns the internal identifier of this instance.
+     *
+     * @return
+     *   The primary ID or NULL, if this entity hasn't been saved yet.
+     */
+    public function internalIdentifier();
+
+    /**
+     * Returns the entity type of this instance.
+     *
+     * @return
+     *   The name of the entity type of this instance.
+     */
+    public function entityType();
+
+    /**
+     * Returns the entity info for this instance as returned by entity_get_info().
+     *
+     * @return
+     *   An array of entity info for this entity type.
+     *
+     * @see
+     *   entity_get_info()
+     */
+    public function entityInfo();
+
+    /**
+     * Invokes a hook on behalf the entity. For hooks that have a respective
+     * field API attacher like insert/update/.. the attacher is called too.
+     */
+    public function invoke($hook);
+
+  }
 }
 
 /**
  * A controller that supports loading instances of the 'entity class' and
  * provides mass delete functionality.
  */
-class EntityCRUDController extends DrupalDefaultEntityController implements EntityCRUDControllerInterface {
+class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
   protected $defaultEntities;
   protected $nameKey, $statusKey;
@@ -202,7 +256,7 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
   }
 
   /**
-   * Implements EntityCRUDControllerInterface.
+   * Implement EntityAPIControllerInterface.
    */
   public function delete($ids) {
     $entities = $this->load($ids);
@@ -269,76 +323,9 @@ class EntityCRUDController extends DrupalDefaultEntityController implements Enti
 }
 
 /**
- * Delete permanently saved entities.
- *
- * @param $entity_type
- *   The entity type to delete, e.g. node or user.
- * @param $ids
- *   An array of entity IDs.
- */
-function entity_delete($entity_type, array $ids) {
-  entity_get_controller($entity_type)->delete($ids);
-}
-
-
-/**
- * Provides a unique interface for CRUD operations on entites.
- */
-interface EntityCRUDInterface {
-
-  /**
-   * Permanently save this entity.
-   *
-   * @return
-   *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
-   *   SAVED_UPDATED is returned depending on the operation performed.
-   */
-  public function save();
-
-  /**
-   * Permanently delete this entity.
-   */
-  public function delete();
-
-  /**
-   * Returns the internal identifier of this instance.
-   *
-   * @return
-   *   The primary ID or NULL, if this entity hasn't been saved yet.
-   */
-  public function internalIdentifier();
-
-  /**
-   * Returns the entity type of this instance.
-   *
-   * @return
-   *   The name of the entity type of this instance.
-   */
-  public function entityType();
-
-  /**
-   * Returns the entity info for this instance as returned by entity_get_info().
-   *
-   * @return
-   *   An array of entity info for this entity type.
-   *
-   * @see
-   *   entity_get_info()
-   */
-  public function entityInfo();
-
-  /**
-   * Invokes a hook on behalf the entity. For hooks that have a respective
-   * field API attacher like insert/update/.. the attacher is called too.
-   */
-  public function invoke($hook);
-
-}
-
-/**
  * A common class for db entities.
  */
-class EntityDB extends FacesExtendable implements EntityCRUDInterface {
+class EntityDB extends FacesExtendable implements EntityAPIInterface {
 
   protected $entityType;
   protected $entityInfo;
