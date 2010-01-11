@@ -342,7 +342,7 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
 
   protected $entityType;
   protected $entityInfo;
-  protected $idKey;
+  protected $idKey, $nameKey, $bundleKey;
 
   public function __construct(array $values = array(), $entityType = NULL) {
     if (empty($entityType)) {
@@ -352,6 +352,11 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
     $this->entityInfo = entity_get_info($entityType);
     $this->idKey = $this->entityInfo['object keys']['id'];
     $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
+    // If this is the bundle of another entity, set the bundle key.
+    if (isset($this->entityInfo['bundle of'])) {
+      $info = entity_get_info($this->entityInfo['bundle of']);
+      $this->bundleKey = $info['bundle keys']['bundle'];
+    }
     // Set initial values.
     foreach ($values as $key => $value) {
       $this->$key = $value;
@@ -405,6 +410,21 @@ class EntityDB extends FacesExtendable implements EntityCRUDInterface {
   public function invoke($hook) {
     if (!empty($this->entityInfo['fieldable']) && function_exists($function = 'field_attach_' . $hook)) {
       $function($this->entityType, $this);
+    }
+    if (isset($this->entityInfo['bundle of']) && $type = $this->entityInfo['bundle of']) {
+      // Call field API bundle attachers for the entity we are a bundle of.
+      if ($hook == 'insert') {
+        field_attach_create_bundle($type, $this->{$this->bundleKey});
+      }
+      elseif ($hook == 'delete') {
+        field_attach_delete_bundle($type, $this->{$this->bundleKey});
+      }
+      elseif ($hook == 'update' && $id = $this->{$this->idKey}) {
+        $entities = entity_load($this->entityType, array($id));
+        if ($entities[$id]->{$this->bundleKey} != $this->{$this->bundleKey}) {
+          field_attach_rename_bundle($type, $entities[$id]->{$this->bundleKey}, $this->{$this->bundleKey});
+        }
+      }
     }
     module_invoke_all($this->entityType . '_' . $hook, $this);
   }
