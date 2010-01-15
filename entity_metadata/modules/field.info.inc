@@ -7,12 +7,12 @@
  */
 
 /**
- * Implements hook_entity_property_info_alter() on top of field module.
+ * Implements hook_entity_property_info() on top of field module.
  *
- * @see entity_metadata_entity_property_info_alter()
  * @see entity_metadata_field_info_alter()
  */
-function entity_metadata_field_entity_property_info_alter(&$info) {
+function entity_metadata_field_entity_property_info() {
+  $info = array();
   // Loop over all field instances and add them as property.
   foreach (field_info_fields() as $field_name => $field) {
     $field += array('bundles' => array());
@@ -32,6 +32,7 @@ function entity_metadata_field_entity_property_info_alter(&$info) {
       }
     }
   }
+  return $info;
 }
 
 /**
@@ -45,7 +46,8 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
       $field_type['property_type'] = 'list<' . $field_type['property_type'] . '>';
     }
     // Add in instance specific property info, if given and apply defaults.
-    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+    $name = str_replace('_', '-', $field['field_name']);
+    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
     $instance += array('property info' => array());
     $property = $instance['property info'] + array(
       'label' => $instance['label'],
@@ -69,7 +71,8 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
  */
 function entity_metadata_field_text_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($instance['settings']['text_processing'])) {
-    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+    $name = str_replace('_', '-', $field['field_name']);
+    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
     $property['sanitized'] = TRUE;
     $property['raw getter callback'] = $property['getter callback'];
     // Use the getter callback returning the 'safe' value.

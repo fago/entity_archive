@@ -20,7 +20,9 @@ function entity_metadata_entity_property_info() {
   foreach (_entity_metadata_core_modules() as $module) {
     module_load_include('inc', 'entity_metadata', "modules/$module.info");
     if (function_exists($function = "entity_metadata_{$module}_entity_property_info")) {
-      $items += (array)$function();
+      if ($return = $function()) {
+        $items = array_merge_recursive($items, $return);
+      }
     }
   }
   return $items;

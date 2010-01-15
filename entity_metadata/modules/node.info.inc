@@ -53,6 +53,11 @@ function entity_metadata_node_entity_property_info() {
     'description' => t("The human-readable name of the node type."),
     'getter callback' => 'entity_metadata_node_get_properties',
   );
+  $properties['title'] = array(
+    'label' => t("Title"),
+    'description' => t("The title of the node."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+  );
   $properties['language'] = array(
     'label' => t("Language"),
     'description' => t("The language the node is written in."),
