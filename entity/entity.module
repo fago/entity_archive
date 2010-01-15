@@ -21,4 +21,9 @@ function entity_autoload($class) {
   }
 }
 
-module_load_include('inc', 'entity', 'entity');
+if (!class_exists('EntityAPIController', FALSE)) {
+  // In rare cases another module shipping with entity.inc might have already
+  // included its own version. Usually we run first, so our version will be
+  // included, but in cases like test execution we might not run first.
+  module_load_include('inc', 'entity', 'entity');
+}
