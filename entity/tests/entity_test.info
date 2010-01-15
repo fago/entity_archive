@@ -5,4 +5,5 @@ version = VERSION
 core = 7.x
 files[] = entity_test.module
 files[] = entity_test.install
+dependencies[] = entity
 hidden = TRUE
