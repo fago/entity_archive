@@ -64,14 +64,6 @@ function entity_metadata_comment_entity_property_info() {
     'getter callback' => 'entity_metadata_comment_get_properties',
     'sanitize' => 'filter_xss',
   );
-  $properties['body'] = array(
-    'label' => t("Content"),
-    'description' => t("The formatted content of the comment itself."),
-    'getter callback' => 'entity_metadata_comment_get_properties',
-    'raw getter callback' => 'entity_metadata_comment_get_raw',
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'sanitized' => TRUE,
-  );
   $properties['url'] = array(
     'label' => t("URL"),
     'description' => t("The URL of the comment."),
@@ -129,4 +121,13 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
     'description' => t("The number of comments posted on a node since the reader last viewed it."),
     'getter callback' => 'entity_metadata_comment_get_node_properties',
   );
+
+  // The comment body field is available for all bundles, so add it directly
+  // to the comment entity.
+  $properties = &$info['comment']['properties'];
+  $bundle_info = reset($info['comment']['bundles']);
+  $properties['comment-body'] = $bundle_info['properties']['comment-body'];
+  foreach ($info['comment']['bundles'] as $bundle => $bundle_info) {
+    unset($bundle_info['properties']['comment-body']);
+  }
 }
