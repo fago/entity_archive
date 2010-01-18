@@ -5,8 +5,6 @@
 /**
  * @file
  * Module for the entity API.
- *
- * entity.inc is autoloaded by the code registry for us.
  */
 
 spl_autoload_register('entity_autoload');
