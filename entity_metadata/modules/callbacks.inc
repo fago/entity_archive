@@ -7,6 +7,15 @@
  */
 
 /**
+ * Callback for getting properties of an entity.
+ */
+function entity_metadata_entity_get_properties($entity, array $options, $name, $entity_type) {
+  if ($name == 'url') {
+    return url(entity_path($entity_type, $entity), $options);
+  }
+}
+
+/**
  * Callback for getting book node properties.
  * @see entity_metadata_book_entity_info_alter()
  */
@@ -41,9 +50,6 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
 
     case 'title':
       return $comment->subject;
-
-    case 'url':
-      return url('comment/' . $comment->cid, array('fragment' => 'comment-' . $comment->cid) + $options);
 
     case 'edit-url':
       return url('comment/edit/' . $comment->cid, $options);
@@ -98,9 +104,6 @@ function entity_metadata_node_get_properties($node, array $options, $name, $enti
 
     case 'type-name':
       return node_type_get_name($node->type);
-
-    case 'url':
-      return url('node/' . $node->nid, $options);
 
     case 'edit-url':
       return url('node/' . $node->nid . '/edit', $options);
@@ -227,9 +230,6 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
     case 'node-count':
       return count(taxonomy_select_nodes($term->tid));
 
-    case 'url':
-      return url('taxonomy/term/' . $term->tid, $options);
-
     case 'description':
       return check_markup($term->description, $term->format, '', TRUE);
 
@@ -268,9 +268,6 @@ function entity_metadata_user_get_properties($account, array $options, $name, $e
   switch ($name) {
     case 'name':
       return ($account->uid == 0) ? variable_get('anonymous', t('Anonymous')) : $account->name;
-
-    case 'url':
-      return url("user/$account->uid", $options);
 
     case 'edit-url':
       return url("user/$account->uid/edit", $options);
