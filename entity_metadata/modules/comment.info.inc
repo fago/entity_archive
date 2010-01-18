@@ -110,7 +110,13 @@ function entity_metadata_comment_entity_property_info() {
 function entity_metadata_comment_entity_property_info_alter(&$info) {
   // Add info about comment module related properties to the node entity.
   $properties = &$info['node']['properties'];
-
+  $properties['comment'] = array(
+    'label' => t("Comments allowed"),
+    'description' => t("Whether comments are allowed on this node: 0 = no, 1 = closed (read only), 2 = open (read/write)."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
+    'type' => 'integer',
+  );
   $properties['comment-count'] = array(
     'label' => t("Comment count"),
     'description' => t("The number of comments posted on a node."),

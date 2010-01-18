@@ -391,3 +391,73 @@ function entity_metadata_field_options_list($object, $name, $obj_type) {
   $field = field_info_field($name);
   return (array)module_invoke($field['module'], 'options_list', $field);
 }
+
+/**
+ * Access callback for the node entity.
+ */
+function entity_metadata_node_access($op, $entity_type, $node = NULL, $account = NULL) {
+  if (isset($node)) {
+    return node_access($op, $node, $account);
+  }
+  // Is access to all nodes allowed?
+  if (!user_access('access content', $account)) {
+    return FALSE;
+  }
+  if (user_access('bypass node access', $account) || (!isset($account) && node_access_view_all_nodes())) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Access callback for the user entity.
+ */
+function entity_metadata_user_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  $account = isset($account) ? $account : $GLOBALS['user'];
+  // Grant access to the users own user account and to the anonymous one.
+  if (isset($entity) && $op != 'delete' && (($entity->uid == $account->uid && $entity->uid) || (!$entity->uid && $op == 'view'))) {
+    return TRUE;
+  }
+  if (user_access('administer users', $account) || user_access('access user profiles', $account) && $op == 'view') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Access callback for the comment entity.
+ */
+function entity_metadata_comment_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  if (isset($entity) && !isset($account) && comment_access($op, $entity)) {
+    return TRUE;
+  }
+  if (user_access('administer comments', $account) || user_access('access comments', $account) && $op == 'view') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Access callback for the taxonomy entities.
+ */
+function entity_metadata_taxonomy_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  if ($entity_type == 'taxonomy_vocabulary') {
+    return user_access('administer taxonomy', $account);
+  }
+  if (isset($entity) && $op == 'edit' && !isset($account) && taxonomy_term_edit_access($entity)) {
+    return TRUE;
+  }
+  if (user_access('administer taxonomy', $account) || user_access('access content', $account) && $op == 'view') {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Callback to determine access for properties which are fields.
+ */
+function entity_metadata_field_access_callback($op, $name, $entity_type, $entity = NULL, $account = NULL) {
+  $field_name = str_replace('-', '_', $name);
+  $field = field_info_field($field_name);
+  return field_access($op, $field, $entity_type, $entity, $account);
+}

@@ -150,6 +150,29 @@ abstract class EntityMetadataWrapper {
     }
     return FALSE;
   }
+
+  /**
+   * Determines whether the given user has access to this entity property. Apart
+   * from relying on access metadata of properties, this takes into account
+   * information about entity level access, if available:
+   *  - Referenced entities can only be viewed, when the user also has
+   *    permission to view this type of entity.
+   *  - A property may be only edited, if the user has permission to update the
+   *    entity containing the property.
+   *
+   * @param $op
+   *   The operation being performed. One of 'view' or 'edit.
+   * @param $account
+   *   The user to check for. Leave it to NULL to check for the global user.
+   * @return boolean
+   *   Whether access to entity property is allowed for the given operation.
+   *   However if we wrap no data, it returns whether access is allowed to the
+   *   property of all entities of this type.
+   *   If there is no access information for this property, TRUE is returned.
+   */
+  public function access($op, $account = NULL) {
+    return !empty($this->info['parent']) ? $this->info['parent']->propertyAccess($this->info['name'], $op, $account) : TRUE;
+  }
 }
 
 /**
@@ -350,6 +373,31 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
     }
   }
 
+  protected function propertyAccess($name, $op, $account = NULL) {
+    $info = $this->getPropertyInfo($name);
+    // If the property should be accessed and it's an entity, make sure the user
+    // is allowed to access that entity.
+    if ($op == 'view' && $this->$name instanceof EntityWrapper) {
+      $entity = $this->dataAvailable() ? $this->$name->data : NULL;
+      if (entity_metadata_entity_access('view', $this->$name->type, $entity, $account) === FALSE) {
+        return FALSE;
+      }
+    }
+    // If a property should be edited, make sure the user has update access for
+    // this entity.
+    $entity = $this->dataAvailable() ? $this->data : NULL;
+    if ($op == 'edit' && entity_metadata_entity_access('update', $this->type, $entity, $account) === FALSE) {
+      return FALSE;
+    }
+    if (!empty($info['access callback'])) {
+      return $info['access callback']($op, $name, $this->type, $entity, $account);
+    }
+    elseif ($op == 'edit' && isset($info['setter permission'])) {
+      return user_access($info['setter permission'], $account);
+    }
+    return TRUE;
+  }
+
   /**
    * Magic method: Can be used to check if a property is known.
    */
@@ -422,6 +470,10 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
       $this->data[$delta] = $value;
       $this->set($this->data);
     }
+  }
+
+  protected function propertyAccess($delta, $op, $account = NULL) {
+    return $this->access($op, $account);
   }
 
   /**

@@ -152,9 +152,9 @@ function entity_metadata_field_info_alter(&$field_info) {
 }
 
 /**
- * Implements hook_entity_info_alter().
+ * Implements hook_entity_info().
  */
-function entity_metadata_entity_info_alter(&$entity_info) {
+function entity_metadata_entity_info() {
   $entity_info['comment']['name property'] = 'title';
   $entity_info['node']['name property'] = 'title';
 
@@ -166,5 +166,36 @@ function entity_metadata_entity_info_alter(&$entity_info) {
     'object keys' => array(),
     'bundles' => array(),
   );
+
+  // Set access callbacks.
+  $entity_info['node']['access callback'] = 'entity_metadata_node_access';
+  $entity_info['user']['access callback'] = 'entity_metadata_user_access';
+  $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
+  $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
+  $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
+
+  return $entity_info;
 }
 
+/**
+ * Determines whether the given user has access to an entity.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param $entity_type
+ *   The entity type of the entity to check for.
+ * @param $entity
+ *   Optionally an entity to check access for. If no entity is given, it will be
+ *   determined whether access is allowed for all entities of the given type.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not. If no information is available, NULL is
+ *   returned.
+ */
+function entity_metadata_entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
+    return $info[$entity_type]['access callback']($op, $entity_type, $entity, $account);
+  }
+}

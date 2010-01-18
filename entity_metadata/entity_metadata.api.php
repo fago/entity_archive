@@ -62,6 +62,12 @@
  *     - 'options list': Optionally, a callback that returns a list of key value
  *       pairs for the property. The callback has to return an array as
  *       used by hook_options_list().
+ *     - 'access callback': An optional access callback to allow for checking
+ *       'view' and 'edit' access for the described property. If no callback
+ *       is specified, a 'setter permission' may be specified instead.
+ *     - 'setter permission': Optionally a permission, that describes whether
+ *       a user has permission to set ('edit') this property. This permission
+ *       should only be taken into account, if no 'access callback' is given.
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in
@@ -114,11 +120,33 @@ function hook_entity_metadata_info_alter(&$info) {
  * @see entity_metadata_field_info_alter()
  * @see entity_metadata_field_text_property_callback()
  */
-function entity_metadata_field_info() {
+function entity_metadata_hook_field_info() {
   return array(
     'text' => array(
       'label' => t('Text'),
       'property_type' => 'text',
+      // ...
+    ),
+  );
+}
+
+/**
+ * Provide additional metadata for entities.
+ *
+ * This defines further keys to annotate more metadata in hook_entity_info().
+ * Additional keys are:
+ * - access callback: Specify a callback that returns access permissions for the
+ *   operations 'create', 'updated', 'delete' and 'view'. The callback gets
+ *   optionally the entity and the user account to check for passed. See
+ *   entity_metadata_node_access() for an example.
+ *
+ * @see hook_entity_info()
+ */
+function entity_metadata_hook_entity_info() {
+  return array(
+    'node' => array(
+      'label' => t('Node'),
+      'access callback' => 'entity_metadata_node_access',
       // ...
     ),
   );
