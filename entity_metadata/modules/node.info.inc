@@ -67,7 +67,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['url'] = array(
     'label' => t("URL"),
     'description' => t("The URL of the node."),
-    'getter callback' => 'entity_metadata_node_get_properties',
+    'getter callback' => 'entity_metadata_entity_get_properties',
     'type' => 'uri',
   );
   $properties['edit-url'] = array(

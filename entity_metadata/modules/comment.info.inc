@@ -67,7 +67,7 @@ function entity_metadata_comment_entity_property_info() {
   $properties['url'] = array(
     'label' => t("URL"),
     'description' => t("The URL of the comment."),
-    'getter callback' => 'entity_metadata_comment_get_properties',
+    'getter callback' => 'entity_metadata_entity_get_properties',
     'type' => 'uri',
   );
   $properties['edit-url'] = array(
