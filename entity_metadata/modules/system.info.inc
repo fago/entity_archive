@@ -50,6 +50,12 @@ function entity_metadata_system_entity_property_info() {
     'getter callback' => 'entity_metadata_system_get_properties',
     'type' => 'uri',
   );
+  $properties['current-user'] = array(
+    'label' => t("Logged in user"),
+    'description' => t("The currently logged in user."),
+    'getter callback' => 'entity_metadata_system_get_properties',
+    'type' => 'user',
+  );
 
   // Files.
   $properties = &$info['file']['properties'];
