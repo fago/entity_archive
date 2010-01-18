@@ -158,6 +158,36 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $info = $wrapper->author->mail->info();
     $this->assertTrue(!empty($info) && is_array($info) && isset($info['label']), 'Property info returned.');
   }
+
+  /**
+   * Test using access() method.
+   */
+  function testAccess() {
+    // Test without data.
+    $account = $this->drupalCreateUser(array('bypass node access'));
+    $this->assertTrue(entity_metadata_entity_access('view', 'node', NULL, $account), 'Access without data checked.');
+
+    // Test with actual data.
+    $values[LANGUAGE_NONE][0] = array('value' => '<b>2009-09-05</b>');
+    $values[LANGUAGE_NONE][1] = array('value' => '2009-09-05');
+    $node = $this->drupalCreateNode(array('type' => 'page', $this->field_name => $values));
+    $this->assertTrue(entity_metadata_entity_access('delete', 'node', $node, $account), 'Access with data checked.');
+
+    // Test per property access without data.
+    $account2 = $this->drupalCreateUser(array('bypass node access', 'administer nodes'));
+    $wrapper = entity_metadata_wrapper('node', NULL, array('bundle' => 'page'));
+    $this->assertFalse($wrapper->status->access('edit', $account), 'Access for admin property denied.');
+    $this->assertTrue($wrapper->status->access('edit', $account2), 'Access for admin property allowed for the admin.');
+
+    // Test per property access with data.
+    $wrapper = entity_metadata_wrapper('node', $node, array('bundle' => 'page'));
+    $this->assertFalse($wrapper->status->access('edit', $account), 'Access for admin property denied.');
+    $this->assertTrue($wrapper->status->access('edit', $account2), 'Access for admin property allowed for the admin.');
+
+    // Test field level access.
+    $property = str_replace('_', '-', $this->field_name);
+    $this->assertTrue($wrapper->$property->access('view'), 'Field access granted.');
+  }
 }
 
 /**

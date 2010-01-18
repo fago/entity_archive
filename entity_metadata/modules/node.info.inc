@@ -35,6 +35,7 @@ function entity_metadata_node_entity_property_info() {
     'type' => 'integer',
     'description' => t("The unique ID of the author of the node."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
     'clear' => array('author'),
   );
   $properties['is-new'] = array(
@@ -80,31 +81,29 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Published"),
     'description' => t("Whether the node is published."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
     'type' => 'boolean',
   );
   $properties['promote'] = array(
     'label' => t("Promoted to frontpage"),
     'description' => t("Whether the node is promoted to the frontpage."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
     'type' => 'boolean',
   );
   $properties['sticky'] = array(
     'label' => t("Sticky in lists"),
     'description' => t("Whether the node is displayed at the top of lists in which it appears."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
     'type' => 'boolean',
-  );
-  $properties['comment'] = array(
-    'label' => t("Comments allowed"),
-    'description' => t("Whether comments are allowed on this node: 0 = no, 1 = closed (read only), 2 = open (read/write)."),
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'type' => 'integer',
   );
   $properties['created'] = array(
     'label' => t("Date created"),
     'type' => 'date',
     'description' => t("The date the node was posted."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
   );
   $properties['changed'] = array(
     'label' => t("Date changed"),
@@ -117,6 +116,7 @@ function entity_metadata_node_entity_property_info() {
     'description' => t("The author of the node."),
     'getter callback' => 'entity_metadata_node_get_properties',
     'setter callback' => 'entity_metadata_node_set_properties',
+    'setter permission' => 'administer nodes',
     'clear' => array('uid'),
   );
   return $info;

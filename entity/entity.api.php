@@ -51,6 +51,8 @@
  *     export process. This is only necessary if the export is more complicated
  *     than simply listing the fields. Defaults to $module . '_' .
  *     $entity_type . '_to_hook_code'.
+ *
+ * @see hook_entity_info()
  */
 function entity_hook_entity_info() {
   $return = array(
