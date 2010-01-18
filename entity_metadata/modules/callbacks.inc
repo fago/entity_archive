@@ -193,6 +193,9 @@ function entity_metadata_system_get_properties($data = FALSE, array $options, $n
     case 'login-url':
       return url('user', $options);
 
+    case 'current-user':
+      return user_load($GLOBALS['user']->uid);
+
     default:
       return variable_get('site_' . $name, '');
   }
