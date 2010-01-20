@@ -86,7 +86,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $wrapper->uid = 0;
     $this->assertEqual(0, $wrapper->uid->value(), 'Setting a property.');
     try {
-      $wrapper->type = 'dummy';
+      $wrapper->url = 'dummy';
       $this->fail('Setting an unsupported property.');
     }
     catch (EntityMetadataWrapperException $e) {
@@ -105,7 +105,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     // Test iterator
     $type_info = entity_metadata_get_info('node');
-    $this->assertFalse(array_diff(array_keys($type_info['properties']), iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
+    $this->assertFalse(array_diff_key($type_info['properties'], iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
 
     // Test setting a new node.
     $wrapper->set($node);
@@ -136,7 +136,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual(check_plain('<b>2009-09-05</b>'), $wrapper->{$property}[0]->value(array('sanitize' => TRUE)), 'Getting array entry.');
 
     // Test iterator
-    $this->assertEqual(iterator_to_array($wrapper->{$property}->getIterator()), array(0, 1, 2), 'Iterator is working.');
+    $this->assertEqual(iterator_to_array($wrapper->$property->getIterator()), $wrapper->$property->value(), 'Iterator is working.');
 
     // Make sure changing the array changes the actual entity property.
     $wrapper->{$property}[0] = '2009-10-05';
@@ -193,7 +193,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 /**
  * Tests provided module integration of the core modules.
  */
-class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
+class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
 
   public static function getInfo() {
     return array(
@@ -257,7 +257,6 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
     $account = $this->drupalCreateUser();
     $comment = (object)array(
       'subject' => 'topic',
-      'status' => 1,
       'nid' => $node->nid,
       'uid' => $account->uid,
       'cid' => FALSE,
@@ -269,7 +268,7 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
     $comment->comment_body[LANGUAGE_NONE][0] = array('value' => 'text', 'format' => 0);
     comment_save($comment);
     $wrapper = entity_metadata_wrapper('comment', $comment);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       if ($key != 'parent') {
         $this->assertValue($wrapper, $key);
       }
@@ -284,7 +283,7 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
     $title = 'Book 1';
     $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'page'));
     $wrapper = entity_metadata_wrapper('node', $node);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       if ($key != 'book' && $key != 'book-id') {
         $this->assertValue($wrapper, $key);
       }
@@ -297,22 +296,28 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
    * Tests properties provided by the taxonomy module.
    */
   function testTaxonomyProperties() {
-    $vocab = $this->createVocabulary();
-    $term_parent = $this->createTerm($vocab);
-    $term = $this->createTerm($vocab);
+    $vocab = $this->createVocab();
+    $term_parent = entity_metadata_entity_create('taxonomy_term', array(
+      'name' => $this->randomName(),
+      'vocabulary' => $vocab,
+    ));
+    taxonomy_term_save($term_parent);
+    $term = entity_metadata_entity_create('taxonomy_term', array(
+      'name' => $this->randomName(),
+      'vocabulary' => $vocab,
+      'description' => $this->randomString(),
+      'weight' => mt_rand(0, 10),
+    ));
     // This term hasn't all properties set yet, so set them.
-    $term->description = $this->randomString();
-    $term->format = 0;
-    $term->weight = mt_rand(0, 10);
     $term->parent = array($term_parent->tid);
     taxonomy_term_save($term);
 
     $wrapper = entity_metadata_wrapper('taxonomy_term', $term);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
     // Test vocabulary.
-    foreach ($wrapper->vocabulary as $key) {
+    foreach ($wrapper->vocabulary as $key => $info) {
       $this->assertValue($wrapper->vocabulary, $key);
     }
   }
@@ -323,7 +328,7 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
   function testUserProperties() {
     $account = $this->drupalCreateUser();
     $wrapper = entity_metadata_wrapper('user', $account);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
   }
@@ -333,7 +338,7 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
    */
   function testSystemProperties() {
     $wrapper = entity_metadata_wrapper('system', FALSE);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
     // Test files.
@@ -351,9 +356,97 @@ class EntityMetadataIntegrationTestCase extends TaxonomyWebTestCase {
     file_save($file);
 
     $wrapper = entity_metadata_wrapper('file', $file);
-    foreach ($wrapper as $key) {
+    foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
+  }
+
+  /**
+   * Runs some generic tests on each entity.
+   */
+  function testCRUDfunctions() {
+    $info = entity_get_info();
+    foreach ($info as $entity_type => $entity_info) {
+      // Test using access callback.
+      entity_metadata_entity_access('view', $entity_type);
+      entity_metadata_entity_access('update', $entity_type);
+      entity_metadata_entity_access('create', $entity_type);
+      entity_metadata_entity_access('delete', $entity_type);
+
+      // Test creating the entity.
+      if (!isset($entity_info['creation callback'])) {
+        continue;
+      }
+
+      // Populate $values with all values that are setable. They will be set
+      // with an metadata wrapper, so we also test setting that way.
+      $values = array();
+      foreach (entity_metadata_wrapper($entity_type) as $name => $info) {
+        if (!empty($info['setter callback'])) {
+          $info += array('type' => 'text');
+          $values[$name] = $this->createValue($info['type'], $info);
+        }
+      }
+      $entity = entity_metadata_entity_create($entity_type, $values);
+      $this->assertTrue($entity, "Created $entity_type and set all setable values.");
+
+      // Save the new entity.
+      $return = entity_metadata_entity_save($entity_type, $entity);
+      if ($return === FALSE) {
+        continue; // No support for saving.
+      }
+      $id = entity_metadata_wrapper($entity_type, $entity)->getIdentifier();
+      $this->assertTrue($id, "$entity_type has been successfully saved.");
+
+      // And delete it.
+      $return = entity_metadata_entity_delete($entity_type, $id);
+      if ($return === FALSE) {
+        continue; // No support for saving.
+      }
+      $return = entity_load($entity_type, array($id));
+      $this->assertFalse($return, "$entity_type has been successfully deleted.");
+    }
+  }
+
+  /**
+   * Creates a value for the given type.
+   */
+  protected function createValue($type, $info) {
+    if (!isset($this->node)) {
+      $this->node = $this->drupalCreateNode(array('type' => 'page'));
+      $this->user = $this->drupalCreateUser();
+      $this->taxonomy_vocabulary = $this->createVocab();
+    }
+
+    if (isset($info['options list'])) {
+      $options = array_keys($info['options list']());
+      return reset($options);
+    }
+
+    switch ($type) {
+      case 'decimal':
+      case 'integer':
+      case 'duration':
+        return 1;
+      case 'date':
+        return time();
+      case 'boolean':
+        return TRUE;
+      case 'text':
+        return drupal_strtolower($this->randomName(8));
+      default:
+        return $this->$type;
+    }
+  }
+
+  protected function createVocab() {
+    $vocab = entity_metadata_entity_create('taxonomy_vocabulary', array(
+      'name' => $this->randomName(),
+      'machine_name' => drupal_strtolower($this->randomName()),
+      'description' => $this->randomName(),
+    ));
+    taxonomy_vocabulary_save($vocab);
+    return $vocab;
   }
 }
 

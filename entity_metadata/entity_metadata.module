@@ -174,6 +174,24 @@ function entity_metadata_entity_info() {
   $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
   $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
 
+  // CRUD function callbacks.
+  $entity_info['node']['creation callback'] = 'entity_metdata_create_node';
+  $entity_info['node']['save callback'] = 'node_save';
+  $entity_info['node']['deletion callback'] = 'node_delete';
+  $entity_info['user']['creation callback'] = 'entity_metdata_create_object';
+  $entity_info['user']['save callback'] = 'entity_metdata_user_save';
+  // We don't support user deletion as the user cancelling needs batching.
+  $entity_info['comment']['creation callback'] = 'entity_metdata_create_comment';
+  $entity_info['comment']['save callback'] = 'comment_save';
+  $entity_info['comment']['deletion callback'] = 'comment_delete';
+  $entity_info['file']['save callback'] = 'file_save';
+  $entity_info['file']['deletion callback'] = 'entity_metdata_file_delete';
+  $entity_info['taxonomy_term']['creation callback'] = 'entity_metdata_create_object';
+  $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
+  $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
+  $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metdata_create_object';
+  $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
+  $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
   return $entity_info;
 }
 
@@ -199,3 +217,71 @@ function entity_metadata_entity_access($op, $entity_type, $entity = NULL, $accou
     return $info[$entity_type]['access callback']($op, $entity_type, $entity, $account);
   }
 }
+
+/**
+ * Permanently save the given entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to save.
+ * @return
+ *   FALSE, if there were no information how to save the entity.
+ */
+function entity_metadata_entity_save($entity_type, &$entity) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['save callback'])) {
+    $info['save callback']($entity);
+  }
+  elseif (method_exists($entity, 'save')) {
+    $entity->save();
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Permanently delete the given entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $id
+ *   The uniform identifier of the entity to delete.
+ * @return
+ *   FALSE, if there were no information how to delete the entity.
+ */
+function entity_metadata_entity_delete($entity_type, $id) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['deletion callback'])) {
+    $info['deletion callback']($id);
+  }
+  elseif (isset($info['entity class']) && method_exists($info['entity class'], 'delete')) {
+    $entities = entity_load($entity_type, array($id));
+    reset($entities)->delete();
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Creates a new entity instance of the given type.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $values
+ *   An array of values for properties to set for the new entity. At least the
+ *   properties marked as 'required' in the property info have to be passed.
+ * @return
+ *   FALSE, if there were no information how to create the entity.
+ */
+function entity_metadata_entity_create($entity_type, $values = array()) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['creation callback'])) {
+    return $info['creation callback']($values, $entity_type);
+  }
+  return FALSE;
+}
+
+

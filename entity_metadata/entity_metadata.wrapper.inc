@@ -406,7 +406,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
   }
 
   public function getIterator() {
-    return new ArrayIterator(array_keys($this->entityInfo['properties']));
+    return new ArrayIterator($this->entityInfo['properties']);
   }
 
   /**
@@ -480,7 +480,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
    * If we wrap a list, we return an iterator over the data list.
    */
   public function getIterator() {
-    return $this->dataAvailable() ? new ArrayIterator(array_keys($this->data)) : array();
+    return $this->dataAvailable() ? new ArrayIterator($this->data) : array();
   }
 
   /**
