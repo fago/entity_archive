@@ -417,7 +417,7 @@ function entity_metadata_node_access($op, $entity_type, $node = NULL, $account =
   if (!user_access('access content', $account)) {
     return FALSE;
   }
-  if (user_access('bypass node access', $account) || (!isset($account) && node_access_view_all_nodes())) {
+  if (user_access('bypass node access', $account) || (!isset($account) && $op == 'view' && node_access_view_all_nodes())) {
     return TRUE;
   }
   return FALSE;
