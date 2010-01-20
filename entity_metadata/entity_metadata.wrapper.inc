@@ -224,16 +224,28 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
     parent::__construct($type, $data, $info);
     $this->entityInfo = entity_get_info($type) + array('name property' => 'name');
     $this->entityInfo = array_merge_recursive($this->entityInfo, entity_metadata_get_info($type)) + array('properties' => array());
-
-    // Add in properties from the bundle, for that we might need to load the
-    // entity if not done yet.
-    if (!empty($this->entityInfo['fieldable']) && empty($info['bundle']) && $this->dataAvailable()) {
-      list($id, $vid, $bundle) = entity_extract_ids($type, $this->value());
-      $info['bundle'] = $bundle;
+    if (!empty($this->info['bundle'])) {
+      $this->loadBundleInfo($this->info['bundle']);
     }
-    if (isset($info['bundle']) && isset($this->entityInfo['bundles'][$info['bundle']])) {
-      $bundle_info = (array)$this->entityInfo['bundles'][$info['bundle']] + array('properties' => array());
-      $this->entityInfo['properties'] += $bundle_info['properties'];
+  }
+
+  /**
+   * Used to lazy-load bundle info. So the wrapper can be loaded e.g. just
+   * for setting without the data being loaded.
+   */
+  protected function loadBundleInfo($bundle = NULL) {
+    if (!isset($this->info['bundle']) || isset($bundle)) {
+      $this->info['bundle'] = $bundle;
+      // Add in properties from the bundle, for that we might need to load the
+      // entity if not done yet.
+      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
+        list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
+        $this->info['bundle'] = $bundle;
+      }
+      if ($this->info['bundle'] && isset($this->entityInfo['bundles'][$this->info['bundle']])) {
+        $bundle_info = (array)$this->entityInfo['bundles'][$this->info['bundle']] + array('properties' => array());
+        $this->entityInfo['properties'] += $bundle_info['properties'];
+      }
     }
   }
 
@@ -248,6 +260,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    *   An array of info about the property.
    */
   public function getPropertyInfo($name) {
+    $this->loadBundleInfo();
     if (!isset($this->entityInfo['properties'][$name])) {
       throw new EntityMetadataWrapperException('Unknown entity property ' . check_plain($name) . '.');
     }
@@ -263,6 +276,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Gets the info about the wrapped entity.
    */
   public function getEntityInfo() {
+    $this->loadBundleInfo();
     return $this->entityInfo;
   }
 
@@ -402,10 +416,12 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Magic method: Can be used to check if a property is known.
    */
   public function __isset($name) {
+    $this->loadBundleInfo();
     return isset($this->entityInfo['properties'][$name]);
   }
 
   public function getIterator() {
+    $this->loadBundleInfo();
     return new ArrayIterator($this->entityInfo['properties']);
   }
 
