@@ -68,6 +68,9 @@
  *     - 'setter permission': Optionally a permission, that describes whether
  *       a user has permission to set ('edit') this property. This permission
  *       should only be taken into account, if no 'access callback' is given.
+ *     - required: Optionally, this may be set to TRUE, if this property is
+ *       required for the creation of a new instance of its entity. See
+ *       entity_metadata_entity_create().
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in
@@ -139,8 +142,17 @@ function entity_metadata_hook_field_info() {
  *   operations 'create', 'updated', 'delete' and 'view'. The callback gets
  *   optionally the entity and the user account to check for passed. See
  *   entity_metadata_node_access() for an example.
- *
+ * - creation callback: Optionally, a callback that creates a new instance of
+ *   this entity type. See entity_metdata_create_node() for an example.
+ * - save callback: Optionally, a callback that permanently saves an entity of
+ *   this type.
+ * - deletion callback: Optionally, a callback that permanently deletes an
+ *   entity of this type.
  * @see hook_entity_info()
+ * @see entity_metadata_entity_access()
+ * @see entity_metadata_entity_create()
+ * @see entity_metadata_entity_save()
+ * @see entity_metadata_entity_delete()
  */
 function entity_metadata_hook_entity_info() {
   return array(

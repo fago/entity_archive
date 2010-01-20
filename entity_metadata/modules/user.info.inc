@@ -26,11 +26,13 @@ function entity_metadata_user_entity_property_info() {
     'getter callback' => 'entity_metadata_user_get_properties',
     'setter callback' => 'entity_metadata_verbatim_set',
     'sanitize' => 'filter_xss',
+    'required' => TRUE,
   );
   $properties['mail'] = array(
     'label' => t("Email"),
     'description' => t("The email address of the user account."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'required' => TRUE,
   );
   $properties['url'] = array(
     'label' => t("URL"),

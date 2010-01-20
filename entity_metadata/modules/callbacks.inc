@@ -48,9 +48,6 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
       }
       return $comment->mail;
 
-    case 'title':
-      return $comment->subject;
-
     case 'edit-url':
       return url('comment/edit/' . $comment->cid, $options);
 
@@ -69,13 +66,19 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
 }
 
 /**
- * Callback for getting raw comment properties.
+ * Callback for setting comment properties.
  * @see entity_metadata_comment_entity_info_alter()
  */
-function entity_metadata_comment_get_raw($comment, array $options, $name) {
+function entity_metadata_comment_setter($comment, $name, $value) {
   switch ($name) {
-    case 'body':
-      return $comment->comment;
+    case 'node':
+      $comment->nid = $value->nid;
+      // Also set the bundle name.
+      $comment->node_type = 'comment_node_' . $value->type;
+      break;
+
+    case 'author':
+      return $comment->uid = $value->uid;
   }
 }
 
@@ -248,15 +251,22 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
 }
 
 /**
+ * Callback for setting term properties.
+ * @see entity_metadata_taxonomy_entity_info_alter()
+ */
+function entity_metadata_taxonomy_term_setter($term, $name, $value) {
+  switch ($name) {
+    case 'vocabulary':
+      return $term->vid = $value->vid;
+  }
+}
+
+/**
  * Callback for getting vocabulary properties.
  * @see entity_metadata_taxonomy_entity_info_alter()
  */
 function entity_metadata_taxonomy_vocabulary_get_properties($vocabulary, array $options, $name) {
   switch ($name) {
-    case 'node-count':
-      $sql = "SELECT COUNT (1) FROM {taxonomy_term_node} tn LEFT JOIN {taxonomy_term_data} td ON tn.tid = td.tid WHERE td.vid = :vid";
-      return db_query($sql, array(':vid' => $vocabulary->vid))->fetchField();
-
     case 'term-count':
       $sql = "SELECT COUNT (1) FROM {taxonomy_term_data} td WHERE td.vid = :vid";
       return db_query($sql, array(':vid' => $vocabulary->vid))->fetchField();
@@ -282,6 +292,7 @@ function entity_metadata_user_get_properties($account, array $options, $name, $e
  */
 function entity_metadata_language_list() {
   $list = array();
+  $list[LANGUAGE_NONE] = t('Language neutral');
   foreach (language_list() as $language) {
     $list[$language->language] = t($language->name);
   }
@@ -463,4 +474,80 @@ function entity_metadata_field_access_callback($op, $name, $entity_type, $entity
   $field_name = str_replace('-', '_', $name);
   $field = field_info_field($field_name);
   return field_access($op, $field, $entity_type, $entity, $account);
+}
+
+/**
+ * Callback to create entity objects.
+ */
+function entity_metdata_create_object($values = array(), $entity_type) {
+  $info = entity_get_info($entity_type);
+  $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
+  $object = new $class(array(), $entity_type);
+  if (isset($info['object keys']['bundle']) && $bundle_key = $info['object keys']['bundle']) {
+    // Make sure at least the bundle property is set.
+    $object->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
+  }
+  $wrapper = entity_metadata_wrapper($entity_type, $object);
+  foreach ($values as $name => $value) {
+    $wrapper->$name->set($value);
+  }
+  return $object;
+}
+
+/**
+ * Callback to create a new comment.
+ */
+function entity_metdata_create_comment($values = array()) {
+  $comment = (object)array(
+    'status' => COMMENT_PUBLISHED,
+    'cid' => FALSE,
+    'pid' => 0,
+    'language' => LANGUAGE_NONE,
+    'node_type' => NULL,
+  );
+  $wrapper = entity_metadata_wrapper('comment', $comment);
+  foreach ($values as $name => $value) {
+    $wrapper->$name->set($value);
+  }
+  return $comment;
+}
+
+/**
+ * Callback to create a new node.
+ */
+function entity_metdata_create_node($values = array()) {
+  $node = (object)array('type' => $values['type'], 'language' => LANGUAGE_NONE);
+  // Set some defaults
+  $node_options = variable_get('node_options_' . $node->type, array('status', 'promote'));
+  foreach (array('status', 'promote', 'sticky') as $key) {
+    $node->$key = (int) in_array($key, $node_options);
+  }
+  $wrapper = entity_metadata_wrapper('node', $node);
+  foreach ($values as $name => $value) {
+    $wrapper->$name->set($value);
+  }
+  return $node;
+}
+
+/**
+ * Callback to save a user account. Unfortunately drupal doesn't provide a
+ * simple save function for user accounts, one has to specify the fields to
+ * save explictly. So we automatically do so for field API and regular user
+ * fields.
+ */
+function entity_metdata_user_save(&$account) {
+  $table = drupal_get_schema('users');
+  $user_fields = $table['fields'];
+  list($id, $vid, $bundle) = entity_extract_ids('user', $account);
+  $instances = field_info_instances('user', $bundle);
+  // Extract the values of all valid keys into $edit.
+  $edit = array_intersect_key((array)$account, $user_fields + $instances);
+  $account = user_save($account, $edit);
+}
+
+/**
+ * Callback to delete a file.
+ */
+function entity_metdata_file_delete($fid) {
+  file_delete(file_load($fid), TRUE);
 }

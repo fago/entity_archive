@@ -47,7 +47,10 @@ function entity_metadata_node_entity_property_info() {
   $properties['type'] = array(
     'label' => t("Content type"),
     'description' => t("The type of the node."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer nodes',
     'options list' => 'node_type_get_names',
+    'required' => TRUE,
   );
   $properties['type-name'] = array(
     'label' => t("Content type name"),
@@ -58,12 +61,14 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Title"),
     'description' => t("The title of the node."),
     'setter callback' => 'entity_metadata_verbatim_set',
+    'required' => TRUE,
   );
   $properties['language'] = array(
     'label' => t("Language"),
     'description' => t("The language the node is written in."),
     'setter callback' => 'entity_metadata_verbatim_set',
     'options list' => 'entity_metadata_language_list',
+    'setter permission' => 'administer nodes',
   );
   $properties['url'] = array(
     'label' => t("URL"),
@@ -117,6 +122,7 @@ function entity_metadata_node_entity_property_info() {
     'getter callback' => 'entity_metadata_node_get_properties',
     'setter callback' => 'entity_metadata_node_set_properties',
     'setter permission' => 'administer nodes',
+    'required' => TRUE,
     'clear' => array('uid'),
   );
   return $info;

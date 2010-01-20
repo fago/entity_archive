@@ -29,11 +29,17 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Node ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the node the comment was posted to."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
+    'clear' => array('node'),
   );
   $properties['uid'] = array(
     'label' => t("User ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the user who posted the comment."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
+    'clear' => array('user'),
   );
   $properties['hostname'] = array(
     'label' => t("IP Address"),
@@ -44,6 +50,7 @@ function entity_metadata_comment_entity_property_info() {
     'description' => t("The name left by the comment author."),
     'getter callback' => 'entity_metadata_comment_get_properties',
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
     'sanitize' => 'filter_xss',
   );
   $properties['mail'] = array(
@@ -51,18 +58,22 @@ function entity_metadata_comment_entity_property_info() {
     'description' => t("The email address left by the comment author."),
     'getter callback' => 'entity_metadata_comment_get_properties',
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
   );
   $properties['homepage'] = array(
     'label' => t("Home page"),
     'description' => t("The home page URL left by the comment author."),
     'sanitize' => 'filter_xss_bad_protocol',
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
   );
-  $properties['title'] = array(
-    'label' => t("Title"),
-    'description' => t("The title of the comment."),
-    'getter callback' => 'entity_metadata_comment_get_properties',
+  $properties['subject'] = array(
+    'label' => t("Subject"),
+    'description' => t("The subject of the comment."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
     'sanitize' => 'filter_xss',
+    'required' => TRUE,
   );
   $properties['url'] = array(
     'label' => t("URL"),
@@ -81,6 +92,7 @@ function entity_metadata_comment_entity_property_info() {
     'description' => t("The date the comment was posted."),
     'type' => 'date',
     'setter callback' => 'entity_metadata_verbatim_set',
+    'setter permission' => 'administer comments',
   );
   $properties['parent'] = array(
     'label' => t("Parent"),
@@ -93,12 +105,20 @@ function entity_metadata_comment_entity_property_info() {
     'description' => t("The node the comment was posted to."),
     'type' => 'node',
     'getter callback' => 'entity_metadata_comment_get_properties',
+    'setter callback' => 'entity_metadata_comment_setter',
+    'setter permission' => 'administer comments',
+    'required' => TRUE,
+    'clear' => array('nid'),
   );
   $properties['author'] = array(
     'label' => t("Author"),
     'description' => t("The author of the comment, if they were logged in."),
     'type' => 'user',
     'getter callback' => 'entity_metadata_comment_get_properties',
+    'setter callback' => 'entity_metadata_comment_setter',
+    'setter permission' => 'administer comments',
+    'required' => TRUE,
+    'clear' => array('uid'),
   );
   return $info;
 }
@@ -136,4 +156,5 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
   foreach ($info['comment']['bundles'] as $bundle => $bundle_info) {
     unset($bundle_info['properties']['comment-body']);
   }
+  $properties['comment-body']['required'] = TRUE;
 }
