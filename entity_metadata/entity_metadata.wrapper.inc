@@ -145,8 +145,8 @@ abstract class EntityMetadataWrapper {
    *   An array as used by hook_options_list() or FALSE.
    */
   public function optionsList() {
-    if (isset($this->info['options list']) && function_exists($this->info['options list']) && $this->dataAvailable() && isset($this->info['name'])) {
-      return $this->info['options list']($this->data, $this->info['name'], $this->type);
+    if (isset($this->info['options list']) && is_callable($this->info['options list']) && $this->dataAvailable() && isset($this->info['name'])) {
+      return call_user_func($this->info['options list'], $this->data, $this->info['name'], $this->type);
     }
     return FALSE;
   }
@@ -189,7 +189,7 @@ class EntityValueWrapper extends EntityMetadataWrapper {
       $info = $this->info + array('sanitized' => FALSE, 'sanitize' => 'check_plain');
       $options += array('sanitize' => FALSE, 'decode' => FALSE);
       if ($options['sanitize'] && !$info['sanitized']) {
-        return $info['sanitize']($data);
+        return call_user_func($info['sanitize'], $data);
       }
       elseif ($options['decode'] && $info['sanitized']) {
         return decode_entities(strip_tags($data));
@@ -339,9 +339,9 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   protected function getPropertyValue($name) {
     $info = $this->getPropertyInfo($name);
-    if (function_exists($info['getter callback']) && $this->dataAvailable()) {
+    if (is_callable($info['getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['getter callback']($this->data, $options, $name, $this->type);
+      return call_user_func($info['getter callback'], $this->data, $options, $name, $this->type);
     }
     throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
   }
@@ -351,9 +351,9 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   protected function getPropertyRaw($name) {
     $info = $this->getPropertyInfo($name);
-    if (!empty($info['raw getter callback']) && function_exists($info['raw getter callback']) && $this->dataAvailable()) {
+    if (!empty($info['raw getter callback']) && is_callable($info['raw getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['raw getter callback']($this->data, $options, $name, $this->type);
+      return call_user_func($info['raw getter callback'], $this->data, $options, $name, $this->type);
     }
     return $this->getPropertyValue($name);
   }
@@ -364,7 +364,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
   protected function setProperty($name, $value) {
     $info = $this->getPropertyInfo($name);
     if (!empty($info['setter callback']) && function_exists($info['setter callback']) && $this->dataAvailable()) {
-      $info['setter callback']($this->data, $name, $value, $this->langcode, $this->type);
+      call_user_func($info['setter callback'], $this->data, $name, $value, $this->langcode, $this->type);
       $this->get($name)->clear();
       // Clear the cache of properties dependent on this value.
       foreach ($info['clear'] as $name) {
@@ -395,7 +395,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
       return FALSE;
     }
     if (!empty($info['access callback'])) {
-      return $info['access callback']($op, $name, $this->type, $entity, $account);
+      return call_user_func($info['access callback'], $op, $name, $this->type, $entity, $account);
     }
     elseif ($op == 'edit' && isset($info['setter permission'])) {
       return user_access($info['setter permission'], $account);
