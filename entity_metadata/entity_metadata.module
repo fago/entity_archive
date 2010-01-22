@@ -30,11 +30,17 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  *      to NULL, what means language neutral.
  *    - bundle: If an entity is wrapped but not passed, use this key to specify
  *      the bundle to return a wrapper for.
+ *    - entity info: May be used to use a wrapper with a non drupal entity being
+ *      not registered in hook_entity_info(). For that pass info about the
+ *      properties in the same structure as used by hook_entity_property_info().
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.
  */
 function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
   if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
+    return new EntityDrupalWrapper($type, $data, $info);
+  }
+  elseif (isset($info['entity info'])) {
     return new EntityWrapper($type, $data, $info);
   }
   elseif (entity_metadata_list_extract_type($type)) {
@@ -102,7 +108,7 @@ function entity_metadata_hook_info_alter(&$hook_info) {
  */
 function entity_metadata_verbatim_get($entity, array $options, $name) {
   if (is_array($entity) && isset($entity[$name])) {
-    return $entity[$info['name']];
+    return $entity[$name];
   }
   elseif (is_object($entity) && isset($entity->$name)) {
     return $entity->$name;
