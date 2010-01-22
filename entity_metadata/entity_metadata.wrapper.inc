@@ -200,15 +200,21 @@ class EntityValueWrapper extends EntityMetadataWrapper {
 }
 
 /**
- * Provides a wrapper for entities which eases dealing with entity properties.
- *
- * The wrapper eases applying getter and setter callbacks of entity properties
- * specified in hook_entity_info() while respecting the specified options.
+ * Provides a general wrapper for any entities, thus basically for any data
+ * structure. The wrapper eases dealing with entity properties, for which
+ * metadata has to be passed during construction.
+ * For a wrapper dealing with "drupal entities", use the EntityDrupalWrapper.
  */
 class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
 
   protected $entityInfo;
   protected $langcode = NULL;
+
+  protected $propertyInfoDefaults = array(
+    'type' => 'text',
+    'getter callback' => 'entity_metadata_verbatim_get',
+    'clear' => array(),
+  );
 
   /**
    * Construct a new EntityWrapper object.
@@ -218,35 +224,25 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * @param $data
    *   Optional. The data to wrap.
    * @param $info
-   *   Optional. Used internally to pass info about properties down the tree.
+   *   Used to for specifying metadata about the entity and internally to pass
+   *   info about properties down the tree. For specifying metadata known keys
+   *   are:
+   *   - entity info: An array of info about the wrapped entity. Most important
+   *     it should contain an array of info about the properties of the entity,
+   *     in the same structure as used by hook_entity_property_info().
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
-    $this->entityInfo = entity_get_info($type) + array('name property' => 'name');
-    $this->entityInfo = array_merge_recursive($this->entityInfo, entity_metadata_get_info($type)) + array('properties' => array());
-    if (!empty($this->info['bundle'])) {
-      $this->loadBundleInfo($this->info['bundle']);
-    }
+    $info += array('entity info' => array());
+    $this->entityInfo = $info['entity info'] + array('properties' => array());
   }
 
   /**
-   * Used to lazy-load bundle info. So the wrapper can be loaded e.g. just
-   * for setting without the data being loaded.
+   * May be used to lazy-load additional info about the entity, which depends on
+   * the passed data.
    */
-  protected function loadBundleInfo($bundle = NULL) {
-    if (!isset($this->info['bundle']) || isset($bundle)) {
-      $this->info['bundle'] = $bundle;
-      // Add in properties from the bundle, for that we might need to load the
-      // entity if not done yet.
-      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
-        list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
-        $this->info['bundle'] = $bundle;
-      }
-      if ($this->info['bundle'] && isset($this->entityInfo['bundles'][$this->info['bundle']])) {
-        $bundle_info = (array)$this->entityInfo['bundles'][$this->info['bundle']] + array('properties' => array());
-        $this->entityInfo['properties'] += $bundle_info['properties'];
-      }
-    }
+  protected function spotInfo() {
+    // May be implemented by child classes.
   }
 
   /**
@@ -260,23 +256,18 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    *   An array of info about the property.
    */
   public function getPropertyInfo($name) {
-    $this->loadBundleInfo();
+    $this->spotInfo();
     if (!isset($this->entityInfo['properties'][$name])) {
       throw new EntityMetadataWrapperException('Unknown entity property ' . check_plain($name) . '.');
     }
-    $info = $this->entityInfo['properties'][$name] + array(
-      'type' => 'text',
-      'getter callback' => 'entity_metadata_verbatim_get',
-      'clear' => array(),
-    );
-    return $info;
+    return $this->entityInfo['properties'][$name] + $this->propertyInfoDefaults;
   }
 
   /**
    * Gets the info about the wrapped entity.
    */
   public function getEntityInfo() {
-    $this->loadBundleInfo();
+    $this->spotInfo();
     return $this->entityInfo;
   }
 
@@ -391,7 +382,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
     $info = $this->getPropertyInfo($name);
     // If the property should be accessed and it's an entity, make sure the user
     // is allowed to access that entity.
-    if ($op == 'view' && $this->$name instanceof EntityWrapper) {
+    if ($op == 'view' && $this->$name instanceof EntityDrupalWrapper) {
       $entity = $this->dataAvailable() ? $this->$name->data : NULL;
       if (entity_metadata_entity_access('view', $this->$name->type, $entity, $account) === FALSE) {
         return FALSE;
@@ -416,12 +407,12 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Magic method: Can be used to check if a property is known.
    */
   public function __isset($name) {
-    $this->loadBundleInfo();
+    $this->spotInfo();
     return isset($this->entityInfo['properties'][$name]);
   }
 
   public function getIterator() {
-    $this->loadBundleInfo();
+    $this->spotInfo();
     return new ArrayIterator($this->entityInfo['properties']);
   }
 
@@ -429,8 +420,66 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * Returns the identifier of the wrapped entity.
    */
   public function getIdentifier() {
-    list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
-    return $id;
+    return isset($this->id) && $this->dataAvailable() ? $this->id->value() : NULL;
+  }
+}
+
+/**
+ * Provides a wrapper for entities known by drupal, thus entities registrered in
+ * hook_entity_info().
+ *
+ * The wrapper eases applying getter and setter callbacks of entity properties
+ * specified in hook_entity_property_info().
+ */
+class EntityDrupalWrapper extends EntityWrapper {
+
+  /**
+   * Construct a new EntityDrupalWrapper object.
+   *
+   * @param $type
+   *   The type of the passed data.
+   * @param $data
+   *   Optional. The data to wrap.
+   * @param $info
+   *   Optional. Used internally to pass info about properties down the tree.
+   */
+  public function __construct($type, &$data = NULL, $info = NULL) {
+    parent::__construct($type, $data, $info);
+    $this->entityInfo = entity_get_info($type) + array('name property' => 'name');
+    $this->entityInfo = array_merge_recursive($this->entityInfo, entity_metadata_get_info($type)) + array('properties' => array());
+    if (!empty($this->info['bundle'])) {
+      $this->spotInfo($this->info['bundle']);
+    }
+  }
+
+  /**
+   * Used to lazy-load bundle info. So the wrapper can be loaded e.g. just
+   * for setting without the data being loaded.
+   */
+  protected function spotInfo($bundle = NULL) {
+    if (!isset($this->info['bundle']) || isset($bundle)) {
+      $this->info['bundle'] = $bundle;
+      // Add in properties from the bundle, for that we might need to load the
+      // entity if not done yet.
+      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
+        list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
+        $this->info['bundle'] = $bundle;
+      }
+      if ($this->info['bundle'] && isset($this->entityInfo['bundles'][$this->info['bundle']])) {
+        $bundle_info = (array)$this->entityInfo['bundles'][$this->info['bundle']] + array('properties' => array());
+        $this->entityInfo['properties'] += $bundle_info['properties'];
+      }
+    }
+  }
+
+  /**
+   * Returns the identifier of the wrapped entity.
+   */
+  public function getIdentifier() {
+    if ($this->dataAvailable()) {
+      list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
+    }
+    return isset($id) ? $id : NULL;
   }
 }
 

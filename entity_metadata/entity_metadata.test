@@ -188,6 +188,27 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $property = str_replace('_', '-', $this->field_name);
     $this->assertTrue($wrapper->$property->access('view'), 'Field access granted.');
   }
+
+  /**
+   * Tests using a non drupal entity wrapper with passed in metadata.
+   */
+  function testEntityWrapper() {
+    $log_entry = array(
+      'type'        => 'entity',
+      'message'     => $this->randomName(8),
+      'variables'   => array(),
+      'severity'    => WATCHDOG_NOTICE,
+      'link'        => '',
+      'user'        => $GLOBALS['user'],
+    );
+    $info['entity info']['properties'] = array(
+      'type' => array('type' => 'text', 'label' => 'The category to which this message belongs.'),
+      'message' => array('type' => 'text', 'label' => 'The log message.'),
+      'user' => array('type' => 'user', 'label' => 'The user causing the log entry.'),
+    );
+    $wrapper = entity_metadata_wrapper('log_entry', $log_entry, $info);
+    $this->assertEqual($wrapper->user->name->value(), $GLOBALS['user']->name, 'Wrapped custom entity.');
+  }
 }
 
 /**
