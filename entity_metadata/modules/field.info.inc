@@ -41,8 +41,7 @@ function entity_metadata_field_entity_property_info() {
  */
 function entity_metadata_field_default_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($field_type['property_type'])) {
-    $is_list = ($field['cardinality'] > 1);
-    if ($is_list) {
+    if ($field['cardinality'] != 1) {
       $field_type['property_type'] = 'list<' . $field_type['property_type'] . '>';
     }
     // Add in instance specific property info, if given and apply defaults.
@@ -52,9 +51,9 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
     $property = $instance['property info'] + array(
       'label' => $instance['label'],
       'type' => $field_type['property_type'],
-      'description' => $instance['description'],
-      'getter callback' => $is_list ? 'entity_metadata_field_property_get_multiple' : 'entity_metadata_field_property_get',
-      'setter callback' => $is_list ? 'entity_metadata_field_property_set_multiple' : 'entity_metadata_field_property_set',
+      'description' => t('Field %name', array('%name' => $name)),
+      'getter callback' => 'entity_metadata_field_property_get',
+      'setter callback' => 'entity_metadata_field_property_set',
       'access callback' => 'entity_metadata_field_access_callback',
     );
     // For field types of the list module add in the options list callback.

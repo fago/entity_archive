@@ -155,6 +155,7 @@ function entity_metadata_field_info_alter(&$field_info) {
   $field_info['text_long']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
   $field_info['text_with_summary']['property_type'] = 'text';
   $field_info['text_with_summary']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
+  $field_info['taxonomy_term_reference']['property_type'] = 'taxonomy_term';
 }
 
 /**

@@ -341,6 +341,13 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     foreach ($wrapper->vocabulary as $key => $info) {
       $this->assertValue($wrapper->vocabulary, $key);
     }
+    // Test field integration.
+    $tags[LANGUAGE_NONE][0]['tid'] = $term->tid;
+    //$tags[LANGUAGE_NONE][1]['tid'] = $term_parent->tid;
+    $node = $this->drupalCreateNode(array('title' => 'foo', 'type' => 'article', 'taxonomy_tags' => $tags));
+    debug($node);
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $wrapper->{'taxonomy-tags'}[1] = $term_parent->tid;
   }
 
   /**
