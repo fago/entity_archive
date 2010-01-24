@@ -304,23 +304,16 @@ function entity_metadata_language_list() {
  */
 function entity_metadata_field_property_get($object, array $options, $name, $obj_type) {
   $name = str_replace('-', '_', $name);
-  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
-  return $object->{$name}[$langcode][0]['value'];
-}
-
-/**
- * Callback for getting multiple field property values.
- */
-function entity_metadata_field_property_get_multiple($object, array $options, $name, $obj_type) {
-  $name = str_replace('-', '_', $name);
+  $field = field_info_field($name);
+  $key = reset(array_keys($field['columns']));
   $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
   $values = array();
   if (isset($object->{$name}[$langcode])) {
     foreach ($object->{$name}[$langcode] as $delta => $data) {
-      $values[$delta] = $data['value'];
+      $values[$delta] = $data[$key];
     }
   }
-  return $values;
+  return $field['cardinality'] == 1 ? reset($values) : $values;
 }
 
 /**
@@ -328,16 +321,7 @@ function entity_metadata_field_property_get_multiple($object, array $options, $n
  */
 function entity_metadata_field_property_get_safe($object, array $options, $name, $obj_type) {
   $name = str_replace('-', '_', $name);
-  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
-  entity_metadata_field_refresh_sanitized_value($object, $obj_type, $name, $langcode);
-  return $object->{$name}[$langcode][0]['safe_value'];
-}
-
-/**
- * Callback for getting multiple 'safe_value' values of a field.
- */
-function entity_metadata_field_property_get_multiple_safe($object, array $options, $name, $obj_type) {
-  $name = str_replace('-', '_', $name);
+  $field = field_info_field($name);
   $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
   entity_metadata_field_refresh_sanitized_value($object, $obj_type, $name, $langcode);
   $values = array();
@@ -346,8 +330,9 @@ function entity_metadata_field_property_get_multiple_safe($object, array $option
       $values[$delta] = $data['safe_value'];
     }
   }
-  return $values;
+  return $field['cardinality'] == 1 ? reset($values) : $values;
 }
+
 
 function _entity_metadata_field_property_get_langcode($object, $options, $name) {
   $langcode = LANGUAGE_NONE;
@@ -370,6 +355,7 @@ function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $fiel
     // _field_invoke('sanitize', $obj_type, $object, $null, $null, array('language' => $langcode));
     // This makes it work for text* field types only for now.
     foreach ($object->{$field_name}[$langcode] as $key => $item) {
+      $item += array('format' => filter_default_format());
       $object->{$field_name}[$langcode][$key]['safe_value'] = _text_sanitize($instance, $langcode, $item, 'value');
     }
   }
@@ -380,21 +366,20 @@ function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $fiel
  */
 function entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type) {
   $name = str_replace('-', '_', $name);
+  $field = field_info_field($name);
+  $key = reset(array_keys($field['columns']));
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
-  $object->{$name}[$langcode][0]['value'] = $value;
-  unset($object->{$name}[$langcode][0]['safe_value']);
-}
+  $values = $field['cardinality'] == 1 ? array($value) : $value;
 
-/**
- * Callback for setting multiple field property values.
- */
-function entity_metadata_field_property_set_multiple($object, $name, $values, $langcode, $obj_type) {
-  $name = str_replace('-', '_', $name);
-  $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
-  $object->{$name}[$langcode] = array();
-  foreach ($values as $key => $value) {
-    $object->{$name}[$langcode][$key]['value'] = $value;
+  $items = array();
+  foreach ($values as $delta => $value) {
+    $items[$delta][$key] = $value;
+    // Keep values for other columns of any existing items unchanged.
+    if (isset($object->{$name}[$langcode][$delta])) {
+      $items[$delta] += array_intersect_key($object->{$name}[$langcode][$delta], $field['columns']);
+    }
   }
+  $object->{$name}[$langcode] = $items;
 }
 
 /**

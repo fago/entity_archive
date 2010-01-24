@@ -110,18 +110,3 @@ function entity_metadata_taxonomy_entity_property_info() {
   );
   return $info;
 }
-
-/**
- * Implements hook_entity_property_info_alter() on top of taxonomy module.
- * @see entity_metadata_entity_property_info_alter()
- */
-function entity_metadata_taxonomy_entity_property_info_alter(&$info) {
-  // Add info about taxonomy related properties in the node entity.
-  $properties = &$info['node']['properties'];
-  $properties['taxonomy'] = array(
-    'label' => t("Taxonomy terms"),
-    'description' => t("The taxonomy terms associated with this node."),
-    'getter callback' => 'entity_metadata_get_list',
-    'type' => 'list<taxonomy_term>',
-  );
-}
