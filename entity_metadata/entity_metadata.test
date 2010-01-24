@@ -190,9 +190,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Tests using a non drupal entity wrapper with passed in metadata.
+   * Tests using a data structure with passed in metadata.
    */
-  function testEntityWrapper() {
+  function testDataStructureWrapper() {
     $log_entry = array(
       'type'        => 'entity',
       'message'     => $this->randomName(8),
@@ -201,7 +201,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       'link'        => '',
       'user'        => $GLOBALS['user'],
     );
-    $info['entity info']['properties'] = array(
+    $info['data info']['properties'] = array(
       'type' => array('type' => 'text', 'label' => 'The category to which this message belongs.'),
       'message' => array('type' => 'text', 'label' => 'The log message.'),
       'user' => array('type' => 'user', 'label' => 'The user causing the log entry.'),
