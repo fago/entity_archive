@@ -200,14 +200,12 @@ class EntityValueWrapper extends EntityMetadataWrapper {
 }
 
 /**
- * Provides a general wrapper for any entities, thus basically for any data
- * structure. The wrapper eases dealing with entity properties, for which
+ * Provides a general wrapper for any data structure. For this to work the
  * metadata has to be passed during construction.
- * For a wrapper dealing with "drupal entities", use the EntityDrupalWrapper.
  */
-class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
+class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAggregate {
 
-  protected $entityInfo;
+  protected $dataInfo;
   protected $langcode = NULL;
 
   protected $propertyInfoDefaults = array(
@@ -217,29 +215,29 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
   );
 
   /**
-   * Construct a new EntityWrapper object.
+   * Construct a new EntityStructureWrapper object.
    *
    * @param $type
    *   The type of the passed data.
    * @param $data
    *   Optional. The data to wrap.
    * @param $info
-   *   Used to for specifying metadata about the entity and internally to pass
+   *   Used to for specifying metadata about the data and internally to pass
    *   info about properties down the tree. For specifying metadata known keys
    *   are:
-   *   - entity info: An array of info about the wrapped entity. Most important
-   *     it should contain an array of info about the properties of the entity,
-   *     in the same structure as used by hook_entity_property_info().
+   *   - data info: An array of info about the wrapped data. It has to contain
+   *     an array of info about the properties of the data, in the same
+   *     structure as used by hook_entity_property_info().
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
-    $info += array('entity info' => array());
-    $this->entityInfo = $info['entity info'] + array('properties' => array());
+    $info += array('data info' => array());
+    $this->dataInfo = $info['data info'] + array('properties' => array());
   }
 
   /**
-   * May be used to lazy-load additional info about the entity, which depends on
-   * the passed data.
+   * May be used to lazy-load additional info about the data, depending on the
+   * concrete passed data.
    */
   protected function spotInfo() {
     // May be implemented by child classes.
@@ -257,18 +255,18 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   public function getPropertyInfo($name) {
     $this->spotInfo();
-    if (!isset($this->entityInfo['properties'][$name])) {
-      throw new EntityMetadataWrapperException('Unknown entity property ' . check_plain($name) . '.');
+    if (!isset($this->dataInfo['properties'][$name])) {
+      throw new EntityMetadataWrapperException('Unknown data property ' . check_plain($name) . '.');
     }
-    return $this->entityInfo['properties'][$name] + $this->propertyInfoDefaults;
+    return $this->dataInfo['properties'][$name] + $this->propertyInfoDefaults;
   }
 
   /**
-   * Gets the info about the wrapped entity.
+   * Gets the info about the wrapped data.
    */
-  public function getEntityInfo() {
+  public function dataInfo() {
     $this->spotInfo();
-    return $this->entityInfo;
+    return $this->dataInfo;
   }
 
   /**
@@ -291,7 +289,7 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    * @return String
    *   The language object of the language or NULL for the default language.
    *
-   * @see EntityWrapper::language()
+   * @see EntityStructureWrapper::language()
    */
   public function getPropertyLanguage() {
     if (isset($this->langcode) && $list = language_list()) {
@@ -388,14 +386,14 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
         return FALSE;
       }
     }
-    // If a property should be edited, make sure the user has update access for
-    // this entity.
-    $entity = $this->dataAvailable() ? $this->data : NULL;
-    if ($op == 'edit' && entity_metadata_entity_access('update', $this->type, $entity, $account) === FALSE) {
+    // If a property should be edited and this is an entity, make sure the user
+    // has update access for this entity.
+    $data = $this->dataAvailable() ? $this->data : NULL;
+    if ($op == 'edit' && $this instanceof EntityDrupalWrapper && entity_metadata_entity_access('update', $this->type, $data, $account) === FALSE) {
       return FALSE;
     }
     if (!empty($info['access callback'])) {
-      return call_user_func($info['access callback'], $op, $name, $this->type, $entity, $account);
+      return call_user_func($info['access callback'], $op, $name, $this->type, $data, $account);
     }
     elseif ($op == 'edit' && isset($info['setter permission'])) {
       return user_access($info['setter permission'], $account);
@@ -408,16 +406,17 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
    */
   public function __isset($name) {
     $this->spotInfo();
-    return isset($this->entityInfo['properties'][$name]);
+    return isset($this->dataInfo['properties'][$name]);
   }
 
   public function getIterator() {
     $this->spotInfo();
-    return new ArrayIterator($this->entityInfo['properties']);
+    return new ArrayIterator($this->dataInfo['properties']);
   }
 
   /**
-   * Returns the identifier of the wrapped entity.
+   * Returns the identifier of the data structure. If there is none, NULL is
+   * returned.
    */
   public function getIdentifier() {
     return isset($this->id) && $this->dataAvailable() ? $this->id->value() : NULL;
@@ -425,13 +424,12 @@ class EntityWrapper extends EntityMetadataWrapper implements IteratorAggregate {
 }
 
 /**
- * Provides a wrapper for entities known by drupal, thus entities registrered in
- * hook_entity_info().
+ * Provides a wrapper for entities registrered in hook_entity_info().
  *
  * The wrapper eases applying getter and setter callbacks of entity properties
  * specified in hook_entity_property_info().
  */
-class EntityDrupalWrapper extends EntityWrapper {
+class EntityDrupalWrapper extends EntityStructureWrapper {
 
   /**
    * Construct a new EntityDrupalWrapper object.
@@ -445,8 +443,8 @@ class EntityDrupalWrapper extends EntityWrapper {
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
-    $this->entityInfo = entity_get_info($type) + array('name property' => 'name');
-    $this->entityInfo = array_merge_recursive($this->entityInfo, entity_metadata_get_info($type)) + array('properties' => array());
+    $this->dataInfo = entity_get_info($type) + array('name property' => 'name');
+    $this->dataInfo = array_merge_recursive($this->dataInfo, entity_metadata_get_info($type)) + array('properties' => array());
     if (!empty($this->info['bundle'])) {
       $this->spotInfo($this->info['bundle']);
     }
@@ -461,13 +459,13 @@ class EntityDrupalWrapper extends EntityWrapper {
       $this->info['bundle'] = $bundle;
       // Add in properties from the bundle, for that we might need to load the
       // entity if not done yet.
-      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
+      if (!isset($this->info['bundle']) && !empty($this->dataInfo['fieldable']) && $this->dataAvailable()) {
         list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
         $this->info['bundle'] = $bundle;
       }
-      if ($this->info['bundle'] && isset($this->entityInfo['bundles'][$this->info['bundle']])) {
-        $bundle_info = (array)$this->entityInfo['bundles'][$this->info['bundle']] + array('properties' => array());
-        $this->entityInfo['properties'] += $bundle_info['properties'];
+      if ($this->info['bundle'] && isset($this->dataInfo['bundles'][$this->info['bundle']])) {
+        $bundle_info = (array)$this->dataInfo['bundles'][$this->info['bundle']] + array('properties' => array());
+        $this->dataInfo['properties'] += $bundle_info['properties'];
       }
     }
   }
@@ -486,9 +484,9 @@ class EntityDrupalWrapper extends EntityWrapper {
 /**
  * Wraps a list of values.
  *
- * If the wrapped data is a list of data, its numerical
- * indexes may be used to retrieve wrappers for the list items. For that this
- * wrapper may be also used like a usual numerically indexed array.
+ * If the wrapped data is a list of data, its numerical indexes may be used to
+ * retrieve wrappers for the list items. For that this wrapper implements
+ * ArrayAccess so it may be used like a usual numerically indexed array.
  */
 class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggregate, ArrayAccess {
 
