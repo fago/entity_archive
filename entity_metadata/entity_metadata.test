@@ -345,9 +345,12 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $tags[LANGUAGE_NONE][0]['tid'] = $term->tid;
     //$tags[LANGUAGE_NONE][1]['tid'] = $term_parent->tid;
     $node = $this->drupalCreateNode(array('title' => 'foo', 'type' => 'article', 'taxonomy_tags' => $tags));
-    debug($node);
     $wrapper = entity_metadata_wrapper('node', $node);
-    $wrapper->{'taxonomy-tags'}[1] = $term_parent->tid;
+    $this->assertEqual($wrapper->{'taxonomy-tags'}[0]->name->value(), $term->name, 'Get an associated tag of a node with the wrapper.');
+    $wrapper->{'taxonomy-tags'}[1] = $term_parent;
+    $tags = $wrapper->{'taxonomy-tags'}->value();
+    $this->assertEqual($tags[1]->tid, $term_parent->tid, 'Associated a new tag with a node.');
+    $this->assertEqual($tags[0]->tid, $term->tid, 'Previsous set association kept.');
   }
 
   /**
