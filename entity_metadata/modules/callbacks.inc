@@ -392,6 +392,28 @@ function entity_metadata_field_options_list($object, $name, $obj_type) {
 }
 
 /**
+ * Callback for getting referenced terms.
+ */
+function entity_metadata_field_term_get($object, array $options, $name, $obj_type) {
+  $return = entity_metadata_field_property_get($object, $options, $name, $obj_type);
+  $tids = is_array($return) ? $return : array($return);
+  $terms = array_combine(array_keys($tids), taxonomy_term_load_multiple($tids));
+  return is_array($return) ? $terms : reset($terms);
+}
+
+/**
+ * Callback for setting referenced terms.
+ */
+function entity_metadata_field_term_set($object, $name, $value, $langcode, $obj_type) {
+  $values = !is_array($value) ? array($value) : $value;
+  foreach ($values as $delta => $term) {
+    $values[$delta] = $term->tid;
+  }
+  $value = !is_array($value) ? reset($values) : $values;
+  entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type);
+}
+
+/**
  * Access callback for the node entity.
  */
 function entity_metadata_node_access($op, $entity_type, $node = NULL, $account = NULL) {
