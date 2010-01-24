@@ -284,8 +284,32 @@ function entity_metadata_user_get_properties($account, array $options, $name, $e
 
     case 'edit-url':
       return url("user/$account->uid/edit", $options);
+
+    case 'roles':
+      return isset($account->roles) ? array_keys($account->roles) : array();
   }
 }
+
+/**
+ * Callback for setting user properties.
+ * @see entity_metadata_user_entity_info_alter()
+ */
+function entity_metadata_user_set_properties($account, $name, $value) {
+  switch ($name) {
+    case 'roles':
+      $account->roles = array_intersect_key(user_roles(), array_flip($value));
+      break;
+  }
+}
+
+
+/**
+ * Options list callback for user roles.
+ */
+function entity_metadata_user_roles() {
+  return user_roles(TRUE);
+}
+
 
 /**
  * Callback defining an options list for language properties.
