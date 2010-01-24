@@ -41,6 +41,9 @@
  *        - uri: Be sure to always return absolute URIs.
  *        - entities - You may use the type of each entity known by
  *          hook_entity_info(), e.g. 'node' or 'user'.
+ *        - struct: This as well as any else not known type may be used for
+ *          supporting arbitrary data structures. For that additional metadata
+ *          has to be specified by setting 'data info'.
  *       Also lists of these types are supported. Specify list<TYPE> as type and
  *       return an numerically indexed array of values.
  *     - sanitized: For textual properties only, whether the text is already
@@ -71,6 +74,9 @@
  *     - required: Optionally, this may be set to TRUE, if this property is
  *       required for the creation of a new instance of its entity. See
  *       entity_metadata_entity_create().
+ *     - 'data info': Optionally, may be used to specify an array of metadata
+ *       for an arbitrary data structure together with any else not defined
+ *       type. Specify metadata in the same way as used by this hook.
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in

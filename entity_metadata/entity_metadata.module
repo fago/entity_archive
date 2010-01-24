@@ -30,8 +30,8 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  *      to NULL, what means language neutral.
  *    - bundle: If an entity is wrapped but not passed, use this key to specify
  *      the bundle to return a wrapper for.
- *    - entity info: May be used to use a wrapper with a non drupal entity being
- *      not registered in hook_entity_info(). For that pass info about the
+ *    - data info: May be used to use a wrapper with an arbitrary data
+ *      structure (type 'struct'). Use this key for specifying metadata about
  *      properties in the same structure as used by hook_entity_property_info().
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.

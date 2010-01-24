@@ -95,13 +95,16 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     // Test getting by the field API processed values like the node body and
     // whether auto-adding bundle properties works.
-    $this->assertEqual("<p>The body &amp; nothing.</p>\n", $wrapper->body->value(), "Getting processed value.");
-    $this->assertEqual("The body & nothing.\n", $wrapper->body->value(array('decode' => TRUE)), "Decoded value.");
-    $this->assertEqual("<b>The body & nothing.</b>", $wrapper->body->raw(), "Raw body returned.");
-    $info = $wrapper->body->info();
+    $body_value = $wrapper->body->value;
+    $this->assertEqual("<p>The body &amp; nothing.</p>\n", $body_value->value(), "Getting processed value.");
+    $this->assertEqual("The body & nothing.\n", $body_value->value(array('decode' => TRUE)), "Decoded value.");
+    $this->assertEqual("<b>The body & nothing.</b>", $body_value->raw(), "Raw body returned.");
+    $info = $body_value->info();
 
-    $wrapper->body->set("<b>The second body.</b>");
-    $this->assertEqual("<p>The second body.</p>\n", $wrapper->body->value(), "Setting a processed field value and reading it again.");
+    $wrapper->body->set(array('value' => "<b>The second body.</b>"));
+    $this->assertEqual("<p>The second body.</p>\n", $wrapper->body->value->value(), "Setting a processed field value and reading it again.");
+    $node = $wrapper->value();
+    $this->assertEqual($node->body[LANGUAGE_NONE][0]['value'], "<b>The second body.</b>", 'Update appears in the wrapped entity.');
 
     // Test iterator
     $type_info = entity_metadata_get_info('node');
@@ -465,6 +468,8 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
         return TRUE;
       case 'text':
         return drupal_strtolower($this->randomName(8));
+      case 'text_formatted':
+        return array('value' => $this->randomName(16));
       default:
         return $this->$type;
     }

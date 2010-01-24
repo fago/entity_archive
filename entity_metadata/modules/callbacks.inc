@@ -316,49 +316,12 @@ function entity_metadata_field_property_get($object, array $options, $name, $obj
   return $field['cardinality'] == 1 ? reset($values) : $values;
 }
 
-/**
- * Callback for getting the 'safe_value' of a field.
- */
-function entity_metadata_field_property_get_safe($object, array $options, $name, $obj_type) {
-  $name = str_replace('-', '_', $name);
-  $field = field_info_field($name);
-  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
-  entity_metadata_field_refresh_sanitized_value($object, $obj_type, $name, $langcode);
-  $values = array();
-  if (isset($object->{$name}[$langcode])) {
-    foreach ($object->{$name}[$langcode] as $delta => $data) {
-      $values[$delta] = $data['safe_value'];
-    }
-  }
-  return $field['cardinality'] == 1 ? reset($values) : $values;
-}
-
-
 function _entity_metadata_field_property_get_langcode($object, $options, $name) {
   $langcode = LANGUAGE_NONE;
   if (isset($options['language']) && isset($object->{$name}[$options['language']->language])) {
     $langcode = $options['language']->language;
   }
   return $langcode;
-}
-
-/**
- * Makes sure the sanitized 'safe_value' is present.
- */
-function entity_metadata_field_refresh_sanitized_value($object, $obj_type, $field_name, $langcode) {
-  if (!isset($object->{$field_name}[$langcode][0]['safe_value'])) {
-    $field = field_info_field($field_name);
-    list($id, $vid, $bundle) = entity_extract_ids($obj_type, $object);
-    $instance = field_info_instance($obj_type, $field_name, $bundle);
-
-    // TODO: Currently this doesn't work for text* field types.
-    // _field_invoke('sanitize', $obj_type, $object, $null, $null, array('language' => $langcode));
-    // This makes it work for text* field types only for now.
-    foreach ($object->{$field_name}[$langcode] as $key => $item) {
-      $item += array('format' => filter_default_format());
-      $object->{$field_name}[$langcode][$key]['safe_value'] = _text_sanitize($instance, $langcode, $item, 'value');
-    }
-  }
 }
 
 /**
@@ -374,10 +337,6 @@ function entity_metadata_field_property_set($object, $name, $value, $langcode, $
   $items = array();
   foreach ($values as $delta => $value) {
     $items[$delta][$key] = $value;
-    // Keep values for other columns of any existing items unchanged.
-    if (isset($object->{$name}[$langcode][$delta])) {
-      $items[$delta] += array_intersect_key($object->{$name}[$langcode][$delta], $field['columns']);
-    }
   }
   $object->{$name}[$langcode] = $items;
 }
@@ -389,6 +348,77 @@ function entity_metadata_field_options_list($object, $name, $obj_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   return (array)module_invoke($field['module'], 'options_list', $field);
+}
+
+/**
+ * Callback to verbatim get the data structure of a field. Useful for fields
+ * that add metadata for their own data structure.
+ *
+ * It's important to return a reference on the field's item structure, so any
+ * changes to the data through the wrapper are present in the object too.
+ */
+function &entity_metadata_field_verbatim_get($object, array $options, $name, $obj_type, &$context) {
+  $name = str_replace('-', '_', $name);
+  // Set contextual info useful for getters of any child properties.
+  $entity_info = $context['parent']->info();
+  $context['instance'] = field_info_instance($entity_info['type'], $name, $entity_info['bundle']);
+  $context['field'] = field_info_field($name);
+
+  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
+  if (!isset($object->{$name}[$langcode])) {
+    $object->{$name}[$langcode] = array(0 => array());
+  }
+  if ($context['field']['cardinality'] == 1) {
+    return $object->{$name}[$langcode][0];
+  }
+  return $object->{$name}[$langcode];
+}
+
+/**
+ * Writes the passed field items in the object. Useful as field level setter for
+ * to set the whole data structure at once.
+ */
+function entity_metadata_field_verbatim_set($object, $name, $items, $langcode) {
+  $name = str_replace('-', '_', $name);
+  $field = field_info_field($name);
+  $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
+  $object->{$name}[$langcode] = $field['cardinality'] == 1 ? array($items) : $items;
+}
+
+/**
+ * Callback for getting the sanitized text of processed text fields.
+ */
+function entity_metadata_field_text_get(&$item, array $options, $name, $type, $context) {
+  if (!isset($item['safe_value'])) {
+    // Get the the wrapper of the field's property.
+    $field_wrapper = _entity_metadata_field_get_wrapper($context);
+    $info = $field_wrapper->info();
+    $item += array('format' => filter_default_format());
+    $langcode = isset($options['language']) ? $options['language']->language : '';
+    $item['safe_value'] = _text_sanitize($info['instance'], $langcode, $item, 'value');
+  }
+  return $item['safe_value'];
+}
+
+/**
+ * Get the wrapper of a field given a context of one of the field's properties.
+ */
+function _entity_metadata_field_get_wrapper($context) {
+  // If this is a multiple value field, there is list wrapper in between.
+  if ($context['parent'] instanceof EntityListWrapper && $info = $context['parent']->info()) {
+    return $info['parent'];
+  }
+  return $context['parent'];
+}
+
+/**
+ * Defines the list of formats available for the current user.
+ */
+function entity_metadata_field_text_formats() {
+  foreach (filter_formats($GLOBALS['user']) as $key => $format) {
+    $formats[$key] = $format->name;
+  }
+  return $formats;
 }
 
 /**
