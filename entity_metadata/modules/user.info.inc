@@ -56,6 +56,15 @@ function entity_metadata_user_entity_property_info() {
     'description' => t("The date the user account was created."),
     'type' => 'date',
   );
+  $properties['roles'] = array(
+    'label' => t("User roles"),
+    'description' => t("The roles of the user."),
+    'type' => 'list<integer>',
+    'getter callback' => 'entity_metadata_user_get_properties',
+    'setter callback' => 'entity_metadata_user_set_properties',
+    'setter permission' => 'administer users',
+    'options list' => 'entity_metadata_user_roles',
+  );
   return $info;
 }
 

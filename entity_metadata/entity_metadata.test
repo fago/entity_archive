@@ -454,7 +454,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
 
     if (isset($info['options list'])) {
       $options = array_keys($info['options list']());
-      return reset($options);
+      return entity_metadata_list_extract_type($type) ? array(reset($options)) : reset($options);
     }
 
     switch ($type) {
