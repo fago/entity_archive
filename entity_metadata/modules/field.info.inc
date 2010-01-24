@@ -65,7 +65,9 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
 
 /**
  * Additional callback to adapt the property info for text fields. If a text
- * field is processed we return the sanitized, thus processed value by default.
+ * field is processed we make use of a separate data structure so that format
+ * filters are available too. For the text value the sanitized, thus processed
+ * value is returned by default.
  *
  * @see entity_metadata_field_entity_property_info_alter().
  */
@@ -73,10 +75,26 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
   if (!empty($instance['settings']['text_processing'])) {
     $name = str_replace('_', '-', $field['field_name']);
     $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
-    $property['sanitized'] = TRUE;
-    $property['raw getter callback'] = $property['getter callback'];
-    // Use the getter callback returning the 'safe' value.
-    $property['getter callback'] .= '_safe';
+    // Define a data structure so it's possible to deal with formatted text
+    // properly. For that use the else undefined type 'text_formatted'.
+    $property['type'] = 'text_formatted';
+    $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+    $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+    $property['data info']['properties'] = array(
+      'value' => array(
+        'type' => 'text',
+        'label' => t('Text'),
+        'sanitized' => TRUE,
+        'getter callback' => 'entity_metadata_field_text_get',
+        'raw getter callback' => 'entity_metadata_verbatim_get',
+      ),
+      'format' => array(
+        'type' => 'integer',
+        'label' => t('Text format'),
+        'options list' => 'entity_metadata_field_text_formats',
+        'getter callback' => 'entity_metadata_verbatim_get',
+      ),
+    );
   }
 }
 

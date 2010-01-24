@@ -32,6 +32,7 @@ abstract class EntityMetadataWrapper {
     $this->info = $info + array(
       'langcode' => NULL,
     );
+    $this->info['type'] = $type;
   }
 
   /**
@@ -68,7 +69,7 @@ abstract class EntityMetadataWrapper {
    */
   public function value(array $options = array()) {
     if (!isset($this->data) && isset($this->info['name'])) {
-      $this->data = $this->info['parent']->getPropertyValue($this->info['name']);
+      $this->data =& $this->info['parent']->getPropertyValue($this->info['name'], $this->info);
     }
     elseif (!isset($this->data)) {
       throw new EntityMetadataWrapperException('There is no data set, so you cannot retrieve any values.');
@@ -83,7 +84,7 @@ abstract class EntityMetadataWrapper {
    */
   public function raw() {
     if (isset($this->info['name']) && isset($this->info['parent'])) {
-      return $this->info['parent']->getPropertyRaw($this->info['name']);
+      return $this->info['parent']->getPropertyRaw($this->info['name'], $this->info);
     }
     // Else return the usual value, which should be raw in this case.
     return $this->value();
@@ -335,11 +336,11 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   /**
    * Gets the value of a property.
    */
-  protected function getPropertyValue($name) {
-    $info = $this->getPropertyInfo($name);
-    if (is_callable($info['getter callback']) && $this->dataAvailable()) {
+  protected function &getPropertyValue($name, &$info) {
+    if ($this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return call_user_func($info['getter callback'], $this->data, $options, $name, $this->type);
+      $value =& $info['getter callback']($this->data, $options, $name, $this->type, $info);
+      return $value;
     }
     throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
   }
@@ -347,13 +348,12 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   /**
    * Gets the raw value of a property.
    */
-  protected function getPropertyRaw($name) {
-    $info = $this->getPropertyInfo($name);
-    if (!empty($info['raw getter callback']) && is_callable($info['raw getter callback']) && $this->dataAvailable()) {
+  protected function getPropertyRaw($name, &$info) {
+    if (!empty($info['raw getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return call_user_func($info['raw getter callback'], $this->data, $options, $name, $this->type);
+      return $info['raw getter callback']($this->data, $options, $name, $this->type, $info);
     }
-    return $this->getPropertyValue($name);
+    return $this->getPropertyValue($name, $info);
   }
 
   /**
@@ -361,8 +361,8 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    */
   protected function setProperty($name, $value) {
     $info = $this->getPropertyInfo($name);
-    if (!empty($info['setter callback']) && function_exists($info['setter callback']) && $this->dataAvailable()) {
-      call_user_func($info['setter callback'], $this->data, $name, $value, $this->langcode, $this->type);
+    if (!empty($info['setter callback']) && $this->dataAvailable()) {
+      $info['setter callback']($this->data, $name, $value, $this->langcode, $this->type);
       $this->get($name)->clear();
       // Clear the cache of properties dependent on this value.
       foreach ($info['clear'] as $name) {
@@ -513,7 +513,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
     return $this->cache[$delta];
   }
 
-  protected function getPropertyValue($delta) {
+  protected function &getPropertyValue($delta) {
     if ($this->dataAvailable() && isset($this->data[$delta])) {
       return $this->data[$delta];
     }
