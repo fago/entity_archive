@@ -153,11 +153,11 @@ abstract class EntityMetadataWrapper {
   }
 
   /**
-   * Determines whether the given user has access to this entity property. Apart
-   * from relying on access metadata of properties, this takes into account
-   * information about entity level access, if available:
+   * Determines whether the given user has access to view or edit this property.
+   * Apart from relying on access metadata of properties, this takes into
+   * account information about entity level access, if available:
    *  - Referenced entities can only be viewed, when the user also has
-   *    permission to view this type of entity.
+   *    permission to view the entity.
    *  - A property may be only edited, if the user has permission to update the
    *    entity containing the property.
    *
@@ -379,20 +379,23 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   protected function propertyAccess($name, $op, $account = NULL) {
     $info = $this->getPropertyInfo($name);
     // If the property should be accessed and it's an entity, make sure the user
-    // is allowed to access that entity.
-    if ($op == 'view' && $this->$name instanceof EntityDrupalWrapper) {
-      $entity = $this->dataAvailable() ? $this->$name->data : NULL;
-      if (entity_metadata_entity_access('view', $this->$name->type, $entity, $account) === FALSE) {
-        return FALSE;
-      }
+    // is allowed to view that entity.
+    if ($op == 'view' && $this->$name instanceof EntityDrupalWrapper && !$this->$name->entityAccess($op, $account)) {
+      return FALSE;
     }
     // If a property should be edited and this is an entity, make sure the user
     // has update access for this entity.
-    $data = $this->dataAvailable() ? $this->data : NULL;
-    if ($op == 'edit' && $this instanceof EntityDrupalWrapper && entity_metadata_entity_access('update', $this->type, $data, $account) === FALSE) {
-      return FALSE;
+    if ($op == 'edit') {
+      $entity = $this;
+      while (!($entity instanceof EntityDrupalWrapper) && isset($entity->info['parent'])) {
+        $entity = $entity->info['parent'];
+      }
+      if ($entity instanceof EntityDrupalWrapper && !$entity->entityAccess('update', $account)) {
+        return FALSE;
+      }
     }
     if (!empty($info['access callback'])) {
+      $data = $this->dataAvailable() ? $this->data : NULL;
       return call_user_func($info['access callback'], $op, $name, $this->type, $data, $account);
     }
     elseif ($op == 'edit' && isset($info['setter permission'])) {
@@ -478,6 +481,16 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
     }
     return isset($id) ? $id : NULL;
+  }
+
+  /**
+   * Checks whether the operation $op is allowed on the entity.
+   *
+   * @see entity_metadata_entity_access()
+   */
+  public function entityAccess($op, $account = NULL) {
+    $entity = $this->dataAvailable() ? $this->data : NULL;
+    return entity_metadata_entity_access($op, $this->type, $entity, $account);
   }
 }
 
