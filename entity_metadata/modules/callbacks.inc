@@ -451,7 +451,7 @@ function entity_metadata_field_text_formats() {
 function entity_metadata_field_term_get($object, array $options, $name, $obj_type) {
   $return = entity_metadata_field_property_get($object, $options, $name, $obj_type);
   $tids = is_array($return) ? $return : array($return);
-  $terms = array_combine(array_keys($tids), taxonomy_term_load_multiple($tids));
+  $terms = $tids ? array_combine(array_keys($tids), taxonomy_term_load_multiple($tids)) : array();
   return is_array($return) ? $terms : reset($terms);
 }
 
