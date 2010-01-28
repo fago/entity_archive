@@ -91,7 +91,7 @@ function entity_metadata_get_info($entity_type = NULL) {
       cache_set('entity_property_info', $info);
     }
   }
-  return empty($entity_type) ? $info : $info[$entity_type];
+  return empty($entity_type) ? $info : (isset($info[$entity_type]) ? $info[$entity_type] : array());
 }
 
 /**
