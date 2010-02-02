@@ -36,10 +36,12 @@ http://drupal.org/project/faces
 How to use the entity CRUD API without introducing a dependency?
 ----------------------------------------------------------------
 
- * Add the most recent "entity.inc" include file to your module.
+ * Add the most recent "entity.inc" include file to your module, but don't
+   list the file in your module's info file.
  
  * Add the most recent "faces.inc" include file from
-   http://drupal.org/project/faces, if you have not done yet.
+   http://drupal.org/project/faces, if you have not done yet. Also don't list it
+   in the info file.
 
  * Add the following code at the top of your module. Replace MODULE with your
    module's name.
@@ -64,12 +66,11 @@ function MODULE_autoload($class) {
 
 --------------------------------------------------------------------------------
 
- * That way the include is autoloaded once a class of it is used. Once this
-   module is installed and enabled, the version of this module is used, because
-   it uses the code registry and its autoloader comes first.
-   
- 
- 
+ That way the include is autoloaded once a class of it is used.
+ Once the entity API module is installed and enabled, the version of the include
+ file shipping with this module is used as it doesn't rely on autoloading.
+
+
  
  How to add a new entity?
  ------------------------
@@ -150,11 +151,11 @@ function MODULE_autoload($class) {
     that one can enable 'decode', so for sanitized data the tags are stripped
     and the data is decoded before it is returned:
     
-       $wrapper->body->value(array('decode' => TRUE));
+       $wrapper->body->value->value(array('decode' => TRUE));
        
     That way one always gets the data as shown to the user. However if you
     really want to get the raw value, even for sanitized textual data, you can
     do so:
     
-      $wrapper->body->raw();
+      $wrapper->body->value->raw();
       
