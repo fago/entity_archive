@@ -414,6 +414,9 @@ class EntityDB extends FacesExtendable implements EntityAPIInterface {
       }
     }
     module_invoke_all($this->entityType . '_' . $hook, $this);
+    if ($hook == 'insert' || $hook == 'update') {
+      entity_invoke($hook, $this->entityType, $this);
+    }
   }
 
 }
