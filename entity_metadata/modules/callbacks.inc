@@ -612,3 +612,30 @@ function entity_metdata_user_save(&$account) {
 function entity_metdata_file_delete($fid) {
   file_delete(file_load($fid), TRUE);
 }
+
+/**
+ * Callback for querying entity properties having their values stored in the
+ * entities main db table.
+ */
+function entity_metadata_table_query($entity_type, $property, $value, $limit) {
+  $info = entity_get_info($entity_type);
+  $name_key = isset($info['object keys']['name']) ? $info['object keys']['name'] : $info['object keys']['id'];
+  $query = db_select($info['base table'], 'base')
+             ->fields('base', array($name_key))
+             ->condition($property, $value)
+             ->range(0, $limit);
+  return $query->execute()->fetchCol();
+}
+
+/**
+ * Callback for querying entities by field values. Only suitable for fields
+ * that don't process the data, so it's stored the same way as returned.
+ */
+function entity_metadata_field_query($entity_type, $property, $value, $limit) {
+  $field = field_info_field(str_replace('-', '_', $property));
+  $key = reset(array_keys($field['columns']));
+  $conditions[] = array('type', $entity_type);
+  $conditions[] = array($key, $value);
+  $result = field_attach_query($field['id'], $conditions, array('limit' => $limit));
+  return array_keys($result[$entity_type]);
+}

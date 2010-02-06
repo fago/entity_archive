@@ -95,6 +95,23 @@ function entity_metadata_get_info($entity_type = NULL) {
 }
 
 /**
+ * Gets an array of info about all properties of a given entity type.
+ *
+ * @param $entity_type
+ *   The entity type.
+ */
+function entity_metadata_get_properties($entity_type) {
+  $info = entity_metadata_get_info($entity_type);
+  $info += array('properties' => array());
+  // Add all bundle properties.
+  foreach ($info['bundles'] as $bundle => $bundle_info) {
+    $bundle_info += array('properties' => array());
+    $info['properties'] += $bundle_info['properties'];
+  }
+  return $info['properties'];
+}
+
+/**
  * Implements hook_hook_info_alter().
  */
 function entity_metadata_hook_info_alter(&$hook_info) {
@@ -292,4 +309,24 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
   return FALSE;
 }
 
-
+/**
+ * Queries for entities having the given property value.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $property
+ *   The name of the property to query for.
+ * @param $value
+ *   A property value or an array of possible values to query for.
+ * @param $limit
+ *   Limit the numer of results. Defaults to 30.
+ * @return
+ *   An array of entity ids or NULL if there is no information how to query for
+ *   the given property.
+ */
+function entity_metadata_entity_query($entity_type, $property, $value, $limit = 30) {
+  $properties = entity_metadata_get_properties($entity_type);
+  if (isset($properties[$property]['query callback'])) {
+    return $properties[$property]['query callback']($entity_type, $property, $value, $limit);
+  }
+}
