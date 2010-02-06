@@ -212,6 +212,18 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $wrapper = entity_metadata_wrapper('log_entry', $log_entry, $info);
     $this->assertEqual($wrapper->user->name->value(), $GLOBALS['user']->name, 'Wrapped custom entity.');
   }
+
+  function testEntityQuery() {
+    $title = '<b>Is it bold?<b>';
+    $values[LANGUAGE_NONE][0] = array('value' => 'foo');
+    $node = $this->drupalCreateNode(array($this->field_name => $values, 'title' => $title));
+
+    $results = entity_metadata_entity_query('node', 'title', array($title, 'another title'));
+    $this->assertEqual($results, array($node->nid), 'Queried nodes with a given title.');
+
+    $results = entity_metadata_entity_query('node', str_replace('_', '-', $this->field_name), 'foo');
+    $this->assertEqual($results, array($node->nid), 'Queried nodes with a given field value.');
+  }
 }
 
 /**

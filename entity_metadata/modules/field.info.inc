@@ -55,6 +55,7 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
       'getter callback' => 'entity_metadata_field_property_get',
       'setter callback' => 'entity_metadata_field_property_set',
       'access callback' => 'entity_metadata_field_access_callback',
+      'query callback' => 'entity_metadata_field_query',
     );
     // For field types of the list module add in the options list callback.
     if (strpos($field['type'], 'list') === 0) {
@@ -95,6 +96,7 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
         'getter callback' => 'entity_metadata_verbatim_get',
       ),
     );
+    unset($property['query callback']);
   }
 }
 
@@ -108,4 +110,5 @@ function entity_metadata_field_term_reference_callback(&$info, $entity_type, $fi
   $property['getter callback'] = 'entity_metadata_field_term_get';
   $property['setter callback'] = 'entity_metadata_field_term_set';
   $property['options list'] = 'entity_metadata_field_options_list';
+  unset($property['query callback']);
 }
