@@ -200,21 +200,21 @@ function entity_metadata_entity_info() {
   $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
 
   // CRUD function callbacks.
-  $entity_info['node']['creation callback'] = 'entity_metdata_create_node';
+  $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
   $entity_info['node']['save callback'] = 'node_save';
   $entity_info['node']['deletion callback'] = 'node_delete';
-  $entity_info['user']['creation callback'] = 'entity_metdata_create_object';
-  $entity_info['user']['save callback'] = 'entity_metdata_user_save';
+  $entity_info['user']['creation callback'] = 'entity_metadata_create_object';
+  $entity_info['user']['save callback'] = 'entity_metadata_user_save';
   // We don't support user deletion as the user cancelling needs batching.
-  $entity_info['comment']['creation callback'] = 'entity_metdata_create_comment';
+  $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
   $entity_info['comment']['save callback'] = 'comment_save';
   $entity_info['comment']['deletion callback'] = 'comment_delete';
   $entity_info['file']['save callback'] = 'file_save';
-  $entity_info['file']['deletion callback'] = 'entity_metdata_file_delete';
-  $entity_info['taxonomy_term']['creation callback'] = 'entity_metdata_create_object';
+  $entity_info['file']['deletion callback'] = 'entity_metadata_file_delete';
+  $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
   $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
   $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
-  $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metdata_create_object';
+  $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
   $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
   $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
   return $entity_info;

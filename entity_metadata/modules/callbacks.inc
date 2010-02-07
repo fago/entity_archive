@@ -540,7 +540,7 @@ function entity_metadata_field_access_callback($op, $name, $entity_type, $entity
 /**
  * Callback to create entity objects.
  */
-function entity_metdata_create_object($values = array(), $entity_type) {
+function entity_metadata_create_object($values = array(), $entity_type) {
   $info = entity_get_info($entity_type);
   $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
   $object = new $class(array(), $entity_type);
@@ -558,7 +558,7 @@ function entity_metdata_create_object($values = array(), $entity_type) {
 /**
  * Callback to create a new comment.
  */
-function entity_metdata_create_comment($values = array()) {
+function entity_metadata_create_comment($values = array()) {
   $comment = (object)array(
     'status' => COMMENT_PUBLISHED,
     'cid' => FALSE,
@@ -576,7 +576,7 @@ function entity_metdata_create_comment($values = array()) {
 /**
  * Callback to create a new node.
  */
-function entity_metdata_create_node($values = array()) {
+function entity_metadata_create_node($values = array()) {
   $node = (object)array('type' => $values['type'], 'language' => LANGUAGE_NONE);
   // Set some defaults
   $node_options = variable_get('node_options_' . $node->type, array('status', 'promote'));
@@ -596,7 +596,7 @@ function entity_metdata_create_node($values = array()) {
  * save explictly. So we automatically do so for field API and regular user
  * fields.
  */
-function entity_metdata_user_save(&$account) {
+function entity_metadata_user_save(&$account) {
   $table = drupal_get_schema('users');
   $user_fields = $table['fields'];
   list($id, $vid, $bundle) = entity_extract_ids('user', $account);
@@ -609,7 +609,7 @@ function entity_metdata_user_save(&$account) {
 /**
  * Callback to delete a file.
  */
-function entity_metdata_file_delete($fid) {
+function entity_metadata_file_delete($fid) {
   file_delete(file_load($fid), TRUE);
 }
 
