@@ -71,6 +71,8 @@
  *     - 'setter permission': Optionally a permission, that describes whether
  *       a user has permission to set ('edit') this property. This permission
  *       should only be taken into account, if no 'access callback' is given.
+ *     - 'query callback: Optionally a callback for querying for entities
+ *       having the given property value. See entity_metadata_entity_query().
  *     - required: Optionally, this may be set to TRUE, if this property is
  *       required for the creation of a new instance of its entity. See
  *       entity_metadata_entity_create().
