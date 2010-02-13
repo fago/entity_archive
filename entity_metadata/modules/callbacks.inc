@@ -11,7 +11,8 @@
  */
 function entity_metadata_entity_get_properties($entity, array $options, $name, $entity_type) {
   if ($name == 'url') {
-    return url(entity_path($entity_type, $entity), $options);
+    $return = entity_uri($entity_type, $entity);
+    return url($return['path'], $return['options'] + $options);
   }
 }
 
