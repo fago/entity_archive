@@ -188,8 +188,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertTrue($wrapper->status->access('edit', $account2), 'Access for admin property allowed for the admin.');
 
     // Test field level access.
-    $property = str_replace('_', '-', $this->field_name);
-    $this->assertTrue($wrapper->$property->access('view'), 'Field access granted.');
+    $this->assertTrue($wrapper->{$this->field_name}->access('view'), 'Field access granted.');
   }
 
   /**
@@ -221,7 +220,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $results = entity_metadata_entity_query('node', 'title', array($title, 'another title'));
     $this->assertEqual($results, array($node->nid), 'Queried nodes with a given title.');
 
-    $results = entity_metadata_entity_query('node', str_replace('_', '-', $this->field_name), 'foo');
+    $results = entity_metadata_entity_query('node', $this->field_name, 'foo');
     $this->assertEqual($results, array($node->nid), 'Queried nodes with a given field value.');
   }
 }
@@ -361,9 +360,9 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     //$tags[LANGUAGE_NONE][1]['tid'] = $term_parent->tid;
     $node = $this->drupalCreateNode(array('title' => 'foo', 'type' => 'article', 'taxonomy_tags' => $tags));
     $wrapper = entity_metadata_wrapper('node', $node);
-    $this->assertEqual($wrapper->{'taxonomy-tags'}[0]->name->value(), $term->name, 'Get an associated tag of a node with the wrapper.');
-    $wrapper->{'taxonomy-tags'}[1] = $term_parent;
-    $tags = $wrapper->{'taxonomy-tags'}->value();
+    $this->assertEqual($wrapper->taxonomy_tags[0]->name->value(), $term->name, 'Get an associated tag of a node with the wrapper.');
+    $wrapper->taxonomy_tags[1] = $term_parent;
+    $tags = $wrapper->taxonomy_tags->value();
     $this->assertEqual($tags[1]->tid, $term_parent->tid, 'Associated a new tag with a node.');
     $this->assertEqual($tags[0]->tid, $term->tid, 'Previsous set association kept.');
   }
