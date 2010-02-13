@@ -387,7 +387,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       $this->assertValue($wrapper, $key);
     }
     // Test files.
-    $filepath = $this->randomName();
+    $filepath = file_destination('temporary://' . $this->randomName(), FILE_EXISTS_REPLACE);
     file_put_contents($filepath, "content");
     $this->assertTrue(is_file($filepath), t('The test file exists on the disk.'), 'Create test file');
     $file = new stdClass();
