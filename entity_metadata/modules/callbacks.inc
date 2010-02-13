@@ -544,8 +544,14 @@ function entity_metadata_create_object($values = array(), $entity_type) {
   $info = entity_get_info($entity_type);
   $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
   $object = new $class(array(), $entity_type);
+  // Support specifying the id of the entity for some entity types.
+  if (isset($info['object keys']['id']) && ($id_key = $info['object keys']['id']) && isset($values[$id_key])) {
+    $object->$id_key = $values[$id_key];
+    $object->is_new = TRUE;
+    unset($values[$id_key]);
+  }
+  // Make sure at least the bundle property is set.
   if (isset($info['object keys']['bundle']) && $bundle_key = $info['object keys']['bundle']) {
-    // Make sure at least the bundle property is set.
     $object->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
   }
   $wrapper = entity_metadata_wrapper($entity_type, $object);
@@ -577,7 +583,14 @@ function entity_metadata_create_comment($values = array()) {
  * Callback to create a new node.
  */
 function entity_metadata_create_node($values = array()) {
-  $node = (object)array('type' => $values['type'], 'language' => LANGUAGE_NONE);
+  $node = (object)array(
+    'type' => $values['type'],
+    'language' => LANGUAGE_NONE,
+    'is_new' => TRUE,
+    // Support specifying custom node ids.
+    'nid' => isset($values['nid']) ? $values['nid'] : FALSE,
+  );
+  unset($values['nid']);
   // Set some defaults
   $node_options = variable_get('node_options_' . $node->type, array('status', 'promote'));
   foreach (array('status', 'promote', 'sticky') as $key) {
