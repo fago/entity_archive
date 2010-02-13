@@ -90,7 +90,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
   );
-  $properties['machine_name'] = array(
+  $properties['machine-name'] = array(
     'label' => t("Machine name"),
     'description' => t("The machine name of the taxonomy vocabulary."),
     'setter callback' => 'entity_metadata_verbatim_set',

@@ -26,7 +26,8 @@
  *   containing the keys:
  *   - properties: The array describing all properties for this entity. Entries
  *     are keyed by the property name and contain an array of metadata for each
- *     property. Known keys are:
+ *     property. The name may only contain alphanumeric lowercase characters
+ *     and dashes. Known keys are:
  *     - label: A human readable, translated label for the property.
  *     - description: A human readable, translated description for the property.
  *     - type: The data type of the property. To make the property actually
