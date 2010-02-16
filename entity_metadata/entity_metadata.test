@@ -159,6 +159,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $wrapper = entity_metadata_wrapper('list<date>', $list = array(0 => REQUEST_TIME));
     $wrapper[1] = strtotime('2009-09-05');
     $this->assertEqual($wrapper->value(), array(REQUEST_TIME, strtotime('2009-09-05')), 'Setting a list item.');
+    $this->assertEqual($wrapper->count(), 2);
   }
 
   /**
