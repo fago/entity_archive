@@ -560,6 +560,10 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   public function get($delta) {
     // Look it up in the cache if possible.
     if (!array_key_exists($delta, $this->cache)) {
+      if (!isset($delta)) {
+        // The [] operator has been used so point at a new entry.
+        $delta = max(array_keys($this->data)) + 1;
+      }
       if (is_numeric($delta)) {
         $info = array('parent' => $this, 'name' => $delta) + $this->info;
         $type = entity_metadata_list_extract_type($this->type);
