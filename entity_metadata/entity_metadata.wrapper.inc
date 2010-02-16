@@ -558,6 +558,8 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
 
   /**
    * Permanently save the wrapped entity.
+   *
+   * @return EntityDrupalWrapper
    */
   public function save() {
     if ($this->entity) {
@@ -567,10 +569,13 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       }
     }
     // If the entity hasn't been loaded yet, don't bother saving it.
+    return $this;
   }
 
   /**
    * Permanently delete the wrapped entity.
+   *
+   * @return EntityDrupalWrapper
    */
   public function delete() {
     if ($this->dataAvailable()) {
@@ -579,6 +584,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
         throw new EntityMetadataWrapperException("There is no information about how to delete entities of type " . check_plain($this->type) . '.');
       }
     }
+    return $this;
   }
 }
 

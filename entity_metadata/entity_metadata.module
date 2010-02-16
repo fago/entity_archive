@@ -300,8 +300,9 @@ function entity_metadata_entity_delete($entity_type, $id) {
  * @param $values
  *   An array of values for properties to set for the new entity. At least the
  *   properties marked as 'required' in the property info have to be passed.
- * @return
- *   FALSE, if there were no information how to create the entity.
+ * @return EntityDrupalWrapper
+ *   An EntityDrupalWrapper wrapping the newly created entity or FALSE, if
+ *   there were no information how to create the entity.
  */
 function entity_metadata_entity_create($entity_type, $values = array()) {
   $info = entity_get_info($entity_type);
