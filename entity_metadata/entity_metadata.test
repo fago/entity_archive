@@ -269,7 +269,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       $this->fail("Loading hasn't created an exception.");
     }
     catch (EntityMetadataWrapperException $e) {
-      $this->pass("RulesException was thrown: ". $e->getMessage());
+      $this->pass("Exception was thrown: ". $e->getMessage());
     }
   }
 }
