@@ -328,7 +328,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * Magic method: Set a property.
    */
   public function __set($name, $value) {
-    $this->setProperty($name, $value);
+    $this->get($name)->set($value);
   }
 
   /**
@@ -436,10 +436,9 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
 class EntityDrupalWrapper extends EntityStructureWrapper {
 
   /**
-   * Flag to determine whether we have just the identifier and need to load
-   * the full entity.
+   * Contains the fully loaded entity while $data only contains the identifier.
    */
-  protected $loaded = TRUE;
+  protected $entity = FALSE;
 
   /**
    * Construct a new EntityDrupalWrapper object.
@@ -458,7 +457,22 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     if (!empty($this->info['bundle'])) {
       $this->spotInfo($this->info['bundle']);
     }
-    $this->loaded = empty($this->info['identifier']);
+    $this->setEntity($data);
+  }
+
+  /**
+   * Sets the entity internally accepting both the entity id and object.
+   */
+  protected function setEntity($data) {
+    if ($data && !is_object($data)) {
+      $this->data = $data;
+      $this->entity = FALSE;
+    }
+    elseif ($data) {
+      $this->entity = $data;
+      list($id, $vid, $bundle) = entity_extract_ids($this->type, $data);
+      $this->data = isset($id) ? $id : FALSE;
+    }
   }
 
   /**
@@ -485,47 +499,50 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Returns the identifier of the wrapped entity.
    */
   public function getIdentifier() {
-    if ($this->dataAvailable() && !$this->loaded) {
-      return $this->data;
-    }
-    if ($this->dataAvailable()) {
-      list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
-    }
-    return isset($id) ? $id : NULL;
+    return $this->dataAvailable() ? $this->data : NULL;
   }
 
   /**
    * Overridden.
    */
   public function value() {
-    if ($this->dataAvailable() && !$this->loaded) {
-      // Lazy load the entity.
-      $this->data = reset(entity_load($this->type, array($this->data)));
-      $this->loaded = TRUE;
+    if (!$this->dataAvailable()) {
+      throw new EntityMetadataWrapperException('There is no data set, so you cannot retrieve any values.');
     }
-    return parent::value();
+    elseif (!$this->entity && $this->data) {
+      // Lazy load the entity if necessary.
+      $this->entity = reset(entity_load($this->type, array($this->data)));
+      if (!$this->entity) {
+        throw new EntityMetadataWrapperException('Unable to load the ' . check_plain($this->type) . ' with the id ' . check_plain($this->data) . '.');
+      }
+    }
+    return $this->entity;
   }
 
   /**
-   * Overridden.
+   * Overridden to support setting the entity by object and id.
+   */
+  protected function dataAvailable() {
+    if (!isset($this->data) && isset($this->info['name']) && parent::dataAvailable()) {
+      $this->setEntity($this->data);
+    }
+    return isset($this->data);
+  }
+
+  /**
+   * Overridden to support setting the entity by either the object or the id.
    */
   public function set($value) {
-    // Let the setter get the identifier/entity as specified but accept both.
-    if (!empty($this->info['identifier']) && $value && is_object($value)) {
-      list($id, $vid, $bundle) = entity_extract_ids($this->type, $value);
-      return parent::set($id);
-    }
-    elseif (empty($this->info['identifier']) && $value && !is_object($value)) {
-      return parent::set(reset(entity_load($this->type, array($value))));
-    }
-    return parent::set($value);
+    // Let the setter get the identifier but accept both.
+    $this->setEntity($value);
+    return parent::set($this->data);
   }
 
   /**
    * Overridden.
    */
   public function clear() {
-    $this->loaded = empty($this->info['identifier']);
+    $this->entity = FALSE;
     parent::clear();
   }
 
@@ -603,10 +620,35 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   /**
+   * @param $options
+   *   An array of options. Known keys:
+   *   identifier: If set to TRUE for a list of entities, it won't be returned
+   *   as list of fully loaded entity objects, but as a list of entity ids.
+   */
+  public function value(array $options = array()) {
+    // For lists of entities fetch full entity objects before returning.
+    if ($this->get(0) instanceof EntityDrupalWrapper && empty($options['identifier']) && $this->dataAvailable()) {
+      return array_values(entity_load($this->get(0)->type, $this->data));
+    }
+    return parent::value();
+  }
+
+  public function set($values) {
+    // Support setting lists of fully loaded entities.
+    if ($this->get(0) instanceof EntityDrupalWrapper && !empty($values[0]) && is_object($values[0])) {
+      foreach ($values as $key => $value) {
+        list($id, $vid, $bundle) = entity_extract_ids($this->get(0)->type, $value);
+        $values[$key] = $id;
+      }
+    }
+    return parent::set($values);
+  }
+
+  /**
    * If we wrap a list, we return an iterator over the data list.
    */
   public function getIterator() {
-    return $this->dataAvailable() ? new ArrayIterator($this->data) : array();
+    return $this->dataAvailable() ? new ArrayIterator($this->value()) : array();
   }
 
   /**

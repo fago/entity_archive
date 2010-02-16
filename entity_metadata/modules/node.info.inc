@@ -130,7 +130,6 @@ function entity_metadata_node_entity_property_info() {
   $properties['author'] = array(
     'label' => t("Author"),
     'type' => 'user',
-    'identifier' => TRUE,
     'description' => t("The author of the node."),
     'getter callback' => 'entity_metadata_node_get_properties',
     'setter callback' => 'entity_metadata_node_set_properties',

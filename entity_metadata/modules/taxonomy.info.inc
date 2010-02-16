@@ -65,7 +65,6 @@ function entity_metadata_taxonomy_entity_property_info() {
     'getter callback' => 'entity_metadata_taxonomy_term_get_properties',
     'setter callback' => 'entity_metadata_taxonomy_term_setter',
     'type' => 'taxonomy_vocabulary',
-    'identifier' => TRUE,
     'required' => TRUE,
     'clear' => array('vid'),
   );
@@ -75,7 +74,6 @@ function entity_metadata_taxonomy_entity_property_info() {
     'getter callback' => 'entity_metadata_taxonomy_term_get_properties',
     'setter callback' => 'entity_metadata_taxonomy_term_setter',
     'type' => 'list<taxonomy_term>',
-    'identifier' => TRUE,
   );
 
   // Add meta-data about the basic vocabulary properties.
