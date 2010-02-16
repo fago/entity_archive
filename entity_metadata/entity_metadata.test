@@ -124,6 +124,12 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     // Test getting options lists.
     $this->assertEqual($wrapper->type->optionsList(), node_type_get_names(), 'Options list returned.');
+
+    // Test saving and deleting.
+    $wrapper->save();
+    $wrapper->delete();
+    $return = node_load($wrapper->getIdentifier());
+    $this->assertFalse($return, "Node has been successfully deleted.");
   }
 
   /**
