@@ -113,7 +113,7 @@ function entity_metadata_node_get_properties($node, array $options, $name, $enti
       return url('node/' . $node->nid . '/edit', $options);
 
     case 'author':
-      return user_load($node->uid);
+      return $node->uid;
   }
 }
 
@@ -123,8 +123,7 @@ function entity_metadata_node_get_properties($node, array $options, $name, $enti
  */
 function entity_metadata_node_set_properties($node, $name, $value) {
   if ($name == 'author') {
-    $node->uid = $value->uid;
-    $node->name = $value->name;
+    $node->uid = $value;
   }
 }
 

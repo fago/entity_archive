@@ -93,6 +93,15 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       $this->pass('Setting an unsupported property.');
     }
 
+    // Test setting a referenced entity by id.
+    $wrapper->author->set($GLOBALS['user']->uid);
+    $this->assertEqual($wrapper->author->getIdentifier(), $GLOBALS['user']->uid, 'Get the identifier of a referenced entity.');
+    $this->assertEqual($wrapper->author->uid->value(), $GLOBALS['user']->uid, 'Successfully set referenced entity using the identifier.');
+    // Set by object.
+    $wrapper->author->set($GLOBALS['user']);
+    $this->assertEqual($wrapper->author->uid->value(), $GLOBALS['user']->uid, 'Successfully set referenced entity using the entity.');
+
+
     // Test getting by the field API processed values like the node body and
     // whether auto-adding bundle properties works.
     $body_value = $wrapper->body->value;

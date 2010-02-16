@@ -58,7 +58,7 @@ abstract class EntityMetadataWrapper {
 
   /**
    * Returns the wrapped data. If no options are given the data is returned as
-   * described in the info
+   * described in the info.
    *
    * @param $options
    *   (optional) A keyed array of options:
@@ -74,7 +74,7 @@ abstract class EntityMetadataWrapper {
     elseif (!isset($this->data)) {
       throw new EntityMetadataWrapperException('There is no data set, so you cannot retrieve any values.');
     }
-    return $this->applyOptions($this->data, $options);
+    return $this->data;
   }
 
   /**
@@ -100,14 +100,9 @@ abstract class EntityMetadataWrapper {
   protected function dataAvailable() {
     if (!isset($this->data) && isset($this->info['name']) && $this->info['parent']->dataAvailable()) {
       // Make sure it is loaded.
-      $this->value();
-      return TRUE;
+      $this->data =& $this->info['parent']->getPropertyValue($this->info['name'], $this->info);
     }
     return isset($this->data);
-  }
-
-  protected function applyOptions(&$data, array $options) {
-    return $data;
   }
 
   /**
@@ -147,7 +142,7 @@ abstract class EntityMetadataWrapper {
    */
   public function optionsList() {
     if (isset($this->info['options list']) && is_callable($this->info['options list']) && $this->dataAvailable() && isset($this->info['name'])) {
-      return call_user_func($this->info['options list'], $this->data, $this->info['name'], $this->type);
+      return call_user_func($this->info['options list'], $this->value(), $this->info['name'], $this->type);
     }
     return FALSE;
   }
@@ -182,10 +177,11 @@ abstract class EntityMetadataWrapper {
 class EntityValueWrapper extends EntityMetadataWrapper {
 
   /**
-   * Overrides EntityMetadataWrapper#applyOptions().
-   * Sanitizes or decodes textual data if necessary.
+   * Overrides EntityMetadataWrapper#value().
+   * Sanitizes or decode textual data if necessary.
    */
-  protected function applyOptions(&$data, array $options) {
+  public function value(array $options = array()) {
+    $data = parent::value();
     if ($this->type == 'text') {
       $info = $this->info + array('sanitized' => FALSE, 'sanitize' => 'check_plain');
       $options += array('sanitize' => FALSE, 'decode' => FALSE);
@@ -341,7 +337,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   protected function &getPropertyValue($name, &$info) {
     if ($this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      $value =& $info['getter callback']($this->data, $options, $name, $this->type, $info);
+      $value =& $info['getter callback']($this->value(), $options, $name, $this->type, $info);
       return $value;
     }
     throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
@@ -353,7 +349,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   protected function getPropertyRaw($name, &$info) {
     if (!empty($info['raw getter callback']) && $this->dataAvailable()) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['raw getter callback']($this->data, $options, $name, $this->type, $info);
+      return $info['raw getter callback']($this->value(), $options, $name, $this->type, $info);
     }
     return $this->getPropertyValue($name, $info);
   }
@@ -365,7 +361,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
     $name = str_replace('_', '-', $name);
     $info = $this->getPropertyInfo($name);
     if (!empty($info['setter callback']) && $this->dataAvailable()) {
-      $info['setter callback']($this->data, $name, $value, $this->langcode, $this->type);
+      $info['setter callback']($this->value(), $name, $value, $this->langcode, $this->type);
       $this->get($name)->clear();
       // Clear the cache of properties dependent on this value.
       foreach ($info['clear'] as $name) {
@@ -399,7 +395,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
       }
     }
     if (!empty($info['access callback'])) {
-      $data = $this->dataAvailable() ? $this->data : NULL;
+      $data = $this->dataAvailable() ? $this->value() : NULL;
       return call_user_func($info['access callback'], $op, $name, $this->type, $data, $account);
     }
     elseif ($op == 'edit' && isset($info['setter permission'])) {
@@ -440,6 +436,12 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
 class EntityDrupalWrapper extends EntityStructureWrapper {
 
   /**
+   * Flag to determine whether we have just the identifier and need to load
+   * the full entity.
+   */
+  protected $loaded = TRUE;
+
+  /**
    * Construct a new EntityDrupalWrapper object.
    *
    * @param $type
@@ -456,6 +458,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     if (!empty($this->info['bundle'])) {
       $this->spotInfo($this->info['bundle']);
     }
+    $this->loaded = empty($this->info['identifier']);
   }
 
   /**
@@ -482,10 +485,48 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Returns the identifier of the wrapped entity.
    */
   public function getIdentifier() {
+    if ($this->dataAvailable() && !$this->loaded) {
+      return $this->data;
+    }
     if ($this->dataAvailable()) {
       list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
     }
     return isset($id) ? $id : NULL;
+  }
+
+  /**
+   * Overridden.
+   */
+  public function value() {
+    if ($this->dataAvailable() && !$this->loaded) {
+      // Lazy load the entity.
+      $this->data = reset(entity_load($this->type, array($this->data)));
+      $this->loaded = TRUE;
+    }
+    return parent::value();
+  }
+
+  /**
+   * Overridden.
+   */
+  public function set($value) {
+    // Let the setter get the identifier/entity as specified but accept both.
+    if (!empty($this->info['identifier']) && $value && is_object($value)) {
+      list($id, $vid, $bundle) = entity_extract_ids($this->type, $value);
+      return parent::set($id);
+    }
+    elseif (empty($this->info['identifier']) && $value && !is_object($value)) {
+      return parent::set(reset(entity_load($this->type, array($value))));
+    }
+    return parent::set($value);
+  }
+
+  /**
+   * Overridden.
+   */
+  public function clear() {
+    $this->loaded = empty($this->info['identifier']);
+    parent::clear();
   }
 
   /**
@@ -494,7 +535,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * @see entity_metadata_entity_access()
    */
   public function entityAccess($op, $account = NULL) {
-    $entity = $this->dataAvailable() ? $this->data : NULL;
+    $entity = $this->dataAvailable() ? $this->value() : NULL;
     return entity_metadata_entity_access($op, $this->type, $entity, $account);
   }
 }

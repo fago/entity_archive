@@ -63,6 +63,9 @@
  *       callback which can be used to retrieve the raw, unprocessed value.
  *     - bundle: If the property is an entity, you may specify the bundle of the
  *       retrieved entity. Optional.
+ *     - identifier: If the property references to an entity using its
+ *       identifier set this to TRUE and specify the entity type as type. If set
+ *       to TRUE the getter and setter callbacks have to deal with the id only.
  *     - 'options list': Optionally, a callback that returns a list of key value
  *       pairs for the property. The callback has to return an array as
  *       used by hook_options_list().
