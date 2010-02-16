@@ -195,6 +195,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     // Test per property access without data.
     $account2 = $this->drupalCreateUser(array('bypass node access', 'administer nodes'));
     $wrapper = entity_metadata_wrapper('node', NULL, array('bundle' => 'page'));
+    $this->assertTrue($wrapper->access('edit', $account), 'Access to node granted.');
     $this->assertFalse($wrapper->status->access('edit', $account), 'Access for admin property denied.');
     $this->assertTrue($wrapper->status->access('edit', $account2), 'Access for admin property allowed for the admin.');
 

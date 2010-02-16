@@ -167,6 +167,10 @@ abstract class EntityMetadataWrapper {
    *   If there is no access information for this property, TRUE is returned.
    */
   public function access($op, $account = NULL) {
+    if (empty($this->info['parent']) && $this instanceof EntityDrupalWrapper) {
+      // If there is no parent just incorporate entity based access.
+      return $this->entityAccess($op == 'edit' ? 'update' : 'view', $account);
+    }
     return !empty($this->info['parent']) ? $this->info['parent']->propertyAccess($this->info['name'], $op, $account) : TRUE;
   }
 }
