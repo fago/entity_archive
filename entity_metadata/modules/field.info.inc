@@ -107,8 +107,6 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
 function entity_metadata_field_term_reference_callback(&$info, $entity_type, $field, $instance, $field_type) {
   $name = str_replace('_', '-', $field['field_name']);
   $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
-  $property['getter callback'] = 'entity_metadata_field_term_get';
-  $property['setter callback'] = 'entity_metadata_field_term_set';
   $property['options list'] = 'entity_metadata_field_options_list';
   unset($property['query callback']);
 }

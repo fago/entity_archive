@@ -29,7 +29,7 @@ function entity_metadata_book_get_properties($node, array $options, $name, $enti
       return $node->book['bid'];
 
     case 'book':
-      return node_load($node->book['bid']);
+      return $node->book['bid'];
   }
 }
 
@@ -56,13 +56,13 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
       return node_load($comment->nid);
 
     case 'parent':
-      if ($parent = comment_load($comment->pid)) {
-        return $parent;
+      if (!empty($comment->pid)) {
+        return $comment->pid;
       }
       throw new EntityMetadataWrapperException('This comment has no parent comment.');
 
     case 'author':
-      return user_load($comment->uid);
+      return $comment->uid;
   }
 }
 
@@ -73,13 +73,14 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
 function entity_metadata_comment_setter($comment, $name, $value) {
   switch ($name) {
     case 'node':
-      $comment->nid = $value->nid;
+      $comment->nid = $value;
       // Also set the bundle name.
-      $comment->node_type = 'comment_node_' . $value->type;
+      $node = node_load($value);
+      $comment->node_type = 'comment_node_' . $node->type;
       break;
 
     case 'author':
-      return $comment->uid = $value->uid;
+      return $comment->uid = $value;
   }
 }
 
@@ -197,7 +198,7 @@ function entity_metadata_system_get_properties($data = FALSE, array $options, $n
       return url('user', $options);
 
     case 'current-user':
-      return user_load($GLOBALS['user']->uid);
+      return $GLOBALS['user']->uid;
 
     default:
       return variable_get('site_' . $name, '');
@@ -223,7 +224,7 @@ function entity_metadata_system_get_file_properties($file, array $options, $name
       return url(file_create_url($file->uri), $options);
 
     case 'owner':
-      return user_load($file->uid);
+      return $file->uid;
   }
 }
 
@@ -243,7 +244,7 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
       return $term->vid;
 
     case 'parent':
-      if (isset($term->parent[0]) & !is_array(isset($term->parent[0]))) {
+      if (isset($term->parent[0]) && !is_array(isset($term->parent[0]))) {
         return $term->parent;
       }
       return array_keys(taxonomy_get_parents($term->tid));
@@ -445,28 +446,6 @@ function entity_metadata_field_text_formats() {
     $formats[$key] = $format->name;
   }
   return $formats;
-}
-
-/**
- * Callback for getting referenced terms.
- */
-function entity_metadata_field_term_get($object, array $options, $name, $obj_type) {
-  $return = entity_metadata_field_property_get($object, $options, $name, $obj_type);
-  $tids = is_array($return) ? $return : array($return);
-  $terms = $tids ? array_combine(array_keys($tids), taxonomy_term_load_multiple($tids)) : array();
-  return is_array($return) ? $terms : reset($terms);
-}
-
-/**
- * Callback for setting referenced terms.
- */
-function entity_metadata_field_term_set($object, $name, $value, $langcode, $obj_type) {
-  $values = !is_array($value) ? array($value) : $value;
-  foreach ($values as $delta => $term) {
-    $values[$delta] = $term->tid;
-  }
-  $value = !is_array($value) ? reset($values) : $values;
-  entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type);
 }
 
 /**

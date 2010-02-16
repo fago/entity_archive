@@ -370,20 +370,33 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $wrapper->parent[] = $term_parent2;
     $this->assertEqual($wrapper->parent[1]->getIdentifier(), $term_parent2->tid, 'Term parent added.');
 
+    $parents = $wrapper->parent->value();
+    $tids = $term_parent->tid . ':' . $term_parent2->tid;
+    $this->assertEqual($parents[0]->tid . ':' . $parents[1]->tid, $tids, 'Parents returned.');
+    $this->assertEqual(implode(':', $wrapper->parent->value(array('identifier' => TRUE))), $tids, 'Parent ids returned.');
+
     // Test vocabulary.
     foreach ($wrapper->vocabulary as $key => $info) {
       $this->assertValue($wrapper->vocabulary, $key);
     }
     // Test field integration.
     $tags[LANGUAGE_NONE][0]['tid'] = $term->tid;
-    //$tags[LANGUAGE_NONE][1]['tid'] = $term_parent->tid;
     $node = $this->drupalCreateNode(array('title' => 'foo', 'type' => 'article', 'taxonomy_tags' => $tags));
     $wrapper = entity_metadata_wrapper('node', $node);
     $this->assertEqual($wrapper->taxonomy_tags[0]->name->value(), $term->name, 'Get an associated tag of a node with the wrapper.');
+
     $wrapper->taxonomy_tags[1] = $term_parent;
     $tags = $wrapper->taxonomy_tags->value();
     $this->assertEqual($tags[1]->tid, $term_parent->tid, 'Associated a new tag with a node.');
     $this->assertEqual($tags[0]->tid, $term->tid, 'Previsous set association kept.');
+
+    // Test getting a list of identifiers.
+    $tags = $wrapper->taxonomy_tags->value(array('identifier' => TRUE));
+    $this->assertEqual($tags, array($term->tid, $term_parent->tid), 'List of referenced term identifiers returned.');
+
+    // Test setting tags by using ids.
+    $wrapper->taxonomy_tags->set(array(2));
+    $this->assertEqual($wrapper->taxonomy_tags[0]->tid->value(), 2, 'Specified tags by a list of term ids.');
   }
 
   /**
