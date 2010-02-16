@@ -547,7 +547,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
  * retrieve wrappers for the list items. For that this wrapper implements
  * ArrayAccess so it may be used like a usual numerically indexed array.
  */
-class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggregate, ArrayAccess {
+class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggregate, ArrayAccess, Countable {
 
   protected $data = NULL;
 
@@ -581,7 +581,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
 
   protected function getPropertyRaw($delta) {
     $list = $this->raw();
-    if (is_array($list) && isset($list[$delta])) {
+    if (isset($list[$delta])) {
       return $list[$delta];
     }
     throw new EntityMetadataWrapperException('List entry ' . check_plain($delta) . " isn't set.");
@@ -613,11 +613,11 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   public function offsetExists($delta) {
-    return is_numeric($delta);
+    return $this->dataAvailable() && isset($this->data[$delta]);
   }
 
   public function offsetSet($delta, $value) {
-    $this->setProperty($delta, $value);
+    $this->get($delta)->set($value);
   }
 
   public function offsetUnset($delta) {
@@ -625,6 +625,10 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
       unset($this->data[$delta]);
       $this->set($this->data);
     }
+  }
+
+  public function count() {
+    return $this->dataAvailable() ? count($this->data) : 0;
   }
 }
 
