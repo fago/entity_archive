@@ -229,6 +229,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual($wrapper->user->name->value(), $GLOBALS['user']->name, 'Wrapped custom entity.');
   }
 
+  /**
+   * Tests using entity_metadata_entity_query().
+   */
   function testEntityQuery() {
     $title = '<b>Is it bold?<b>';
     $values[LANGUAGE_NONE][0] = array('value' => 'foo');
@@ -239,6 +242,35 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     $results = entity_metadata_entity_query('node', $this->field_name, 'foo');
     $this->assertEqual($results, array($node->nid), 'Queried nodes with a given field value.');
+  }
+
+  /**
+   * Tests serializing data wrappers, in particular for EntityDrupalWrapper.
+   */
+  function testWrapperSerialization() {
+    $node = $this->drupalCreateNode();
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $this->assertTrue($wrapper->value() == $node, 'Data correctly wrapped.');
+
+    // Test serializing and make sure only the node id is stored.
+    $this->assertTrue(strpos(serialize($wrapper), $node->title) === FALSE, 'Node has been correctly serialized.');
+    $this->assertEqual(unserialize(serialize($wrapper))->title->value(), $node->title, 'Serializing works right.');
+
+    $wrapper2 = unserialize(serialize($wrapper));
+    // Test serializing the unloaded wrapper.
+    $this->assertEqual(unserialize(serialize($wrapper2))->title->value(), $node->title, 'Serializing works right.');
+
+    // Test loading a not more existing node.
+    $s = serialize($wrapper2);
+    node_delete($node->nid);
+    $this->assertFalse(node_load($node->nid), 'Node deleted.');
+    try {
+      unserialize($s)->value();
+      $this->fail("Loading hasn't created an exception.");
+    }
+    catch (EntityMetadataWrapperException $e) {
+      $this->pass("RulesException was thrown: ". $e->getMessage());
+    }
   }
 }
 

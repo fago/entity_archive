@@ -173,6 +173,15 @@ abstract class EntityMetadataWrapper {
     }
     return !empty($this->info['parent']) ? $this->info['parent']->propertyAccess($this->info['name'], $op, $account) : TRUE;
   }
+
+  /**
+   * Prepare for serializiation.
+   */
+  public function __sleep() {
+    $vars = get_object_vars($this);
+    unset($vars['cache']);
+    return drupal_map_assoc(array_keys($vars));
+  }
 }
 
 /**
@@ -232,6 +241,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
+    $this->info += array('property defaults' => array());
     $info += array('data info' => array());
     $this->dataInfo = $info['data info'] + array('properties' => array());
   }
@@ -260,7 +270,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
     if (!isset($this->dataInfo['properties'][$name])) {
       throw new EntityMetadataWrapperException('Unknown data property ' . check_plain($name) . '.');
     }
-    return $this->dataInfo['properties'][$name] + $this->propertyInfoDefaults;
+    return $this->dataInfo['properties'][$name] + $this->propertyInfoDefaults + $this->info['property defaults'];
   }
 
   /**
@@ -429,6 +439,15 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   public function getIdentifier() {
     return isset($this->id) && $this->dataAvailable() ? $this->id->value() : NULL;
   }
+
+  /**
+   * Prepare for serializiation.
+   */
+  public function __sleep() {
+    $vars = parent::__sleep();
+    unset($vars['propertyInfoDefaults']);
+    return $vars;
+  }
 }
 
 /**
@@ -456,12 +475,16 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
-    $this->dataInfo = entity_get_info($type) + array('name property' => 'name');
-    $this->dataInfo = array_merge_recursive($this->dataInfo, entity_metadata_get_info($type)) + array('properties' => array());
+    $this->setUp();
+    $this->setEntity($data);
+  }
+
+  protected function setUp() {
+    $this->dataInfo = entity_get_info($this->type) + array('name property' => 'name');
+    $this->dataInfo = array_merge_recursive($this->dataInfo, entity_metadata_get_info($this->type)) + array('properties' => array());
     if (!empty($this->info['bundle'])) {
       $this->spotInfo($this->info['bundle']);
     }
-    $this->setEntity($data);
   }
 
   /**
@@ -589,6 +612,20 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       }
     }
     return $this;
+  }
+
+  /**
+   * Prepare for serializiation.
+   */
+  public function __sleep() {
+    $vars = parent::__sleep();
+    // Don't serialize the loaded entity and its info.
+    unset($vars['entity'], $vars['dataInfo']);
+    return $vars;
+  }
+
+  public function __wakeup() {
+    $this->setUp();
   }
 }
 
