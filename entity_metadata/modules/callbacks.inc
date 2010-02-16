@@ -240,13 +240,13 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
       return check_markup($term->description, $term->format, '', TRUE);
 
     case 'vocabulary':
-      return taxonomy_vocabulary_load($term->vid);
+      return $term->vid;
 
     case 'parent':
-      if (($parents = taxonomy_get_parents($term->tid)) && $parent = array_pop($parents)) {
-        return taxonomy_term_load($parent->tid);
+      if (isset($term->parent[0]) & !is_array(isset($term->parent[0]))) {
+        return $term->parent;
       }
-      throw new EntityMetadataWrapperException('This term has no parent term.');
+      return array_keys(taxonomy_get_parents($term->tid));
   }
 }
 
@@ -257,7 +257,9 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
 function entity_metadata_taxonomy_term_setter($term, $name, $value) {
   switch ($name) {
     case 'vocabulary':
-      return $term->vid = $value->vid;
+      return $term->vid = $value;
+    case 'parent':
+      return $term->parent = $value;
   }
 }
 

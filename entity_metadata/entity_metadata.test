@@ -347,20 +347,29 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       'vocabulary' => $vocab,
     ));
     taxonomy_term_save($term_parent);
+    $term_parent2 = entity_metadata_entity_create('taxonomy_term', array(
+      'name' => $this->randomName(),
+      'vocabulary' => $vocab,
+    ));
+    taxonomy_term_save($term_parent2);
     $term = entity_metadata_entity_create('taxonomy_term', array(
       'name' => $this->randomName(),
       'vocabulary' => $vocab,
       'description' => $this->randomString(),
       'weight' => mt_rand(0, 10),
+      'parent' => array($term_parent->tid),
     ));
-    // This term hasn't all properties set yet, so set them.
-    $term->parent = array($term_parent->tid);
     taxonomy_term_save($term);
 
     $wrapper = entity_metadata_wrapper('taxonomy_term', $term);
     foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
+
+    // Test setting another parent using the full object.
+    $wrapper->parent[] = $term_parent2;
+    $this->assertEqual($wrapper->parent[1]->getIdentifier(), $term_parent2->tid, 'Term parent added.');
+
     // Test vocabulary.
     foreach ($wrapper->vocabulary as $key => $info) {
       $this->assertValue($wrapper->vocabulary, $key);
@@ -491,6 +500,9 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
         return drupal_strtolower($this->randomName(8));
       case 'text_formatted':
         return array('value' => $this->randomName(16));
+      case 'list<taxonomy_term>':
+        return array(1);
+
       default:
         return $this->$type;
     }

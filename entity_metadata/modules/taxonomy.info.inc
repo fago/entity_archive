@@ -65,14 +65,17 @@ function entity_metadata_taxonomy_entity_property_info() {
     'getter callback' => 'entity_metadata_taxonomy_term_get_properties',
     'setter callback' => 'entity_metadata_taxonomy_term_setter',
     'type' => 'taxonomy_vocabulary',
+    'identifier' => TRUE,
     'required' => TRUE,
     'clear' => array('vid'),
   );
   $properties['parent'] = array(
-    'label' => t("Parent term"),
-    'description' => t("The parent term of the taxonomy term, if one exists."),
+    'label' => t("Parent terms"),
+    'description' => t("The parent terms of the taxonomy term."),
     'getter callback' => 'entity_metadata_taxonomy_term_get_properties',
-    'type' => 'taxonomy_term',
+    'setter callback' => 'entity_metadata_taxonomy_term_setter',
+    'type' => 'list<taxonomy_term>',
+    'identifier' => TRUE,
   );
 
   // Add meta-data about the basic vocabulary properties.
