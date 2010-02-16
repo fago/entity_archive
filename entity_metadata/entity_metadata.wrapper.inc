@@ -555,6 +555,31 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     $entity = $this->dataAvailable() ? $this->value() : NULL;
     return entity_metadata_entity_access($op, $this->type, $entity, $account);
   }
+
+  /**
+   * Permanently save the wrapped entity.
+   */
+  public function save() {
+    if ($this->entity) {
+      $return = entity_metadata_entity_save($this->type, $this->entity);
+      if ($return === FALSE) {
+        throw new EntityMetadataWrapperException("There is no information about how to save entities of type " . check_plain($this->type) . '.');
+      }
+    }
+    // If the entity hasn't been loaded yet, don't bother saving it.
+  }
+
+  /**
+   * Permanently delete the wrapped entity.
+   */
+  public function delete() {
+    if ($this->dataAvailable()) {
+      $return = entity_metadata_entity_delete($this->type, $this->data);
+      if ($return === FALSE) {
+        throw new EntityMetadataWrapperException("There is no information about how to delete entities of type " . check_plain($this->type) . '.');
+      }
+    }
+  }
 }
 
 /**
