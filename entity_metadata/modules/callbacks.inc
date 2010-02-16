@@ -539,7 +539,7 @@ function entity_metadata_create_object($values = array(), $entity_type) {
   foreach ($values as $name => $value) {
     $wrapper->$name->set($value);
   }
-  return $object;
+  return $wrapper;
 }
 
 /**
@@ -557,7 +557,7 @@ function entity_metadata_create_comment($values = array()) {
   foreach ($values as $name => $value) {
     $wrapper->$name->set($value);
   }
-  return $comment;
+  return $wrapper;
 }
 
 /**
@@ -581,7 +581,7 @@ function entity_metadata_create_node($values = array()) {
   foreach ($values as $name => $value) {
     $wrapper->$name->set($value);
   }
-  return $node;
+  return $wrapper;
 }
 
 /**
