@@ -560,9 +560,12 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Overridden to support setting the entity by either the object or the id.
    */
   public function set($value) {
-    // Let the setter get the identifier but accept both.
+    // Set value, so we get the identifier and pass it to the normal setter.
     $this->setEntity($value);
-    return parent::set($this->data);
+    parent::set($this->data);
+    // Now the entity object is cleared, so set it again.
+    $this->setEntity($value);
+    return $this;
   }
 
   /**
