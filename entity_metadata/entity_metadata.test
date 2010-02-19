@@ -172,7 +172,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
    * Tests using the wrapper without any data.
    */
   function testWithoutData() {
-    $wrapper = entity_metadata_wrapper('node', NULL, array('bundle' => 'page'));
+    $wrapper = entity_metadata_wrapper('node', $data = NULL, array('bundle' => 'page'));
     $this->assertTrue(isset($wrapper->title), 'Bundle properties have been added.');
     $info = $wrapper->author->mail->info();
     $this->assertTrue(!empty($info) && is_array($info) && isset($info['label']), 'Property info returned.');
@@ -194,7 +194,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
 
     // Test per property access without data.
     $account2 = $this->drupalCreateUser(array('bypass node access', 'administer nodes'));
-    $wrapper = entity_metadata_wrapper('node', NULL, array('bundle' => 'page'));
+    $wrapper = entity_metadata_wrapper('node', $data = NULL, array('bundle' => 'page'));
     $this->assertTrue($wrapper->access('edit', $account), 'Access to node granted.');
     $this->assertFalse($wrapper->status->access('edit', $account), 'Access for admin property denied.');
     $this->assertTrue($wrapper->status->access('edit', $account2), 'Access for admin property allowed for the admin.');
@@ -450,7 +450,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
    * Test properties provided by system module.
    */
   function testSystemProperties() {
-    $wrapper = entity_metadata_wrapper('system', FALSE);
+    $wrapper = entity_metadata_wrapper('system', $data = FALSE);
     foreach ($wrapper as $key => $info) {
       $this->assertValue($wrapper, $key);
     }
