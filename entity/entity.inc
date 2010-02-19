@@ -374,7 +374,7 @@ if (!class_exists('EntityDB', FALSE)) {
     public function save() {
       $this->invoke('presave');
 
-      if (isset($this->{$this->idKey})) {
+      if (!empty($this->{$this->idKey}) && empty($this->is_new)) {
         $return = drupal_write_record($this->entityInfo['base table'], $this, $this->idKey);
         $this->invoke('update');
       }
