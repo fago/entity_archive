@@ -469,11 +469,11 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * @param $type
    *   The type of the passed data.
    * @param $data
-   *   Optional. The data to wrap.
+   *   Optional. The entity to wrap or its identifier.
    * @param $info
    *   Optional. Used internally to pass info about properties down the tree.
    */
-  public function __construct($type, &$data = NULL, $info = NULL) {
+  public function __construct($type, $data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
     $this->setUp();
     $this->setEntity($data);
@@ -656,7 +656,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
       if (is_numeric($delta)) {
         $info = array('parent' => $this, 'name' => $delta) + $this->info;
         $type = entity_metadata_list_extract_type($this->type);
-        $this->cache[$delta] = entity_metadata_wrapper($type, NULL, $info);
+        $this->cache[$delta] = entity_metadata_wrapper($type, $data = NULL, $info);
       }
       else {
         throw new EntityMetadataWrapperException('There can be only numerical keyed items in a list.');

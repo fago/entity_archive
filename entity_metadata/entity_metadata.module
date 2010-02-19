@@ -36,7 +36,7 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.
  */
-function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
+function entity_metadata_wrapper($type, &$data = NULL, array $info = array()) {
   if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
     return new EntityDrupalWrapper($type, $data, $info);
   }
