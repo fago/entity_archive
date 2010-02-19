@@ -120,7 +120,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertFalse(array_diff_key($type_info['properties'], iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
 
     // Test setting a new node.
+    $node->title = 'foo';
     $wrapper->set($node);
+    $this->assertEqual($wrapper->title->value(), 'foo', 'Changed the wrapped node.');
 
     // Test getting options lists.
     $this->assertEqual($wrapper->type->optionsList(), node_type_get_names(), 'Options list returned.');
