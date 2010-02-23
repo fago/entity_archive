@@ -40,7 +40,7 @@ function entity_metadata_wrapper($type, &$data = NULL, array $info = array()) {
   if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
     return new EntityDrupalWrapper($type, $data, $info);
   }
-  elseif (entity_metadata_list_extract_type($type)) {
+  elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
     return new EntityListWrapper($type, $data, $info);
   }
   elseif (isset($info['data info'])) {
