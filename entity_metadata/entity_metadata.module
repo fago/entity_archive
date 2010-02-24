@@ -241,7 +241,7 @@ function entity_metadata_entity_info() {
  */
 function entity_metadata_entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
   if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
-    return $info[$entity_type]['access callback']($op, $entity_type, $entity, $account);
+    return $info[$entity_type]['access callback']($op, $entity, $account, $entity_type);
   }
 }
 
