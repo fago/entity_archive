@@ -39,61 +39,35 @@ if (!interface_exists('EntityAPIControllerInterface', FALSE)) {
      *
      * @param $ids
      *   An array of entity IDs.
+     * @return
+     *   FALSE, if deleting failed. Else NULL.
      */
     public function delete($ids);
-  }
-
-  /**
-   * Provides an interface for entites using the entity API.
-   */
-  interface EntityAPIInterface {
-
-    /**
-     * Permanently save this entity.
-     *
-     * @return
-     *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
-     *   SAVED_UPDATED is returned depending on the operation performed.
-     */
-    public function save();
-
-    /**
-     * Permanently delete this entity.
-     */
-    public function delete();
-
-    /**
-     * Returns the internal identifier of this instance.
-     *
-     * @return
-     *   The primary ID or NULL, if this entity hasn't been saved yet.
-     */
-    public function internalIdentifier();
-
-    /**
-     * Returns the entity type of this instance.
-     *
-     * @return
-     *   The name of the entity type of this instance.
-     */
-    public function entityType();
-
-    /**
-     * Returns the entity info for this instance as returned by entity_get_info().
-     *
-     * @return
-     *   An array of entity info for this entity type.
-     *
-     * @see
-     *   entity_get_info()
-     */
-    public function entityInfo();
 
     /**
      * Invokes a hook on behalf the entity. For hooks that have a respective
      * field API attacher like insert/update/.. the attacher is called too.
      */
-    public function invoke($hook);
+    public function invoke($hook, $entity);
+
+
+    /**
+     * Permanently saves the given entity.
+     *
+     * @return
+     *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
+     *   SAVED_UPDATED is returned depending on the operation performed.
+     */
+    public function save($entity);
+
+
+    /**
+     * Create a new entity.
+     *
+     * @param $values
+     *   An array of values to set, keyed by property name.
+     */
+    public function create($values = array());
 
   }
 }
@@ -107,7 +81,7 @@ if (!class_exists('EntityAPIController', FALSE)) {
   class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
     protected $defaultEntities;
-    protected $nameKey, $statusKey;
+    protected $nameKey, $statusKey, $bundleKey;
 
     /**
      * Overridden.
@@ -122,6 +96,11 @@ if (!class_exists('EntityAPIController', FALSE)) {
       $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
       if (isset($this->entityInfo['exportable'])) {
         $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+      }
+      // If this is the bundle of another entity, set the bundle key.
+      if (isset($this->entityInfo['bundle of'])) {
+        $info = entity_get_info($this->entityInfo['bundle of']);
+        $this->bundleKey = $info['bundle keys']['bundle'];
       }
     }
 
@@ -258,22 +237,6 @@ if (!class_exists('EntityAPIController', FALSE)) {
     }
 
     /**
-     * Implement EntityAPIControllerInterface.
-     */
-    public function delete($ids) {
-      $entities = $this->load($ids);
-
-      db_delete($this->entityInfo['base table'])
-        ->condition($this->idKey, $ids, 'IN')
-        ->execute();
-
-      foreach ($entities as $entity) {
-        $entity->invoke('delete');
-      }
-      $this->resetCache();
-    }
-
-    /**
      * For exportables call the hook to get all default entities.
      */
     protected function getDefaults($ids, $conditions = array()) {
@@ -322,6 +285,96 @@ if (!class_exists('EntityAPIController', FALSE)) {
       $this->entityCache = array();
       unset($this->defaultEntities);
     }
+
+    /**
+     * Invokes a hook and calls any field API attachers.
+     */
+    public function invoke($hook, $entity) {
+      if (!empty($this->entityInfo['fieldable']) && function_exists($function = 'field_attach_' . $hook)) {
+        $function($this->entityType, $entity);
+      }
+      if (isset($this->entityInfo['bundle of']) && $type = $this->entityInfo['bundle of']) {
+        // Call field API bundle attachers for the entity we are a bundle of.
+        if ($hook == 'insert') {
+          field_attach_create_bundle($type, $entity->{$this->bundleKey});
+        }
+        elseif ($hook == 'delete') {
+          field_attach_delete_bundle($type, $entity->{$this->bundleKey});
+        }
+        elseif ($hook == 'update' && $id = $entity->{$this->idKey}) {
+          $entities = entity_load($this->entityType, array($id));
+          if ($entities[$id]->{$this->bundleKey} != $entity->{$this->bundleKey}) {
+            field_attach_rename_bundle($type, $entities[$id]->{$this->bundleKey}, $entity->{$this->bundleKey});
+          }
+        }
+      }
+      module_invoke_all($this->entityType . '_' . $hook, $entity);
+      if ($hook == 'insert' || $hook == 'update') {
+        entity_invoke($hook, $this->entityType, $entity);
+      }
+    }
+
+    /**
+     * Implements EntityAPIControllerInterface.
+     */
+    public function delete($ids) {
+      $entities = $this->load($ids);
+
+      try {
+        db_delete($this->entityInfo['base table'])
+          ->condition($this->idKey, $ids, 'IN')
+          ->execute();
+
+        foreach ($entities as $entity) {
+          $this->invoke('delete', $entity);
+        }
+        // Ignore slave server temporarily.
+        db_ignore_slave();
+      }
+      catch (Exception $e) {
+        $transaction->rollback($this->entityType, $e->getMessage(), array(), WATCHDOG_ERROR);
+        return FALSE;
+      }
+      $this->resetCache();
+    }
+
+    /**
+     * Implements EntityAPIControllerInterface.
+     */
+    public function save($entity) {
+      $transaction = db_transaction();
+
+      try {
+        $this->invoke('presave', $entity);
+
+        if (!empty($entity->{$this->idKey}) && empty($entity->is_new)) {
+          $return = drupal_write_record($this->entityInfo['base table'], $entity, $this->idKey);
+          $this->invoke('update', $entity);
+        }
+        else {
+          $return = drupal_write_record($this->entityInfo['base table'], $entity);
+          $this->invoke('insert', $entity);
+        }
+        // Ignore slave server temporarily.
+        db_ignore_slave();
+
+        return $return;
+      }
+      catch (Exception $e) {
+        $transaction->rollback($this->entityType, $e->getMessage(), array(), WATCHDOG_ERROR);
+        return FALSE;
+      }
+    }
+
+    /**
+     * Implements EntityAPIControllerInterface.
+     */
+    public function create($values = array()) {
+      if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
+        return new $class($values, $this->entityType);
+      }
+      return (object)$values;
+    }
   }
 }
 
@@ -330,11 +383,11 @@ if (!class_exists('EntityDB', FALSE)) {
   /**
    * A common class for db entities.
    */
-  class EntityDB extends FacesExtendable implements EntityAPIInterface {
+  class EntityDB extends FacesExtendable {
 
     protected $entityType;
     protected $entityInfo;
-    protected $idKey, $nameKey, $bundleKey;
+    protected $idKey, $nameKey;
 
     public function __construct(array $values = array(), $entityType = NULL) {
       if (empty($entityType)) {
@@ -344,11 +397,7 @@ if (!class_exists('EntityDB', FALSE)) {
       $this->entityInfo = entity_get_info($entityType);
       $this->idKey = $this->entityInfo['object keys']['id'];
       $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
-      // If this is the bundle of another entity, set the bundle key.
-      if (isset($this->entityInfo['bundle of'])) {
-        $info = entity_get_info($this->entityInfo['bundle of']);
-        $this->bundleKey = $info['bundle keys']['bundle'];
-      }
+
       // Set initial values.
       foreach ($values as $key => $value) {
         $this->$key = $value;
@@ -372,55 +421,13 @@ if (!class_exists('EntityDB', FALSE)) {
     }
 
     public function save() {
-      $this->invoke('presave');
-
-      if (!empty($this->{$this->idKey}) && empty($this->is_new)) {
-        $return = drupal_write_record($this->entityInfo['base table'], $this, $this->idKey);
-        $this->invoke('update');
-      }
-      else {
-        $return = drupal_write_record($this->entityInfo['base table'], $this);
-        $this->invoke('insert');
-      }
-      return $return;
+      return entity_get_controller($this->entityType)->save($this);
     }
 
     public function delete() {
-      $id = $this->internalIdentifier();
+      $id = $this->identifier();
       if (isset($id)) {
-        db_delete($this->entityInfo['base table'])
-          ->condition($this->idKey, $id)
-          ->execute();
-        $this->invoke('delete');
-        entity_get_controller($this->entityType)->resetCache();
-      }
-    }
-
-    /**
-     * Invokes a hook and calls any field API attachers.
-     */
-    public function invoke($hook) {
-      if (!empty($this->entityInfo['fieldable']) && function_exists($function = 'field_attach_' . $hook)) {
-        $function($this->entityType, $this);
-      }
-      if (isset($this->entityInfo['bundle of']) && $type = $this->entityInfo['bundle of']) {
-        // Call field API bundle attachers for the entity we are a bundle of.
-        if ($hook == 'insert') {
-          field_attach_create_bundle($type, $this->{$this->bundleKey});
-        }
-        elseif ($hook == 'delete') {
-          field_attach_delete_bundle($type, $this->{$this->bundleKey});
-        }
-        elseif ($hook == 'update' && $id = $this->{$this->idKey}) {
-          $entities = entity_load($this->entityType, array($id));
-          if ($entities[$id]->{$this->bundleKey} != $this->{$this->bundleKey}) {
-            field_attach_rename_bundle($type, $entities[$id]->{$this->bundleKey}, $this->{$this->bundleKey});
-          }
-        }
-      }
-      module_invoke_all($this->entityType . '_' . $hook, $this);
-      if ($hook == 'insert' || $hook == 'update') {
-        entity_invoke($hook, $this->entityType, $this);
+        entity_get_controller($this->entityType)->delete(array($id));
       }
     }
   }
