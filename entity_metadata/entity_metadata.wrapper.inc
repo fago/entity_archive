@@ -410,7 +410,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
     }
     if (!empty($info['access callback'])) {
       $data = $this->dataAvailable() ? $this->value() : NULL;
-      return call_user_func($info['access callback'], $op, $name, $this->type, $data, $account);
+      return call_user_func($info['access callback'], $op, $name, $data, $account, $this->type);
     }
     elseif ($op == 'edit' && isset($info['setter permission'])) {
       return user_access($info['setter permission'], $account);
