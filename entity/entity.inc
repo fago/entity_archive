@@ -322,7 +322,7 @@ if (!class_exists('EntityAPIController', FALSE)) {
 
       try {
         db_delete($this->entityInfo['base table'])
-          ->condition($this->idKey, $ids, 'IN')
+          ->condition($this->nameKey, $ids, 'IN')
           ->execute();
 
         foreach ($entities as $entity) {
