@@ -95,48 +95,13 @@ if (!interface_exists('FacesExtendableInterface', FALSE)) {
 
 }
 
-if (!class_exists('FacesRoot', FALSE)) {
-
-  /**
-   * Provides a common ancestor that makes it possible for extenders to access
-   * protected object properties and methods of the extendable object.
-   */
-  abstract class FacesRoot {
-
-    /**
-     * Returns any property.
-     */
-    protected function &property($name) {
-      return $this->$name;
-    }
-
-    /**
-     * Invokes any method.
-     *
-     * This also allows to pass arguments by reference, so it may be used to
-     * pass arguments by reference to dynamically extended methods.
-     *
-     * @param $name
-     *   The method name.
-     * @param $arguments
-     *   An array of arguments to pass to the method.
-     */
-    public function call($name, array $args = array()) {
-      if (method_exists($this, $name)) {
-        return call_user_func_array(array($this, $name), $args);
-      }
-      return $this->__call($name, $args);
-    }
-  }
-}
-
 if (!class_exists('FacesExtender', FALSE)) {
   /**
    * A common base class for FacesExtenders. Extenders may access protected
    * methods and properties of the extendable using the property() and call()
    * methods.
    */
-  abstract class FacesExtender extends FacesRoot implements FacesExtenderInterface {}
+  abstract class FacesExtender implements FacesExtenderInterface {}
 }
 
 
@@ -145,7 +110,7 @@ if (!class_exists('FacesExtendable', FALSE)) {
   /**
    * Class providing an implementation of FacesExtendableInterface.
    */
-  abstract class FacesExtendable extends FacesRoot implements FacesExtendableInterface {
+  abstract class FacesExtendable implements FacesExtendableInterface {
 
     protected $facesMethods = array();
     protected $faces = array();
@@ -266,6 +231,35 @@ if (!class_exists('FacesExtendable', FALSE)) {
      */
     public function __sleep() {
       return array('facesMethods', 'faces', 'facesIncludes');
+    }
+
+    /**
+     * Makes protected properties accessible.
+     */
+    public function &property($name) {
+      $var = NULL;
+      if (isset($this->$name)) {
+        return $this->$name;
+      }
+      return $var;
+    }
+
+    /**
+     * Invokes any method.
+     *
+     * This also allows to pass arguments by reference, so it may be used to
+     * pass arguments by reference to dynamically extended methods.
+     *
+     * @param $name
+     *   The method name.
+     * @param $arguments
+     *   An array of arguments to pass to the method.
+     */
+    public function call($name, array $args = array()) {
+      if (method_exists($this, $name)) {
+        return call_user_func_array(array($this, $name), $args);
+      }
+      return $this->__call($name, $args);
     }
   }
 }
