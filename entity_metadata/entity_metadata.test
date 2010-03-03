@@ -118,6 +118,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     // Test iterator
     $type_info = entity_metadata_get_info('node');
     $this->assertFalse(array_diff_key($type_info['properties'], iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
+    foreach ($wrapper as $property) {
+      $this->assertTrue($property instanceof EntityMetadataWrapper, 'Iterate over wrapper properties.');
+    }
 
     // Test setting a new node.
     $node->title = 'foo';
@@ -156,7 +159,10 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual(check_plain('<b>2009-09-05</b>'), $wrapper->{$property}[0]->value(array('sanitize' => TRUE)), 'Getting array entry.');
 
     // Test iterator
-    $this->assertEqual(iterator_to_array($wrapper->$property->getIterator()), $wrapper->$property->value(), 'Iterator is working.');
+    $this->assertEqual(array_keys(iterator_to_array($wrapper->$property->getIterator())), array_keys($wrapper->$property->value()), 'Iterator is working.');
+    foreach ($wrapper->$property as $p) {
+      $this->assertTrue($p instanceof EntityMetadataWrapper, 'Iterate over list wrapper properties.');
+    }
 
     // Make sure changing the array changes the actual entity property.
     $wrapper->{$property}[0] = '2009-10-05';
@@ -354,7 +360,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $comment->comment_body[LANGUAGE_NONE][0] = array('value' => 'text', 'format' => 0);
     comment_save($comment);
     $wrapper = entity_metadata_wrapper('comment', $comment);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       if ($key != 'parent') {
         $this->assertValue($wrapper, $key);
       }
@@ -369,7 +375,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $title = 'Book 1';
     $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'page'));
     $wrapper = entity_metadata_wrapper('node', $node);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       if ($key != 'book' && $key != 'book-id') {
         $this->assertValue($wrapper, $key);
       }
@@ -400,7 +406,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     ))->save()->value();
 
     $wrapper = entity_metadata_wrapper('taxonomy_term', $term);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }
 
@@ -414,7 +420,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $this->assertEqual(implode(':', $wrapper->parent->value(array('identifier' => TRUE))), $tids, 'Parent ids returned.');
 
     // Test vocabulary.
-    foreach ($wrapper->vocabulary as $key => $info) {
+    foreach ($wrapper->vocabulary as $key => $value) {
       $this->assertValue($wrapper->vocabulary, $key);
     }
     // Test field integration.
@@ -443,7 +449,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
   function testUserProperties() {
     $account = $this->drupalCreateUser();
     $wrapper = entity_metadata_wrapper('user', $account);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }
   }
@@ -453,7 +459,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
    */
   function testSystemProperties() {
     $wrapper = entity_metadata_wrapper('system', $data = FALSE);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }
     // Test files.
@@ -471,7 +477,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     file_save($file);
 
     $wrapper = entity_metadata_wrapper('file', $file);
-    foreach ($wrapper as $key => $info) {
+    foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }
   }
@@ -496,7 +502,8 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       // Populate $values with all values that are setable. They will be set
       // with an metadata wrapper, so we also test setting that way.
       $values = array();
-      foreach (entity_metadata_wrapper($entity_type) as $name => $info) {
+      foreach (entity_metadata_wrapper($entity_type) as $name => $wrapper) {
+        $info = $wrapper->info();
         if (!empty($info['setter callback'])) {
           $info += array('type' => 'text');
           $values[$name] = $this->createValue($info['type'], $info);

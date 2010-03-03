@@ -429,7 +429,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
 
   public function getIterator() {
     $this->spotInfo();
-    return new ArrayIterator($this->dataInfo['properties']);
+    return new EntityMetadataWrapperIterator($this, array_keys($this->dataInfo['properties']));
   }
 
   /**
@@ -723,7 +723,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
    * If we wrap a list, we return an iterator over the data list.
    */
   public function getIterator() {
-    return $this->dataAvailable() ? new ArrayIterator($this->value()) : array();
+    return $this->dataAvailable() ? new EntityMetadataWrapperIterator($this, array_keys($this->data)) : array();
   }
 
   /**
@@ -758,3 +758,45 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
  */
 class EntityMetadataWrapperException extends Exception { }
 
+
+/**
+ * Allows to easily iterate over existing child wrappers.
+ */
+class EntityMetadataWrapperIterator implements RecursiveIterator {
+
+  protected $position = 0;
+  protected $wrapper, $keys;
+
+  public function __construct(EntityMetadataWrapper $wrapper, array $keys) {
+    $this->wrapper = $wrapper;
+    $this->keys = $keys;
+  }
+
+  function rewind() {
+    $this->position = 0;
+  }
+
+  function current() {
+    return $this->wrapper->get($this->keys[$this->position]);
+  }
+
+  function key() {
+    return $this->keys[$this->position];
+  }
+
+  function next() {
+    $this->position++;
+  }
+
+  function valid() {
+    return isset($this->keys[$this->position]);
+  }
+
+  public function hasChildren () {
+    return $this->current() instanceof IteratorAggregate;
+  }
+
+  public function getChildren () {
+    return $this->current()->getIterator();
+  }
+}
