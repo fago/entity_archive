@@ -109,27 +109,23 @@ if (!class_exists('EntityAPIController', FALSE)) {
      *
      * @return The results in a Traversable object.
      */
-    public function query() {
+    public function query($ids, $conditions, $revision_id = FALSE) {
       // Build the query.
-      $this->buildQuery();
-      $result = $this->query->execute();
+      $query = $this->buildQuery($ids, $conditions, $revision_id);
+      $result = $query->execute();
       if (!empty($this->entityInfo['entity class'])) {
         $result->setFetchMode(PDO::FETCH_CLASS, $this->entityInfo['entity class'], array(array(), $this->entityType));
       }
       return $result;
     }
 
-    protected function buildQuery() {
-      // If we have a separate name key use it to filter for ids in $this->ids.
-      if ($this->ids && $this->nameKey != $this->idKey) {
-        $ids = $this->ids;
-        $this->ids = array();
-        parent::buildQuery();
-        $this->query->condition("base.{$this->nameKey}", $ids, 'IN');
+    protected function buildQuery($ids, $conditions = array(), $revision_id = FALSE) {
+      // Add the id condition ourself, as we might have a separate name key.
+      $query = parent::buildQuery(array(), $conditions, $revision_id);
+      if ($ids) {
+        $query->condition("base.{$this->nameKey}", $ids, 'IN');
       }
-      else {
-        parent::buildQuery();
-      }
+      return $query;
     }
 
     /**
@@ -141,19 +137,16 @@ if (!class_exists('EntityAPIController', FALSE)) {
      * objects.
      */
     public function load($ids = array(), $conditions = array()) {
-      $this->ids = $ids;
-      $this->conditions = $conditions;
-
       $entities = array();
 
       // Revisions are not statically cached, and require a different query to
       // other conditions, so separate the revision id into its own variable.
-      if ($this->revisionKey && isset($this->conditions[$this->revisionKey])) {
-        $this->revisionId = $this->conditions[$this->revisionKey];
-        unset($this->conditions[$this->revisionKey]);
+      if ($this->revisionKey && isset($conditions[$this->revisionKey])) {
+        $revision_id = $conditions[$this->revisionKey];
+        unset($conditions[$this->revisionKey]);
       }
       else {
-        $this->revisionId = FALSE;
+        $revision_id = FALSE;
       }
 
       // Create a new variable which is either a prepared version of the $ids
@@ -161,28 +154,28 @@ if (!class_exists('EntityAPIController', FALSE)) {
       // were passed. The $ids array is reduced as items are loaded from cache,
       // and we need to know if it's empty for this reason to avoid querying the
       // database when all requested entities are loaded from cache.
-      $passed_ids = !empty($this->ids) ? array_flip($this->ids) : FALSE;
+      $passed_ids = !empty($ids) ? array_flip($ids) : FALSE;
       // Try to load entities from the static cache, if the entity type supports
       // static caching.
       if ($this->cache) {
-        $entities = $this->cacheGet($this->ids, $this->conditions);
+        $entities = $this->cacheGet($ids, $conditions);
         // If any entities were loaded, remove them from the ids still to load.
         if ($passed_ids) {
-          $this->ids = array_keys(array_diff_key($passed_ids, $entities));
+          $ids = array_keys(array_diff_key($passed_ids, $entities));
         }
       }
-      if (!empty($this->entityInfo['exportable']) && ($this->ids !== array() || !$passed_ids)) {
+      if (!empty($this->entityInfo['exportable']) && ($ids !== array() || !$passed_ids)) {
         // Add default entities defined in code.
-        $entities += $this->getDefaults($this->ids, $this->conditions);
+        $entities += $this->getDefaults($ids, $conditions);
       }
 
       // Load any remaining entities from the database. This is the case if $ids
       // is set to FALSE (so we load all entities), if there are any ids left to
       // load, if loading a revision, or if $conditions was passed without $ids.
-      if ($this->ids === FALSE || $this->ids || $this->revisionId || ($this->conditions && !$passed_ids)) {
+      if ($ids === FALSE || $ids || $revision_id || ($conditions && !$passed_ids)) {
         $schema = drupal_get_schema($this->entityInfo['base table']);
         $queried_entities = array();
-        foreach ($this->query() as $record) {
+        foreach ($this->query($ids, $conditions, $revision_id) as $record) {
           // Care for serialized columns.
           foreach ($schema['fields'] as $field => $info) {
             if (!empty($info['serialize']) && isset($record->$field)) {
@@ -213,13 +206,13 @@ if (!class_exists('EntityAPIController', FALSE)) {
       // which attaches fields (if supported by the entity type) and calls the
       // entity type specific load callback, for example hook_node_load().
       if (!empty($queried_entities)) {
-        $this->attachLoad($queried_entities);
+        $this->attachLoad($queried_entities, $revision_id);
         $entities += $queried_entities;
       }
 
       if ($this->cache) {
         // Add entities to the cache if we are not loading a revision.
-        if (!empty($queried_entities) && !$this->revisionId) {
+        if (!empty($queried_entities) && !$revision_id) {
           $this->cacheSet($queried_entities);
         }
       }
