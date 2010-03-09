@@ -18,85 +18,46 @@ you may stop reading now.
                               Entity CRUD API
 --------------------------------------------------------------------------------
 
+ * To use the API you have to introduce a dependency on the "entity" module.
+
+ * The provided controller implements full CRUD functionality. To leverage that
+   you may use the EntityDB or EntityDBExtendable as a class or a base class
+   for your entities. The latter is extendable via the Extendable Object Faces
+   API (http://drupal.org/project/faces).
+   As an alternative you may just rely on the provided entity_save(), entity_delete()
+   and entity_create() functions and/or add your own ENTITY_TYPE_(save|delete|create)
+   API functions.
 
 
-Relationship to the Extendable Object Faces (API)
--------------------------------------------------
-http://drupal.org/project/faces
-
- * Entities are extendable with the help of faces by default. So to make this
-   possible you also have to ship with the "faces.inc" include.
-   
- * If you don't want to, you may edit your copy of entity.inc and make the
-   class "EntityDB" not extending "FacesExtendable". Also remove 'faces' from your
-   modules autoloader (see below). That's it. 
-   That way you can ship with "entity.inc" without having to ship with "faces.inc".
-
-
-How to use the entity CRUD API without introducing a dependency?
-----------------------------------------------------------------
-
- * Add the most recent "entity.inc" include file to your module, but don't
-   list the file in your module's info file.
- 
- * Add the most recent "faces.inc" include file from
-   http://drupal.org/project/faces, if you have not done yet. Also don't list it
-   in the info file.
-
- * Add the following code at the top of your module. Replace MODULE with your
-   module's name.
-
-CODE:
---------------------------------------------------------------------------------
- 
- spl_autoload_register('MODULE_autoload');
-
-/**
- * Autoload API includes. Note that the code registry autoload is used only
- * by the providing API module.
- */
-function MODULE_autoload($class) {
-  if (stripos($class, 'faces') === 0) {
-    module_load_include('inc', 'MODULE', 'faces');
-  }
-  if (stripos($class, 'entity') === 0) {
-    module_load_include('inc', 'MODULE', 'entity');
-  }
-}
-
---------------------------------------------------------------------------------
-
- That way the include is autoloaded once a class of it is used.
- Once the entity API module is installed and enabled, the version of the include
- file shipping with this module is used as it doesn't rely on autoloading.
-
-
- 
- How to add a new entity?
- ------------------------
+ How to add a new entity type?
+ ------------------------------
  
   * You might want to study the code of the "entity_test.module".
   
   * Describe your entities db table as usual in hook_schema().
   
-  * You may use the "EntityDB" class directly or extend it with your own class.
+  * You may use the entity classes directly or extend it with your own class.
     To see how to provide a separate class have a look at the "EntityClass" from
     the "entity_test.module". 
   
-  * Implement hook_entity_info() for your entity. At least specifiy the entity
-    class, the controller class of this API, your db table and your object's
-    primary key field.
+  * Implement hook_entity_info() for your entity. At least specifiy the
+    controller class of this API, your db table and your object's primary key
+    field. Optionally also set the 'entity class' to EntityDB, EntityDBExtendable
+    or your extended class.
     Again just look at "entity_test.module"'s hook_entity_info() for guidance.
-    If you don't want to create a separate entity class, just set 'entity class'
-    to 'EntityDB'.
     
   * If you want your entity to be fieldable just set 'fieldable' in hook_entity_info
     to TRUE. The field API attachers are called automatically in the entities
     CRUD functions then.
     
+  * The entity API is able to deal with bundle objects too (e.g. the node type
+    object). For that just specify an entity type for the bundle objects and
+    set the 'bundle of' property appropriate.
+    Again just look at "entity_test.module"'s hook_entity_info() for guidance.
+
   * Schema fields marked as 'serialzed' are automatically unserialized upon
-    loading. If the 'merge' attribute is also set to TRUE the unserialized data
-    is automatically "merged" into the entity.
+    loading as well as serialized on saving. If the 'merge' attribute is also
+    set to TRUE the unserialized data is automatically "merged" into the entity.
 
     
     

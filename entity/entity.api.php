@@ -14,8 +14,8 @@
 /**
  * This is just placeholder for describing further keys for describing entities
  * in hook_entity_info(), which are introduced by the entity API:
- * - class: The class to use when loading entities with the provided controller
- *   class EntityCRUDController. Optionally.
+ * - entity class: Optionally a class the controller will use for instantiating
+ *   entities.
  * - 'bundle of': Optionally if the entity describes bundles of another entity
  *   specify the entity, for which this is a bundle of, here. If done so, the
  *   API will automatically invoke the field API bundle attachers. For this to
