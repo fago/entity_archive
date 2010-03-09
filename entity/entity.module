@@ -1,5 +1,4 @@
 <?php
-
 // $Id$
 
 /**
@@ -19,9 +18,23 @@ function entity_autoload($class) {
   }
 }
 
-if (!class_exists('EntityAPIController', FALSE)) {
-  // In rare cases another module shipping with entity.inc might have already
-  // included its own version. Usually we run first, so our version will be
-  // included, but in cases like test execution we might not run first.
-  module_load_include('inc', 'entity', 'entity');
-}
+/**
+ * Defines status codes used for exportable entities.
+ */
+
+/**
+ * A bit flag used to let us know if an entity is in the database.
+ */
+define('ENTITY_IN_DB', 0x01);
+
+/**
+ * A bit flag used to let us know if an entity is a 'default' in code.
+ */
+define('ENTITY_IN_CODE', 0x02);
+
+/**
+ * A bit flag used to mark entities as fixed, thus not changeable for any
+ * user.
+ */
+define('ENTITY_FIXED', 0x04);
+

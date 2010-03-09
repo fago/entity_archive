@@ -136,7 +136,7 @@ function entity_test_default_entity_test_type() {
 /**
  * Main class for test entities.
  */
-class EntityClass extends EntityDB {
+class EntityClass extends EntityDBExtendable {
 
   public function __construct(array $values = array(), $entityType = NULL) {
     parent::__construct($values, 'entity_test');
