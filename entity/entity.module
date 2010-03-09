@@ -38,3 +38,90 @@ define('ENTITY_IN_CODE', 0x02);
  */
 define('ENTITY_FIXED', 0x04);
 
+
+
+/**
+ * Permanently save an entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to save.
+ * @return
+ *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
+ *   SAVED_UPDATED is returned depending on the operation performed. If the
+ *   given entity type isn't compatible to the CRUD API NULL is returned.
+ */
+function entity_save($entity_type, $entity) {
+  $info = entity_get_info($entity_type);
+  if (method_exists($entity, 'save')) {
+    return $entity->save();
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->save($entity);
+  }
+}
+
+/**
+ * Permanently delete the given entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $id
+ *   The uniform identifier of the entity to delete.
+ * @return
+ *   FALSE if the given entity type isn't compatible to the CRUD API.
+ */
+function entity_delete($entity_type, $id) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['entity class']) && method_exists($info['entity class'], 'delete')) {
+    $entities = entity_load($entity_type, array($id));
+    reset($entities)->delete();
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    entity_get_controller($entity_type)->delete(array($id));
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Permanently delete multiple entities.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $ids
+ *   An array of uniform identifiers of the entities to delete.
+ * @return
+ *   FALSE if the given entity type isn't compatible to the CRUD API.
+ */
+function entity_delete_multiple($entity_type, $ids) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    entity_get_controller($entity_type)->delete($ids);
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Create a new entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $values
+ *   An array of values to set, keyed by property name. If the entity type has
+ *   bundles the bundle key has to be specified.
+ * @return
+ *   A new instance of the entity type or FALSE if the given entity type isn't
+ *   compatible to the CRUD API.
+ */
+function entity_create($entity_type, $values) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->create($values);
+  }
+  return FALSE;
+}

@@ -42,6 +42,8 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    *
    * @param $values
    *   An array of values to set, keyed by property name.
+   * @return
+   *   A new instance of the entity type.
    */
   public function create($values = array());
 

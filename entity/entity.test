@@ -59,6 +59,40 @@ class EntityAPITestCase extends DrupalWebTestCase {
   }
 
   /**
+   * Tests CRUD API functions: entity_(create|delete|save)
+   */
+  function testCRUDAPIfunctions() {
+    $user1 = $this->drupalCreateUser();
+    // Create test entities for the user1 and unrelated to a user.
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
+    entity_save('entity_test', $entity);
+    $entity = entity_create('entity_test', array('name' => 'test2', 'uid' => $user1->uid));
+    entity_save('entity_test', $entity);
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => NULL));
+    entity_save('entity_test', $entity);
+
+    $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test')));
+    $this->assertEqual($entities[0]->name, 'test', 'Created and loaded entity.');
+    $this->assertEqual($entities[1]->name, 'test', 'Created and loaded entity.');
+
+    $results = entity_test_load_multiple(array($entity->pid));
+    $loaded = array_pop($results);
+    $this->assertEqual($loaded->pid, $entity->pid, 'Loaded the entity unrelated to a user.');
+
+    $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
+    entity_delete('entity_test', $entities[0]->pid);
+    $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
+    $this->assertEqual($entities, array(), 'Entity successfully deleted.');
+
+    entity_save('entity_test', $entity);
+    $this->assertEqual($entity->pid, $loaded->pid, 'Entity successfully updated.');
+
+    // Try deleting multiple test entities by deleting all.
+    $pids = array_keys(entity_test_load_multiple(FALSE));
+    entity_delete_multiple('entity_test', $pids);
+  }
+
+  /**
    * Test loading entities defined in code.
    */
   function testExportables() {
