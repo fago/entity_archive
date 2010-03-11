@@ -347,3 +347,27 @@ function entity_metadata_entity_query($entity_type, $property, $value, $limit = 
     return $properties[$property]['query callback']($entity_type, $property, $value, $limit);
   }
 }
+
+/**
+ * Implements hook_field_create_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_metadata_field_create_instance() {
+  entity_metadata_info_cache_clear();
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_metadata_field_delete_instance() {
+  entity_metadata_info_cache_clear();
+}
+
+/**
+ * Implements hook_field_update_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_metadata_field_update_instance() {
+  entity_metadata_info_cache_clear();
+}
