@@ -293,6 +293,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
       $this->langcode = $langcode;
       $this->cache = array();
     }
+    return $this;
   }
 
   /**

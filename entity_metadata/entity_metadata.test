@@ -280,6 +280,19 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       $this->pass("Exception was thrown: ". $e->getMessage());
     }
   }
+
+  /**
+   * Tests whether token support is basically working.
+   */
+  function testTokenSupport() {
+    $node = $this->drupalCreateNode(array('sticky' => TRUE, 'promote' => FALSE));
+    $text = "Sticky: [node:sticky] Promote: [node:promote]";
+    $true = t('true');
+    $false = t('false');
+    $target = "Sticky: $true Promote: $false";
+    $replace = token_replace($text, array('node' => $node));
+    $this->assertEqual($replace, $target, 'Provided tokens basically work.');
+  }
 }
 
 /**

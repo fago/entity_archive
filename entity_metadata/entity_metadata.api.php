@@ -157,6 +157,9 @@ function entity_metadata_hook_field_info() {
  *   this type.
  * - deletion callback: Optionally, a callback that permanently deletes an
  *   entity of this type.
+ * - token type: Optionally a type name to use for token replacements. Set it
+ *   to FALSE if there aren't any token replacements for this entity type.
+ *
  * @see hook_entity_info()
  * @see entity_metadata_entity_access()
  * @see entity_metadata_entity_create()
