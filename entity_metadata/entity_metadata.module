@@ -106,7 +106,7 @@ function entity_metadata_get_info($entity_type = NULL) {
  */
 function entity_metadata_get_properties($entity_type) {
   $info = entity_metadata_get_info($entity_type);
-  $info += array('properties' => array());
+  $info += array('properties' => array(), 'bundles' => array());
   // Add all bundle properties.
   foreach ($info['bundles'] as $bundle => $bundle_info) {
     $bundle_info += array('properties' => array());
@@ -232,6 +232,10 @@ function entity_metadata_entity_info() {
   $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
   $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
   $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
+
+  // Token type mapping.
+  $entity_info['taxonomy_term']['token type'] = 'term';
+  $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
   return $entity_info;
 }
 
