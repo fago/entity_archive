@@ -80,15 +80,19 @@ function entity_metadata_get_info($entity_type = NULL) {
   isset($drupal_static[__FUNCTION__]) || ($drupal_static[__FUNCTION__] = &drupal_static(__FUNCTION__));
   $info = &$drupal_static[__FUNCTION__];
 
+  // hook_entity_property_info() includes translated strings, so each language
+  // is cached separately.
+  $langcode = $GLOBALS['language']->language;
+
   if (empty($info)) {
-    if ($cache = cache_get('entity_property_info')) {
+    if ($cache = cache_get("entity_property_info:$langcode")) {
       $info = $cache->data;
     }
     else {
       $info = module_invoke_all('entity_property_info');
       // Let other modules alter the entity info.
       drupal_alter('entity_property_info', $info);
-      cache_set('entity_property_info', $info);
+      cache_set("entity_property_info:$langcode", $info);
     }
   }
   return empty($entity_type) ? $info : (isset($info[$entity_type]) ? $info[$entity_type] : array());
@@ -109,6 +113,15 @@ function entity_metadata_get_properties($entity_type) {
     $info['properties'] += $bundle_info['properties'];
   }
   return $info['properties'];
+}
+
+/**
+ * Resets the cached information of hook_entity_property_info().
+ */
+function entity_metadata_info_cache_clear() {
+  drupal_static_reset('entity_metadata_get_info');
+  // Clear all languages.
+  cache_clear_all('entity_property_info:', 'cache', TRUE);
 }
 
 /**
