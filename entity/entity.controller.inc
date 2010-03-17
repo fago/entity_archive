@@ -339,6 +339,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    */
   public function create($values = array()) {
     if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
+      // Add is_new property if it is not set.
+      $values += array('is_new' => TRUE);
       return new $class($values, $this->entityType);
     }
     return (object)$values;
