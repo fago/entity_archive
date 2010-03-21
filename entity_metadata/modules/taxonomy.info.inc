@@ -33,6 +33,10 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
   );
+  $properties['vocabulary-machine-name'] = array(
+    'label' => t("Vocabulary machine name"),
+    'description' => t("The machine readable name of the term's vocabulary."),
+  );
   $properties['description'] = array(
     'label' => t("Description"),
     'description' => t("The optional description of the taxonomy term."),
