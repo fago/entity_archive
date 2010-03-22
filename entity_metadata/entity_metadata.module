@@ -225,7 +225,7 @@ function entity_metadata_entity_info() {
   $entity_info['comment']['save callback'] = 'comment_save';
   $entity_info['comment']['deletion callback'] = 'comment_delete';
   $entity_info['file']['save callback'] = 'file_save';
-  $entity_info['file']['deletion callback'] = 'entity_metadata_file_delete';
+  $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
   $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
   $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
   $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';

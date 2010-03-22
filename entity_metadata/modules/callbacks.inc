@@ -602,8 +602,9 @@ function entity_metadata_user_save(&$account) {
 
 /**
  * Callback to delete a file.
+ * Watch out to not accidentilly implement hook_file_delete().
  */
-function entity_metadata_file_delete($fid) {
+function entity_metadata_delete_file($fid) {
   file_delete(file_load($fid), TRUE);
 }
 
