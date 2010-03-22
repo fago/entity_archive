@@ -85,8 +85,8 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
         }
       }
     }
+    return $replacements;
   }
-  return $replacements;
 }
 
 function _entity_metadata_get_token($wrapper, $options) {
