@@ -20,7 +20,7 @@ function entity_test_install() {
   field_create_field($field);
 
   $instance = array(
-    'object_type' => 'entity_test',
+    'entity_type' => 'entity_test',
     'field_name' => 'entity_test_fullname',
     'bundle' => 'main',
     'label' => 'Full name',

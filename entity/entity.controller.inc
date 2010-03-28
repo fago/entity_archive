@@ -68,7 +68,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   public function __construct($entityType) {
     parent::__construct($entityType);
     // Use the name key as primary identifier.
-    $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
+    $this->nameKey = isset($this->entityInfo['entity keys']['name']) ? $this->entityInfo['entity keys']['name'] : $this->idKey;
     if (isset($this->entityInfo['exportable'])) {
       $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
     }
