@@ -21,8 +21,8 @@ class EntityDBExtendable extends FacesExtendable {
     }
     $this->entityType = $entityType;
     $this->entityInfo = entity_get_info($entityType);
-    $this->idKey = $this->entityInfo['object keys']['id'];
-    $this->nameKey = isset($this->entityInfo['object keys']['name']) ? $this->entityInfo['object keys']['name'] : $this->idKey;
+    $this->idKey = $this->entityInfo['entity keys']['id'];
+    $this->nameKey = isset($this->entityInfo['entity keys']['name']) ? $this->entityInfo['entity keys']['name'] : $this->idKey;
 
     // Set initial values.
     foreach ($values as $key => $value) {

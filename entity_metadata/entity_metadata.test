@@ -28,7 +28,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->field_id = $this->field['id'];
     $this->instance = array(
       'field_name' => $this->field_name,
-      'object_type' => 'node',
+      'entity_type' => 'node',
       'bundle' => 'page',
       'label' => $this->randomName() . '_label',
       'description' => $this->randomName() . '_description',

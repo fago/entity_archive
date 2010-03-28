@@ -21,7 +21,7 @@
  *   API will automatically invoke the field API bundle attachers. For this to
  *   work you also have to set the bundle key for the referred entity.
  * - exportable: Whether the entity is exportable. Defaults to FALSE.
- * - 'object keys' - 'name': An optional name of a property that contains a
+ * - 'entity keys' - 'name': An optional name of a property that contains a
  *   unique name of the entity. If specified, this is used as uniform identifier
  *   of the entity while the 'id' key is only used to refer to the entity
  *   internally, e.g. in the database. If not specified, this defaults to the
@@ -60,7 +60,7 @@ function entity_hook_entity_info() {
       'controller class' => 'EntityCRUDController',
       'base table' => 'entity_test',
       'fieldable' => TRUE,
-      'object keys' => array(
+      'entity keys' => array(
         'id' => 'pid',
         'name' => 'name',
         'bundle' => 'type',

@@ -17,7 +17,7 @@ function entity_test_entity_info() {
       'controller class' => 'EntityAPIController',
       'base table' => 'entity_test',
       'fieldable' => TRUE,
-      'object keys' => array(
+      'entity keys' => array(
         'id' => 'pid',
         'bundle' => 'name',
       ),
@@ -35,7 +35,7 @@ function entity_test_entity_info() {
     'fieldable' => FALSE,
     'bundle of' => 'entity_test',
     'exportable' => TRUE,
-    'object keys' => array(
+    'entity keys' => array(
       'id' => 'id',
       'name' => 'name',
     ),

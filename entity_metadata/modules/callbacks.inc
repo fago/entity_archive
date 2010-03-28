@@ -526,13 +526,13 @@ function entity_metadata_create_object($values = array(), $entity_type) {
   $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
   $object = new $class(array(), $entity_type);
   // Support specifying the id of the entity for some entity types.
-  if (isset($info['object keys']['id']) && ($id_key = $info['object keys']['id']) && isset($values[$id_key])) {
+  if (isset($info['entity keys']['id']) && ($id_key = $info['entity keys']['id']) && isset($values[$id_key])) {
     $object->$id_key = $values[$id_key];
     $object->is_new = TRUE;
     unset($values[$id_key]);
   }
   // Make sure at least the bundle property is set.
-  if (isset($info['object keys']['bundle']) && $bundle_key = $info['object keys']['bundle']) {
+  if (isset($info['entity keys']['bundle']) && $bundle_key = $info['entity keys']['bundle']) {
     $object->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
   }
   $wrapper = entity_metadata_wrapper($entity_type, $object);
@@ -614,7 +614,7 @@ function entity_metadata_delete_file($fid) {
  */
 function entity_metadata_table_query($entity_type, $property, $value, $limit) {
   $info = entity_get_info($entity_type);
-  $name_key = isset($info['object keys']['name']) ? $info['object keys']['name'] : $info['object keys']['id'];
+  $name_key = isset($info['entity keys']['name']) ? $info['entity keys']['name'] : $info['entity keys']['id'];
   $query = db_select($info['base table'], 'base')
              ->fields('base', array($name_key))
              ->condition($property, $value)

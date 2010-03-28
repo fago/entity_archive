@@ -203,7 +203,7 @@ function entity_metadata_entity_info() {
     'label' => t("System information"),
     // Set some properties to empty arrays to prevent field API errors...
     'fieldable' => FALSE,
-    'object keys' => array(),
+    'entity keys' => array(),
     'bundles' => array(),
   );
 
