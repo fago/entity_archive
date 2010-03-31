@@ -371,7 +371,7 @@ function entity_metadata_field_property_set($object, $name, $value, $langcode, $
 /**
  * Callback returning the options list of a field.
  */
-function entity_metadata_field_options_list($object, $name, $obj_type) {
+function entity_metadata_field_options_list($name, $obj_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   return (array)module_invoke($field['module'], 'options_list', $field);
