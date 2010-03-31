@@ -141,8 +141,8 @@ abstract class EntityMetadataWrapper {
    *   An array as used by hook_options_list() or FALSE.
    */
   public function optionsList() {
-    if (isset($this->info['options list']) && is_callable($this->info['options list']) && $this->dataAvailable() && isset($this->info['name'])) {
-      return call_user_func($this->info['options list'], $this->value(), $this->info['name'], $this->type);
+    if (isset($this->info['options list']) && is_callable($this->info['options list']) && isset($this->info['name'])) {
+      return call_user_func($this->info['options list'], $this->info['name'], $this->type);
     }
     return FALSE;
   }
