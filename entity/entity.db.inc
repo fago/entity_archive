@@ -56,4 +56,8 @@ class EntityDB {
       entity_get_controller($this->entityType)->delete(array($id));
     }
   }
+
+  public function export() {
+    return entity_get_controller($this->entityType)->export($this);
+  }
 }
