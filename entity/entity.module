@@ -125,3 +125,56 @@ function entity_create($entity_type, $values) {
   }
   return FALSE;
 }
+
+/**
+ * Exports an entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to export.
+ * @return
+ *   The exported entity as code.
+ */
+function entity_export($entity_type, $entity) {
+  $info = entity_get_info($entity_type);
+  if (method_exists($entity, 'export')) {
+    return $entity->export();
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->export($entity);
+  }
+}
+
+/**
+ * Export a variable. Copied from ctools.
+ *
+ * This is a replacement for var_export(), allowing us to more nicely
+ * format exports. It will recurse down into arrays and will try to
+ * properly export bools when it can.
+ */
+function entity_var_export($var, $prefix = '') {
+  if (is_array($var)) {
+    if (empty($var)) {
+      $output = 'array()';
+    }
+    else {
+      $output = "array(\n";
+      foreach ($var as $key => $value) {
+        $output .= "  '$key' => " . entity_var_export($value, '  ') . ",\n";
+      }
+      $output .= ')';
+    }
+  }
+  else if (is_bool($var)) {
+    $output = $var ? 'TRUE' : 'FALSE';
+  }
+  else {
+    $output = var_export($var, TRUE);
+  }
+
+  if ($prefix) {
+    $output = str_replace("\n", "\n$prefix", $output);
+  }
+  return $output;
+}

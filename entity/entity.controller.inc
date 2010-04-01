@@ -47,6 +47,14 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    */
   public function create($values = array());
 
+
+  /**
+   * Exports an entity.
+   *
+   * @return
+   *   The exported entity as code.
+   */
+  public function export($entity);
 }
 
 /**
@@ -344,5 +352,14 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       return new $class($values, $this->entityType);
     }
     return (object)$values;
+  }
+
+  /**
+   * Implements EntityAPIControllerInterface.
+   */
+  public function export($entity) {
+    $vars = get_object_vars($entity);
+    unset($vars[$this->statusKey]);
+    return "entity_create('$this->entityType', " . entity_var_export($vars) . ");";
   }
 }

@@ -105,6 +105,11 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $types = entity_load('entity_test_type', array('test', 'test2'));
     $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded correctly.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && $types['test']->status & ENTITY_IN_DB, 'Status of modified type is correct.');
+
+    // Test exporting an entity to code.
+    $code = $types['test']->export();
+    $import = eval('return ' . $code);
+    $this->assertTrue(get_class($import) == get_class($types['test']) && $types['test']->label == $import->label, 'Successfully exported entity to code.');
+    $this->assertTrue(!isset($import->status), 'Exportable status has not been exported to code.');
   }
 }
-
