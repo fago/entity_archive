@@ -178,3 +178,44 @@ function entity_var_export($var, $prefix = '') {
   }
   return $output;
 }
+
+/**
+ * Implements hook_theme().
+ */
+function entity_theme() {
+  return array(
+    'entity_status' => array(
+      'variables' => array('status' => NULL, 'html' => TRUE),
+    ),
+  );
+}
+
+/**
+ * Themes the exportable status of an entity.
+ */
+function theme_entity_status($variables) {
+  $status = $variables['status'];
+  $html = $variables['html'];
+  if ($status & ENTITY_FIXED) {
+    $label = t('Fixed');
+    $help = t('The configuration is fixed and cannot be edited.');
+    return $html ? "<span class='entity-status-fixed' title='$help'>" . $label . "</span>" : $label;
+  }
+  elseif ($status & ENTITY_IN_CODE && $status & ENTITY_IN_DB) {
+    $label = t('Overridden');
+    $help = t('This configuration is provided by a module, but has been altered.');
+    return $html ? "<span class='entity-status-overridden' title='$help'>" . $label . "</span>" : $label;
+  }
+  elseif ($status & ENTITY_IN_CODE) {
+    $label = t('Default');
+    $help = t('A module provides this configuration.');
+    return $html ? "<span class='entity-status-default' title='$help'>" . $label . "</span>" : $label;
+  }
+  elseif ($status & ENTITY_IN_DB) {
+    $label = t('Custom');
+    $help = t('A custom configuration not provided by a module.');
+    return $html ? "<span class='entity-status-custom' title='$help'>" . $label . "</span>" : $label;
+  }
+}
+
+
