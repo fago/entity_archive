@@ -36,7 +36,7 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.
  */
-function entity_metadata_wrapper($type, &$data = NULL, array $info = array()) {
+function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
   if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
     return new EntityDrupalWrapper($type, $data, $info);
   }
@@ -134,15 +134,15 @@ function entity_metadata_hook_info_alter(&$hook_info) {
 }
 
 /**
- * Gets the property just as it is set in the entity.
+ * Gets the property just as it is set in the data.
  */
-function entity_metadata_verbatim_get($entity, array $options, $name) {
+function entity_metadata_verbatim_get($data, array $options, $name) {
   $name = str_replace('-', '_', $name);
-  if (is_array($entity) && isset($entity[$name])) {
-    return $entity[$name];
+  if (is_array($data) || (is_object($data) && $data instanceof ArrayAccess) && isset($data[$name])) {
+    return $data[$name];
   }
-  elseif (is_object($entity) && isset($entity->$name)) {
-    return $entity->$name;
+  elseif (is_object($data) && isset($data->$name)) {
+    return $data->$name;
   }
   return NULL;
 }
@@ -151,21 +151,21 @@ function entity_metadata_verbatim_get($entity, array $options, $name) {
 /**
  * Sets the property to the given value. May be used as 'setter callback'.
  */
-function entity_metadata_verbatim_set(&$entity, $name, $value) {
+function entity_metadata_verbatim_set($data, $name, $value) {
   $name = str_replace('-', '_', $name);
-  if (is_array($entity)) {
-    $entity[$name] = $value;
+  if (is_object($data) && $data instanceof ArrayAccess) {
+    $data[$name] = $value;
   }
-  elseif (is_object($entity)) {
-    $entity->$name = $value;
+  elseif (is_object($data)) {
+    $data->$name = $value;
   }
 }
 
 /**
  * Getter callback for getting an array. Makes sure it's numerically indexed.
  */
-function entity_metadata_get_list($entity, array $options, $name) {
-  return isset($entity->$name) ? array_values($entity->$name) : array();
+function entity_metadata_get_list($data, array $options, $name) {
+  return isset($data->$name) ? array_values($data->$name) : array();
 }
 
 /**
