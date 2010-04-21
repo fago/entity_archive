@@ -332,12 +332,12 @@ function entity_metadata_language_list() {
 function entity_metadata_field_property_get($object, array $options, $name, $obj_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
-  $key = reset(array_keys($field['columns']));
+  $columns = array_keys($field['columns']);
   $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
   $values = array();
   if (isset($object->{$name}[$langcode])) {
     foreach ($object->{$name}[$langcode] as $delta => $data) {
-      $values[$delta] = $data[$key];
+      $values[$delta] = $data[$columns[0]];
     }
   }
   return $field['cardinality'] == 1 ? reset($values) : $values;
@@ -357,13 +357,13 @@ function _entity_metadata_field_property_get_langcode($object, $options, $name) 
 function entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
-  $key = reset(array_keys($field['columns']));
+  $columns = array_keys($field['columns']);
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
   $values = $field['cardinality'] == 1 ? array($value) : $value;
 
   $items = array();
   foreach ($values as $delta => $value) {
-    $items[$delta][$key] = $value;
+    $items[$delta][$columns[0]] = $value;
   }
   $object->{$name}[$langcode] = $items;
 }
@@ -380,11 +380,8 @@ function entity_metadata_field_options_list($name, $obj_type) {
 /**
  * Callback to verbatim get the data structure of a field. Useful for fields
  * that add metadata for their own data structure.
- *
- * It's important to return a reference on the field's item structure, so any
- * changes to the data through the wrapper are present in the object too.
  */
-function &entity_metadata_field_verbatim_get($object, array $options, $name, $obj_type, &$context) {
+function entity_metadata_field_verbatim_get($object, array $options, $name, $obj_type, &$context) {
   $name = str_replace('-', '_', $name);
   // Set contextual info useful for getters of any child properties.
   $entity_info = $context['parent']->info();
@@ -395,10 +392,13 @@ function &entity_metadata_field_verbatim_get($object, array $options, $name, $ob
   if (!isset($object->{$name}[$langcode])) {
     $object->{$name}[$langcode] = array(0 => array());
   }
+  // To avoid loosing the reference wrap the item into an array object. That
+  // way the changes through the wrapper are automatically reflected in the
+  // entity.
   if ($context['field']['cardinality'] == 1) {
-    return $object->{$name}[$langcode][0];
+    return new EntityMetadataArrayObject($object->{$name}[$langcode][0]);
   }
-  return $object->{$name}[$langcode];
+  return new EntityMetadataArrayObject($object->{$name}[$langcode]);
 }
 
 /**
@@ -415,14 +415,15 @@ function entity_metadata_field_verbatim_set($object, $name, $items, $langcode) {
 /**
  * Callback for getting the sanitized text of processed text fields.
  */
-function entity_metadata_field_text_get(&$item, array $options, $name, $type, $context) {
+function entity_metadata_field_text_get(EntityMetadataArrayObject $item, array $options, $name, $type, $context) {
   if (!isset($item['safe_value'])) {
     // Get the the wrapper of the field's property.
     $field_wrapper = _entity_metadata_field_get_wrapper($context);
     $info = $field_wrapper->info();
-    $item += array('format' => filter_default_format());
+    $item_array = $item->getArray();
+    $item_array += array('format' => filter_default_format());
     $langcode = isset($options['language']) ? $options['language']->language : '';
-    $item['safe_value'] = _text_sanitize($info['instance'], $langcode, $item, 'value');
+    $item['safe_value'] = _text_sanitize($info['instance'], $langcode, $item_array, 'value');
   }
   return $item['safe_value'];
 }
@@ -628,9 +629,9 @@ function entity_metadata_table_query($entity_type, $property, $value, $limit) {
  */
 function entity_metadata_field_query($entity_type, $property, $value, $limit) {
   $field = field_info_field(str_replace('-', '_', $property));
-  $key = reset(array_keys($field['columns']));
+  $columns = array_keys($field['columns']);
   $conditions[] = array('type', $entity_type);
-  $conditions[] = array($key, $value);
+  $conditions[] = array($columns[0], $value);
   $result = field_attach_query($field['id'], $conditions, array('limit' => $limit));
   return array_keys($result[$entity_type]);
 }
