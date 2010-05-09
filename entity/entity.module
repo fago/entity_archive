@@ -180,6 +180,46 @@ function entity_var_export($var, $prefix = '') {
 }
 
 /**
+ * Export a variable in pretty formatted JSON.
+ */
+function entity_var_json_export($var, $prefix = '') {
+  if (is_array($var) && $var) {
+    // Defines whether we use a JSON array or object.
+    $use_array = ($var == array_values($var));
+    $output = $use_array ? "[" : "{";
+
+    foreach ($var as $key => $value) {
+      if ($use_array) {
+        $values[] = entity_var_json_export($value, '  ');
+      }
+      else {
+        $values[] = entity_var_json_export((string) $key, '  ') . ' : ' . entity_var_json_export($value, '  ');
+      }
+    }
+    // Use several lines for long content. However for objects with a single
+    // entry keep the key in the first line.
+    if (strlen($content = implode(", ", $values)) > 70 && ($use_array || count($values) > 1)) {
+      $output .= "\n  " .  implode(",\n  ", $values) . "\n";
+    }
+    elseif (strpos($content, "\n") !== FALSE) {
+      $output .= " " .  $content . "\n";
+    }
+    else {
+      $output .= " " .  $content . " ";
+    }
+    $output .= $use_array ? "]" : "}";
+  }
+  else {
+    $output = drupal_json_encode($var);
+  }
+
+  if ($prefix) {
+    $output = str_replace("\n", "\n$prefix", $output);
+  }
+  return $output;
+}
+
+/**
  * Implements hook_theme().
  */
 function entity_theme() {
