@@ -63,7 +63,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
  */
 class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
-  protected $defaultEntities;
+  protected $defaultEntities, $defaultsFiltered = FALSE;
   protected $nameKey, $statusKey, $bundleKey;
 
   /**
@@ -176,7 +176,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
           // Care for setting the status key properly.
           $record->{$this->statusKey} |= ENTITY_IN_DB;
           $id = $record->{$this->nameKey};
-          if (isset($entities[$id]) && $entities[$id]->{$this->statusKey} & ENTITY_IN_CODE) {
+          if (isset($this->defaultEntities[$id])) {
             $record->{$this->statusKey} |= ENTITY_IN_CODE;
             unset($entities[$id]);
           }
@@ -224,13 +224,26 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         if ($hook = $this->entityInfo['export']['default hook']) {
           $this->defaultEntities = module_invoke_all($hook);
           drupal_alter($hook, $this->defaultEntities);
-          foreach ($this->defaultEntities as $entity) {
+
+          foreach ($this->defaultEntities as $id => $entity) {
             $entity->{$this->statusKey} |= ENTITY_IN_CODE;
+            $entity->{$this->nameKey} = $id;
           }
         }
       }
     }
     $entities = $ids ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
+    if (!$this->defaultsFiltered && $conditions && $entities) {
+      // Remove overridden entities. This is not necessary for pure id based
+      // lookups though, as in this case overridden entities would get
+      // incorporated later anyway.
+      foreach ($this->query(array_keys($this->defaultEntities), array()) as $record) {
+        $this->defaultEntities[$record->{$this->nameKey}] = FALSE;
+        unset($entities[$record->{$this->nameKey}]);
+      }
+      $this->cacheSet(array_filter($this->defaultEntities));
+      $this->defaultsFiltered = TRUE;
+    }
     return $this->applyConditions($entities, $conditions);
   }
 
@@ -260,6 +273,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   public function resetCache() {
     $this->entityCache = array();
     unset($this->defaultEntities);
+    $this->defaultsFiltered = FALSE;
   }
 
   /**
@@ -351,7 +365,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       $values += array('is_new' => TRUE);
       return new $class($values, $this->entityType);
     }
-    return (object)$values;
+    return (object) $values;
   }
 
   /**
