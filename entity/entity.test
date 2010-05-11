@@ -100,10 +100,31 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($types['test']->label, 'label', 'Default type loaded.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && !($types['test']->status & ENTITY_IN_DB), 'Default type status is correct.');
 
+    // Test using a condition, which has to be applied on the defaults.
+    $types = entity_load('entity_test_type', FALSE, array('label' => 'label'));
+    $this->assertEqual($types['test']->label, 'label', 'Condition to default type applied.');
+
     $types['test']->label = 'modified';
     $types['test']->save();
+
+    // Ensure loading the changed entity works.
+    $types = entity_load('entity_test_type', FALSE, array('label' => 'modified'));
+    $this->assertEqual($types['test']->label, 'modified', 'Modified type loaded.');
+
+    // Clear the cache to simulate a new page load.
+    entity_get_controller('entity_test_type')->resetCache();
+
+    // Test loading using a condition again, now they default may not appear any
+    // more as it's overridden by an entity with another label.
+    $types = entity_load('entity_test_type', FALSE, array('label' => 'label'));
+    $this->assertTrue(empty($types), 'Conditions are applied to the overridden entity only.');
+
+    // But the overridden entity has to appear with another condition.
+    $types = entity_load('entity_test_type', FALSE, array('label' => 'modified'));
+    $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded by condition.');
+
     $types = entity_load('entity_test_type', array('test', 'test2'));
-    $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded correctly.');
+    $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded by id.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && $types['test']->status & ENTITY_IN_DB, 'Status of modified type is correct.');
 
     // Test exporting an entity to code.
@@ -111,5 +132,6 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $import = eval('return ' . $code);
     $this->assertTrue(get_class($import) == get_class($types['test']) && $types['test']->label == $import->label, 'Successfully exported entity to code.');
     $this->assertTrue(!isset($import->status), 'Exportable status has not been exported to code.');
+
   }
 }
