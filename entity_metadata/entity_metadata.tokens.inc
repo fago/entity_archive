@@ -64,15 +64,15 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
   if (isset($token_types[$type]) && (!empty($data[$type]) || $type == 'site')) {
     $data += array($type => FALSE);
     $replacements = array();
-    if (isset($options['language'])) {
-      $wrapper->language($options['language']->language);
-    }
 
     $info = token_info();
     foreach ($tokens as $name => $original) {
       // Provide the token for all properties marked to stem from us.
       if (!empty($info['tokens'][$type][$name]['entity metadata'])) {
         $wrapper = !isset($wrapper) ? entity_metadata_wrapper($token_types[$type], $data[$type]) : $wrapper;
+        if (isset($options['language'])) {
+          $wrapper->language($options['language']->language);
+        }
         $replacements[$original] = _entity_metadata_get_token($wrapper->$name, $options);
       }
     }
@@ -81,6 +81,9 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
       if (!empty($token_info['entity metadata']) && isset($token_info['type']) && $token_info['type'] == 'date') {
         if ($date_tokens = token_find_with_prefix($tokens, $name)) {
           $wrapper = !isset($wrapper) ? entity_metadata_wrapper($token_types[$type], $data[$type]) : $wrapper;
+          if (isset($options['language'])) {
+            $wrapper->language($options['language']->language);
+          }
           $replacements += token_generate('date', $date_tokens, array('date' => $wrapper->$name->value()), $options);
         }
       }
