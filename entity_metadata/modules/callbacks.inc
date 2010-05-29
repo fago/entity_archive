@@ -586,18 +586,12 @@ function entity_metadata_create_node($values = array()) {
 }
 
 /**
- * Callback to save a user account. Unfortunately drupal doesn't provide a
- * simple save function for user accounts, one has to specify the fields to
- * save explictly. So we automatically do so for field API and regular user
- * fields.
+ * Callback to save a user account.
  */
 function entity_metadata_user_save(&$account) {
-  $table = drupal_get_schema('users');
-  $user_fields = $table['fields'];
-  list($id, $vid, $bundle) = entity_extract_ids('user', $account);
-  $instances = field_info_instances('user', $bundle);
-  // Extract the values of all valid keys into $edit.
-  $edit = array_intersect_key((array)$account, $user_fields + $instances);
+  $edit = (array) $account;
+  // Don't save the hashed password as password.
+  unset($edit['pass']);
   $account = user_save($account, $edit);
 }
 
