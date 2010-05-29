@@ -238,12 +238,12 @@ function theme_entity_status($variables) {
   $html = $variables['html'];
   if ($status & ENTITY_FIXED) {
     $label = t('Fixed');
-    $help = t('The configuration is fixed and cannot be edited.');
+    $help = t('The configuration is fixed and cannot be changed.');
     return $html ? "<span class='entity-status-fixed' title='$help'>" . $label . "</span>" : $label;
   }
   elseif ($status & ENTITY_IN_CODE && $status & ENTITY_IN_DB) {
     $label = t('Overridden');
-    $help = t('This configuration is provided by a module, but has been altered.');
+    $help = t('This configuration is provided by a module, but has been changed.');
     return $html ? "<span class='entity-status-overridden' title='$help'>" . $label . "</span>" : $label;
   }
   elseif ($status & ENTITY_IN_CODE) {
@@ -253,7 +253,7 @@ function theme_entity_status($variables) {
   }
   elseif ($status & ENTITY_IN_DB) {
     $label = t('Custom');
-    $help = t('A custom configuration not provided by a module.');
+    $help = t('A custom configuration by a user.');
     return $html ? "<span class='entity-status-custom' title='$help'>" . $label . "</span>" : $label;
   }
 }
