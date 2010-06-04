@@ -77,7 +77,7 @@
  *     - required: Optionally, this may be set to TRUE, if this property is
  *       required for the creation of a new instance of its entity. See
  *       entity_metadata_entity_create().
- *     - 'data info': Optionally, may be used to specify an array of metadata
+ *     - 'property info': Optionally, may be used to specify an array of info
  *       for an arbitrary data structure together with any else not defined
  *       type. Specify metadata in the same way as used by this hook.
  *   - bundles: An array keyed by bundle name containing further metadata
@@ -85,11 +85,11 @@
  *     with an array of info about the bundle specific properties, structured in
  *     the same way as the entity properties array.
  *
- *  @see hook_entity_metadata_info_alter()
+ *  @see hook_entity_property_info_alter()
  *  @see entity_metadata_get_info()
  *  @see entity_metadata_wrapper()
  */
-function hook_entity_metadata_info() {
+function hook_entity_property_info() {
   $info = array();
   $properties = &$info['node']['properties'];
 
@@ -104,9 +104,9 @@ function hook_entity_metadata_info() {
 /**
  * Allow modules to alter metadata about entity properties.
  *
- * @see hook_entity_metadata_info()
+ * @see hook_entity_property_info()
  */
-function hook_entity_metadata_info_alter(&$info) {
+function hook_entity_property_info_alter(&$info) {
   $properties = &$info['node']['bundles']['poll']['properties'];
 
   $properties['poll-votes'] = array(

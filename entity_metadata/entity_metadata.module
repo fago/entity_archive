@@ -30,8 +30,8 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  *      to NULL, what means language neutral.
  *    - bundle: If an entity is wrapped but not passed, use this key to specify
  *      the bundle to return a wrapper for.
- *    - data info: May be used to use a wrapper with an arbitrary data
- *      structure (type 'struct'). Use this key for specifying metadata about
+ *    - property info: May be used to use a wrapper with an arbitrary data
+ *      structure (type 'struct'). Use this key for specifying info about
  *      properties in the same structure as used by hook_entity_property_info().
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.
@@ -43,7 +43,7 @@ function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
   elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
     return new EntityListWrapper($type, $data, $info);
   }
-  elseif (isset($info['data info'])) {
+  elseif (isset($info['property info'])) {
     return new EntityStructureWrapper($type, $data, $info);
   }
   else {
