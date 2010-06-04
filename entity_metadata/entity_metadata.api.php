@@ -80,6 +80,8 @@
  *     - 'property info': Optionally, may be used to specify an array of info
  *       for an arbitrary data structure together with any else not defined
  *       type. Specify metadata in the same way as used by this hook.
+ *     - 'property info alter': Optionally, a callback for altering the property
+ *       info before it is used.
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in
