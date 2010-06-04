@@ -251,7 +251,11 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * concrete passed data.
    */
   protected function spotInfo() {
-    // May be implemented by child classes.
+    // Apply the callback if set, such that the caller may alter the info.
+    if (!empty($this->info['property info alter']) && !$this->propertyInfoAltered) {
+      $this->propertyInfo = call_user_func($this->info['property info alter'], $this, $this->propertyInfo);
+      $this->propertyInfoAltered = TRUE;
+    }
   }
 
   /**
