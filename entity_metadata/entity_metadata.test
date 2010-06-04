@@ -230,7 +230,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       'link'        => '',
       'user'        => $GLOBALS['user'],
     );
-    $info['data info']['properties'] = array(
+    $info['property info'] = array(
       'type' => array('type' => 'text', 'label' => 'The category to which this message belongs.'),
       'message' => array('type' => 'text', 'label' => 'The log message.'),
       'user' => array('type' => 'user', 'label' => 'The user causing the log entry.'),

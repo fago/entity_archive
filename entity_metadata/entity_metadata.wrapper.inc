@@ -215,7 +215,7 @@ class EntityValueWrapper extends EntityMetadataWrapper {
  */
 class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAggregate {
 
-  protected $dataInfo;
+  protected $propertyInfo = array(), $propertyInfoAltered = FALSE;
   protected $langcode = NULL;
 
   protected $propertyInfoDefaults = array(
@@ -235,15 +235,15 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    *   Used to for specifying metadata about the data and internally to pass
    *   info about properties down the tree. For specifying metadata known keys
    *   are:
-   *   - data info: An array of info about the wrapped data. It has to contain
-   *     an array of info about the properties of the data, in the same
+   *   - property info: An array of info about the properties of the wrapped
+   *     data structure. It has to contain an array of property info in the same
    *     structure as used by hook_entity_property_info().
    */
   public function __construct($type, &$data = NULL, $info = NULL) {
     parent::__construct($type, $data, $info);
     $this->info += array('property defaults' => array());
-    $info += array('data info' => array());
-    $this->dataInfo = $info['data info'] + array('properties' => array());
+    $info += array('property info' => array());
+    $this->propertyInfo['properties'] = $info['property info'];
   }
 
   /**
@@ -258,27 +258,23 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * Gets the info about the given property.
    *
    * @param $name
-   *   The name of the property.
+   *   The name of the property. If not given, info about all properties will
+   *   be returned.
    * @throws EntityMetadataWrapperException
    *   If there is no such property.
    * @return
    *   An array of info about the property.
    */
-  public function getPropertyInfo($name) {
+  public function getPropertyInfo($name = NULL) {
     $this->spotInfo();
+    if (!isset($name)) {
+      return $this->propertyInfo['properties'];
+    }
     $name = str_replace('_', '-', $name);
-    if (!isset($this->dataInfo['properties'][$name])) {
+    if (!isset($this->propertyInfo['properties'][$name])) {
       throw new EntityMetadataWrapperException('Unknown data property ' . check_plain($name) . '.');
     }
-    return $this->dataInfo['properties'][$name] + $this->info['property defaults'] + $this->propertyInfoDefaults;
-  }
-
-  /**
-   * Gets the info about the wrapped data.
-   */
-  public function dataInfo() {
-    $this->spotInfo();
-    return $this->dataInfo;
+    return $this->propertyInfo['properties'][$name] + $this->info['property defaults'] + $this->propertyInfoDefaults;
   }
 
   /**
@@ -424,12 +420,12 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   public function __isset($name) {
     $this->spotInfo();
     $name = str_replace('_', '-', $name);
-    return isset($this->dataInfo['properties'][$name]);
+    return isset($this->propertyInfo['properties'][$name]);
   }
 
   public function getIterator() {
     $this->spotInfo();
-    return new EntityMetadataWrapperIterator($this, array_keys($this->dataInfo['properties']));
+    return new EntityMetadataWrapperIterator($this, array_keys($this->propertyInfo['properties']));
   }
 
   /**
@@ -462,6 +458,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Contains the entity id.
    */
   protected $id = FALSE;
+  protected $entityInfo;
 
   /**
    * Construct a new EntityDrupalWrapper object.
@@ -480,9 +477,11 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   }
 
   protected function setUp() {
-    $this->dataInfo = entity_get_info($this->type) + array('name property' => 'name');
-    $this->dataInfo = array_merge_recursive($this->dataInfo, entity_metadata_get_info($this->type)) + array('properties' => array());
-    if (!empty($this->info['bundle'])) {
+    $this->propertyInfo = entity_metadata_get_info($this->type) + array('properties' => array());
+    $info = $this->info + array('property info' => array());
+    $this->propertyInfo['properties'] += $info['property info'];
+    $this->entityInfo = entity_get_info($this->type);
+    if (isset($this->info['bundle'])) {
       $this->spotInfo($this->info['bundle']);
     }
   }
@@ -510,16 +509,19 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   protected function spotInfo($bundle = NULL) {
     if (!isset($this->info['bundle']) || isset($bundle)) {
       $this->info['bundle'] = $bundle;
-      // Add in properties from the bundle, for that we might need to load the
-      // entity if not done yet.
-      if (!isset($this->info['bundle']) && !empty($this->dataInfo['fieldable']) && $this->dataAvailable()) {
+      // Detect the bundle if not set yet and add in properties from the bundle.
+      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
         list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
         $this->info['bundle'] = $bundle;
       }
-      if ($this->info['bundle'] && isset($this->dataInfo['bundles'][$this->info['bundle']])) {
-        $bundle_info = (array)$this->dataInfo['bundles'][$this->info['bundle']] + array('properties' => array());
-        $this->dataInfo['properties'] += $bundle_info['properties'];
+      elseif (!isset($this->info['bundle'])) {
+        $this->info['bundle'] = FALSE;
       }
+      if ($this->info['bundle'] && isset($this->propertyInfo['bundles'][$this->info['bundle']])) {
+        $bundle_info = (array)$this->propertyInfo['bundles'][$this->info['bundle']] + array('properties' => array());
+        $this->propertyInfo['properties'] += $bundle_info['properties'];
+      }
+      parent::spotInfo();
     }
   }
 
@@ -620,12 +622,19 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   }
 
   /**
+   * Gets the info about the wrapped entity.
+   */
+  public function entityInfo() {
+    return $this->entityInfo;
+  }
+
+  /**
    * Prepare for serializiation.
    */
   public function __sleep() {
     $vars = parent::__sleep();
-    // Don't serialize the loaded entity and its info.
-    unset($vars['data'], $vars['dataInfo']);
+    // Don't serialize the loaded entity and its property info.
+    unset($vars['data'], $vars['propertyInfo'], $vars['propertyInfoAltered'], $vars['entityInfo']);
     return $vars;
   }
 
