@@ -129,6 +129,13 @@ function entity_metadata_node_set_properties($node, $name, $value) {
 }
 
 /**
+ * Callback for determing access for node revision related properties.
+ */
+function entity_metadata_node_revision_access($op, $name, $entity = NULL, $account = NULL) {
+  return $op == 'view' ? user_access('view revisions', $account) : user_access('administer nodes', $account);
+}
+
+/**
  * Callback for getting poll properties.
  * @see entity_metadata_poll_entity_info_alter()
  */

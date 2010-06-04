@@ -137,6 +137,20 @@ function entity_metadata_node_entity_property_info() {
     'required' => TRUE,
     'clear' => array('uid'),
   );
+  $properties['log'] = array(
+    'label' => t("Revision log message"),
+    'type' => 'text',
+    'description' => t("In case a new revision is to be saved, the log entry explaining the changes for this version."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'access callback' => 'entity_metadata_node_revision_access',
+  );
+  $properties['revision'] = array(
+    'label' => t("Creates revision"),
+    'type' => 'boolean',
+    'description' => t("Whether saving this node creates a new revision."),
+    'setter callback' => 'entity_metadata_verbatim_set',
+    'access callback' => 'entity_metadata_node_revision_access',
+  );
   return $info;
 }
 
