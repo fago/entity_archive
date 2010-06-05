@@ -605,6 +605,10 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       if ($return === FALSE) {
         throw new EntityMetadataWrapperException("There is no information about how to save entities of type " . check_plain($this->type) . '.');
       }
+      // On insert, update the identifier afterwards.
+      if (!$this->id) {
+        list($this->id, , ) = entity_extract_ids($this->type, $this->data);
+      }
     }
     // If the entity hasn't been loaded yet, don't bother saving it.
     return $this;
