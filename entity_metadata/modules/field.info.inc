@@ -56,6 +56,8 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
       'setter callback' => 'entity_metadata_field_property_set',
       'access callback' => 'entity_metadata_field_access_callback',
       'query callback' => 'entity_metadata_field_query',
+      // Specify that this property stems from a field.
+      'field' => TRUE,
     );
     // For field types of the list module add in the options list callback.
     if (strpos($field['type'], 'list') === 0) {

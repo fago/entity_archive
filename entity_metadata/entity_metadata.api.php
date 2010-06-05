@@ -77,6 +77,8 @@
  *     - required: Optionally, this may be set to TRUE, if this property is
  *       required for the creation of a new instance of its entity. See
  *       entity_metadata_entity_create().
+ *     - field: Optionally, a boolean indicating whether a property is stemming
+ *       from a field.
  *     - 'property info': Optionally, may be used to specify an array of info
  *       for an arbitrary data structure together with any else not defined
  *       type. Specify metadata in the same way as used by this hook.
