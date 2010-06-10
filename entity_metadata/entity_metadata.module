@@ -148,7 +148,7 @@ function entity_metadata_hook_info_alter(&$hook_info) {
  */
 function entity_metadata_verbatim_get($data, array $options, $name) {
   $name = str_replace('-', '_', $name);
-  if (is_array($data) || (is_object($data) && $data instanceof ArrayAccess) && isset($data[$name])) {
+  if ((is_array($data) || (is_object($data) && $data instanceof ArrayAccess)) && isset($data[$name])) {
     return $data[$name];
   }
   elseif (is_object($data) && isset($data->$name)) {
