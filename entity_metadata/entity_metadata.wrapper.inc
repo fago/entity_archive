@@ -537,6 +537,16 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   }
 
   /**
+   * Returns the bundle of an entity, or FALSE if it has no bundles.
+   */
+  public function getBundle() {
+    if ($this->dataAvailable()) {
+      $this->spotInfo();
+      return $this->info['bundle'];
+    }
+  }
+
+  /**
    * Overridden.
    */
   public function value(array $options = array()) {
@@ -634,6 +644,18 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function entityInfo() {
     return $this->entityInfo;
+  }
+
+  /**
+   * Returns the name of the key used by the entity for given entity key.
+   *
+   * @param $name
+   *   One of 'id', 'name', 'bundle' or 'revision'.
+   * @return
+   *   The name of the key used by the entity.
+   */
+  public function entityKey($name) {
+    return isset($this->entityInfo['entity keys'][$name]) ? $this->entityInfo['entity keys'][$name] : FALSE;
   }
 
   /**
