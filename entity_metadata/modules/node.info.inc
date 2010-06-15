@@ -154,3 +154,19 @@ function entity_metadata_node_entity_property_info() {
   return $info;
 }
 
+/**
+ * Implements hook_entity_property_info_alter() on top of node module.
+ * @see entity_metadata_entity_property_info_alter()
+ */
+function entity_metadata_node_entity_property_info_alter(&$info) {
+  // Move the body property to the node by default, as its usually there this
+  // makes dealing with it more convenient.
+  $properties = array();
+  foreach ($info['node']['bundles'] as $bundle => $bundle_info) {
+    $bundle_info += array('properties' => array());
+    $properties += $bundle_info['properties'];
+  }
+  if (!empty($properties['body'])) {
+    $info['node']['properties']['body'] = $properties['body'];
+  }
+}
