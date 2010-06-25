@@ -300,7 +300,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     }
     module_invoke_all($this->entityType . '_' . $hook, $entity);
     if ($hook == 'insert' || $hook == 'update') {
-      entity_invoke($hook, $this->entityType, $entity);
+      module_invoke_all('entity_' . $hook, $entity, $this->entityType);
     }
   }
 
