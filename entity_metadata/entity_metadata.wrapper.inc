@@ -665,6 +665,10 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     $vars = parent::__sleep();
     // Don't serialize the loaded entity and its property info.
     unset($vars['data'], $vars['propertyInfo'], $vars['propertyInfoAltered'], $vars['entityInfo']);
+    // In case the entity is not saved yet, serialize the unsaved data.
+    if ($this->dataAvailable() && $this->id === FALSE) {
+      $vars['data'] = 'data';
+    }
     return $vars;
   }
 
