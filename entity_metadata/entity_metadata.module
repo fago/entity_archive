@@ -221,8 +221,6 @@ function entity_metadata_entity_info() {
   $entity_info['node']['access callback'] = 'entity_metadata_node_access';
   $entity_info['user']['access callback'] = 'entity_metadata_user_access';
   $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
-  $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
-  $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
 
   // CRUD function callbacks.
   $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
@@ -236,16 +234,20 @@ function entity_metadata_entity_info() {
   $entity_info['comment']['deletion callback'] = 'comment_delete';
   $entity_info['file']['save callback'] = 'file_save';
   $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
-  $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
-  $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
-  $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
-  $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
-  $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
-  $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
 
-  // Token type mapping.
-  $entity_info['taxonomy_term']['token type'] = 'term';
-  $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
+  if (module_exists('taxonomy')) {
+    $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
+    $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
+    $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
+    $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
+    // Token type mapping.
+    $entity_info['taxonomy_term']['token type'] = 'term';
+    $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
+  }
   return $entity_info;
 }
 
