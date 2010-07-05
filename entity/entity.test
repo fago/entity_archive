@@ -13,9 +13,9 @@ class EntityAPITestCase extends DrupalWebTestCase {
 
   public static function getInfo() {
     return array(
-      'name' => 'Entity API',
-      'description' => 'Tests basic API functionality.',
-      'group' => 'Entity',
+      'name' => 'Entity CRUD',
+      'description' => 'Tests basic CRUD API functionality.',
+      'group' => 'Entity API',
     );
   }
 
