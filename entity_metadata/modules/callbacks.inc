@@ -615,24 +615,29 @@ function entity_metadata_delete_file($fid) {
  * entities main db table.
  */
 function entity_metadata_table_query($entity_type, $property, $value, $limit) {
-  $info = entity_get_info($entity_type);
-  $name_key = isset($info['entity keys']['name']) ? $info['entity keys']['name'] : $info['entity keys']['id'];
-  $query = db_select($info['base table'], 'base')
-             ->fields('base', array($name_key))
-             ->condition($property, $value)
-             ->range(0, $limit);
-  return $query->execute()->fetchCol();
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $entity_type, '=')
+        ->entityCondition($property, $value, '=')
+        ->range(0, $limit);
+
+  $result = $query->execute();
+  return array_keys($result[$entity_type]);
 }
 
 /**
- * Callback for querying entities by field values. Only suitable for fields
- * that don't process the data, so it's stored the same way as returned.
+ * Callback for querying entities by field values. This function just queries
+ * for the value of the first specified column. Also it is only suitable for
+ * fields that don't process the data, so it's stored the same way as returned.
  */
 function entity_metadata_field_query($entity_type, $property, $value, $limit) {
+  $query = new EntityFieldQuery();
   $field = field_info_field(str_replace('-', '_', $property));
   $columns = array_keys($field['columns']);
-  $conditions[] = array('type', $entity_type);
-  $conditions[] = array($columns[0], $value);
-  $result = field_attach_query($field['id'], $conditions, array('limit' => $limit));
+
+  $query->entityCondition('entity_type', $entity_type, '=')
+        ->fieldCondition($field, $columns[0], $value, '=')
+        ->range(0, $limit);
+
+  $result = $query->execute();
   return array_keys($result[$entity_type]);
 }
