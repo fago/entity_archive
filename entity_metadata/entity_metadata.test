@@ -15,7 +15,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     return array(
       'name' => 'Metadata Wrapper',
       'description' => 'Makes sure metadata wrapper are working right.',
-      'group' => 'Entity',
+      'group' => 'Entity API',
     );
   }
 
@@ -306,7 +306,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     return array(
       'name' => 'Metadata integration',
       'description' => 'Tests using metadata wrappers provided for drupal core.',
-      'group' => 'Entity',
+      'group' => 'Entity API',
     );
   }
 
