@@ -13,12 +13,28 @@
  *   An array mapping token types to the usual (entity) type names.
  */
 function entity_metadata_token_types() {
-  foreach (entity_get_info() as $type => $info) {
-    if ($token_type = isset($info['token type']) ? $info['token type'] : $type) {
-      $return[$token_type] = $type;
+  $return = entity_metadata_token_types_chained();
+  return $return + drupal_map_assoc(array('text', 'integer', 'decimal', 'duration', 'boolean', 'uri', 'site'));
+}
+
+/**
+ * Defines a list of token types that need to be chained.
+ *
+ * @return
+ *   If a type is given, whether the given type needs to be chained. Else a full
+ *   list of token types to be chained as returned by
+ *   entity_metadata_token_types().
+ */
+function entity_metadata_token_types_chained($type = NULL) {
+  // Add entities.
+  foreach (entity_get_info() as $entity_type => $info) {
+    if ($token_type = isset($info['token type']) ? $info['token type'] : $entity_type) {
+      $return[$token_type] = $entity_type;
     }
   }
-  return drupal_map_assoc(array('text', 'integer', 'decimal', 'date', 'duration', 'boolean', 'uri')) + $return;
+  // Add 'date' tokens.
+  $return['date'] = 'date';
+  return isset($type) ? isset($return[$type]) : $return;
 }
 
 /**
@@ -32,14 +48,16 @@ function entity_metadata_token_info_alter(&$info) {
     if (!$token_type) {
       continue;
     }
-
+    // Make sure there is a token category for each supported entity.
     if (!isset($info['types'][$token_type])) {
-      $info['types']['user'] = array(
+      $info['types'][$token_type] = array(
         'name' => $entity_info['label'],
         'description' => t('Tokens related to the %name entities.', array('%name' => $entity_info['label'])),
         'needs-data' => $token_type,
       );
     }
+  }
+  foreach ($valid_types as $token_type => $type) {
     // Just add all properties regardless whether its in a bundle only if there
     // is no token of the property yet.
     foreach (entity_metadata_get_properties($type) as $name => $property) {
@@ -69,27 +87,29 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
     foreach ($tokens as $name => $original) {
       // Provide the token for all properties marked to stem from us.
       if (!empty($info['tokens'][$type][$name]['entity metadata'])) {
-        $wrapper = !isset($wrapper) ? entity_metadata_wrapper($token_types[$type], $data[$type]) : $wrapper;
-        if (isset($options['language'])) {
-          $wrapper->language($options['language']->language);
-        }
+        $wrapper = !isset($wrapper) ? _entity_metadata_token_wrap_data($type, $token_types[$type], $data[$type], $options) : $wrapper;
         $replacements[$original] = _entity_metadata_get_token($wrapper->$name, $options);
       }
     }
-    // Properly chain all date tokens that are marked to stem from us.
+    // Properly chain everything of a type marked as needs chaining.
     foreach ($info['tokens'][$type] as $name => $token_info) {
-      if (!empty($token_info['entity metadata']) && isset($token_info['type']) && $token_info['type'] == 'date') {
-        if ($date_tokens = token_find_with_prefix($tokens, $name)) {
-          $wrapper = !isset($wrapper) ? entity_metadata_wrapper($token_types[$type], $data[$type]) : $wrapper;
-          if (isset($options['language'])) {
-            $wrapper->language($options['language']->language);
-          }
-          $replacements += token_generate('date', $date_tokens, array('date' => $wrapper->$name->value()), $options);
+      if (!empty($token_info['entity metadata']) && isset($token_info['type']) && entity_metadata_token_types_chained($token_info['type'])) {
+        if ($chained_tokens = token_find_with_prefix($tokens, $name)) {
+          $wrapper = !isset($wrapper) ? _entity_metadata_token_wrap_data($type, $token_types[$type], $data[$type], $options) : $wrapper;
+          $replacements += token_generate($token_info['type'], $chained_tokens, array($token_info['type'] => $wrapper->$name->value()), $options);
         }
       }
     }
     return $replacements;
   }
+}
+
+function _entity_metadata_token_wrap_data($token_type, $type, $data, $options) {
+  $wrapper = ($type == 'site') ? entity_metadata_site_wrapper() : entity_metadata_wrapper($type, $data);
+  if (isset($options['language'])) {
+    $wrapper->language($options['language']->language);
+  }
+  return $wrapper;
 }
 
 function _entity_metadata_get_token($wrapper, $options) {

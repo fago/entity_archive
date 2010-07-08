@@ -288,10 +288,11 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
    */
   function testTokenSupport() {
     $node = $this->drupalCreateNode(array('sticky' => TRUE, 'promote' => FALSE));
-    $text = "Sticky: [node:sticky] Promote: [node:promote]";
+    $text = "Sticky: [node:sticky] Promote: [node:promote] User: [site:current-user:name]";
     $true = t('true');
     $false = t('false');
-    $target = "Sticky: $true Promote: $false";
+    $user_name = $GLOBALS['user']->name;
+    $target = "Sticky: $true Promote: $false User: $user_name";
     $replace = token_replace($text, array('node' => $node));
     $this->assertEqual($replace, $target, 'Provided tokens basically work.');
   }
@@ -473,8 +474,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
    * Test properties provided by system module.
    */
   function testSystemProperties() {
-    $data = FALSE;
-    $wrapper = entity_metadata_wrapper('system', $data);
+    $wrapper = entity_metadata_site_wrapper();
     foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }

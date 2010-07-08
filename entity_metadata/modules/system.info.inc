@@ -8,13 +8,19 @@
 
 /**
  * Implements hook_entity_property_info() on top of system module.
+ *
  * @see entity_metadata_entity_property_info()
  * @see entity_metadata_entity_info_alter()
+ * @see entity_metadata_site_wrapper()
  */
 function entity_metadata_system_entity_property_info() {
   $info = array();
 
-  $properties = &$info['system']['properties'];
+  // There is no site entity, but still add metadata for global site properties
+  // here. That way modules can alter and add further properties at this place.
+  // In order to make use of this metadata modules may use the wrapper returned
+  // by entity_metadata_site_wrapper().
+  $properties = &$info['site']['properties'];
   $properties['name'] = array(
     'label' => t("Name"),
     'description' => t("The name of the site."),
@@ -55,6 +61,12 @@ function entity_metadata_system_entity_property_info() {
     'description' => t("The currently logged in user."),
     'getter callback' => 'entity_metadata_system_get_properties',
     'type' => 'user',
+  );
+  $properties['current-date'] = array(
+    'label' => t("Current date"),
+    'description' => t("The current date and time."),
+    'getter callback' => 'entity_metadata_system_get_properties',
+    'type' => 'date',
   );
 
   // Files.
