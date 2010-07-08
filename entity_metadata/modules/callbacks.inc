@@ -461,8 +461,11 @@ function entity_metadata_field_text_formats() {
 
 /**
  * Access callback for the node entity.
+ *
+ * This function does not implement hook_node_access(), thus it may not be
+ * called entity_metadata_node_access().
  */
-function entity_metadata_node_access($op, $node = NULL, $account = NULL) {
+function entity_metadata_no_hook_node_access($op, $node = NULL, $account = NULL) {
   if (isset($node)) {
     return node_access($op, $node, $account);
   }

@@ -227,7 +227,7 @@ function entity_metadata_entity_info() {
   $entity_info['node']['name property'] = 'title';
 
   // Set access callbacks.
-  $entity_info['node']['access callback'] = 'entity_metadata_node_access';
+  $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
   $entity_info['user']['access callback'] = 'entity_metadata_user_access';
   $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
 
