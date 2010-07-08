@@ -52,6 +52,24 @@ function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
 }
 
 /**
+ * Returns a metadata wrapper for accessing site-wide properties.
+ *
+ * Although there is no 'site' entity or such, modules may provide info about
+ * site-wide properties using hook_entity_property_info(). This function returns
+ * a wrapper for making use of this properties.
+ *
+ * @return EntityMetadataWrapper
+ *   A wrapper for accessing site-wide properties.
+ *
+ * @see entity_metadata_system_entity_property_info()
+ */
+function entity_metadata_site_wrapper() {
+  $site_info = entity_metadata_get_info('site');
+  $info['property info'] = $site_info['properties'];
+  return entity_metadata_wrapper('site', FALSE, $info);
+}
+
+/**
  * Extracts the contained type for a list type string like list<date>.
  *
  * @return
@@ -207,15 +225,6 @@ function entity_metadata_field_info_alter(&$field_info) {
 function entity_metadata_entity_info() {
   $entity_info['comment']['name property'] = 'title';
   $entity_info['node']['name property'] = 'title';
-
-  // Create a entity for dealing with drupal variables as properties.
-  $entity_info['system'] = array(
-    'label' => t("System information"),
-    // Set some properties to empty arrays to prevent field API errors...
-    'fieldable' => FALSE,
-    'entity keys' => array(),
-    'bundles' => array(),
-  );
 
   // Set access callbacks.
   $entity_info['node']['access callback'] = 'entity_metadata_node_access';

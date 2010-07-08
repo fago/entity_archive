@@ -190,7 +190,7 @@ function entity_metadata_statistics_node_get_properties($node, array $options, $
 }
 
 /**
- * Callback for getting system properties.
+ * Callback for getting site-wide properties.
  * @see entity_metadata_system_entity_info_alter()
  */
 function entity_metadata_system_get_properties($data = FALSE, array $options, $name) {
@@ -206,6 +206,9 @@ function entity_metadata_system_get_properties($data = FALSE, array $options, $n
 
     case 'current-user':
       return $GLOBALS['user']->uid;
+
+    case 'current-date':
+      return time();
 
     default:
       return variable_get('site_' . $name, '');
