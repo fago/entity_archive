@@ -154,7 +154,7 @@ function entity_metadata_hook_field_info() {
  * - access callback: Specify a callback that returns access permissions for the
  *   operations 'create', 'updated', 'delete' and 'view'. The callback gets
  *   optionally the entity and the user account to check for passed. See
- *   entity_metadata_node_access() for an example.
+ *   entity_metadata_no_hook_node_access() for an example.
  * - creation callback: Optionally, a callback that creates a new instance of
  *   this entity type. See entity_metdata_create_node() for an example.
  * - save callback: Optionally, a callback that permanently saves an entity of
@@ -174,7 +174,7 @@ function entity_metadata_hook_entity_info() {
   return array(
     'node' => array(
       'label' => t('Node'),
-      'access callback' => 'entity_metadata_node_access',
+      'access callback' => 'entity_metadata_no_hook_node_access',
       // ...
     ),
   );
