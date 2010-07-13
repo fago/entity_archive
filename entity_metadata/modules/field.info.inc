@@ -83,23 +83,30 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
     $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
     $property['getter callback'] = 'entity_metadata_field_verbatim_get';
     $property['setter callback'] = 'entity_metadata_field_verbatim_set';
-    $property['property info'] = array(
-      'value' => array(
-        'type' => 'text',
-        'label' => t('Text'),
-        'sanitized' => TRUE,
-        'getter callback' => 'entity_metadata_field_text_get',
-        'raw getter callback' => 'entity_metadata_verbatim_get',
-      ),
-      'format' => array(
-        'type' => 'integer',
-        'label' => t('Text format'),
-        'options list' => 'entity_metadata_field_text_formats',
-        'getter callback' => 'entity_metadata_verbatim_get',
-      ),
-    );
+    $property['property info'] = entity_metadata_text_formatted_properties();
     unset($property['query callback']);
   }
+}
+
+/**
+ * Defines the properties for the text_formatted data structure.
+ */
+function entity_metadata_text_formatted_properties() {
+  return array(
+    'value' => array(
+      'type' => 'text',
+      'label' => t('Text'),
+      'sanitized' => TRUE,
+      'getter callback' => 'entity_metadata_field_text_get',
+      'raw getter callback' => 'entity_metadata_verbatim_get',
+    ),
+    'format' => array(
+      'type' => 'integer',
+      'label' => t('Text format'),
+      'options list' => 'entity_metadata_field_text_formats',
+      'getter callback' => 'entity_metadata_verbatim_get',
+    ),
+  );
 }
 
 /**
