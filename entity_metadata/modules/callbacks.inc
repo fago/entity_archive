@@ -412,7 +412,7 @@ function entity_metadata_field_verbatim_get($object, array $options, $name, $obj
 }
 
 /**
- * Writes the passed field items in the object. Useful as field level setter for
+ * Writes the passed field items in the object. Useful as field level setter
  * to set the whole data structure at once.
  */
 function entity_metadata_field_verbatim_set($object, $name, $items, $langcode) {
@@ -423,30 +423,17 @@ function entity_metadata_field_verbatim_set($object, $name, $items, $langcode) {
 }
 
 /**
- * Callback for getting the sanitized text of processed text fields.
+ * Callback for getting the sanitized text of 'text_formatted' properties.
+ * Note that $item might be an ArrayObject.
  */
-function entity_metadata_field_text_get(EntityMetadataArrayObject $item, array $options, $name, $type, $context) {
+function entity_metadata_field_text_get($item, array $options, $name, $type) {
   if (!isset($item['safe_value'])) {
-    // Get the the wrapper of the field's property.
-    $field_wrapper = _entity_metadata_field_get_wrapper($context);
-    $info = $field_wrapper->info();
-    $item_array = $item->getArray();
-    $item_array += array('format' => filter_default_format());
+    // Apply input formats.
     $langcode = isset($options['language']) ? $options['language']->language : '';
-    $item['safe_value'] = _text_sanitize($info['instance'], $langcode, $item_array, 'value');
+    $format = isset($item['format']) ? $item['format'] : filter_default_format();
+    $item['safe_value'] = check_markup($item['value'], $format, $langcode);
   }
   return $item['safe_value'];
-}
-
-/**
- * Get the wrapper of a field given a context of one of the field's properties.
- */
-function _entity_metadata_field_get_wrapper($context) {
-  // If this is a multiple value field, there is list wrapper in between.
-  if ($context['parent'] instanceof EntityListWrapper && $info = $context['parent']->info()) {
-    return $info['parent'];
-  }
-  return $context['parent'];
 }
 
 /**
