@@ -396,3 +396,24 @@ function entity_metadata_field_delete_instance() {
 function entity_metadata_field_update_instance() {
   entity_metadata_info_cache_clear();
 }
+
+/**
+ * Defines the properties for the text_formatted data structure.
+ */
+function entity_metadata_text_formatted_properties() {
+  return array(
+    'value' => array(
+      'type' => 'text',
+      'label' => t('Text'),
+      'sanitized' => TRUE,
+      'getter callback' => 'entity_metadata_field_text_get',
+      'raw getter callback' => 'entity_metadata_verbatim_get',
+    ),
+    'format' => array(
+      'type' => 'integer',
+      'label' => t('Text format'),
+      'options list' => 'entity_metadata_field_text_formats',
+      'getter callback' => 'entity_metadata_verbatim_get',
+    ),
+  );
+}

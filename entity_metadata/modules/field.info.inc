@@ -89,27 +89,6 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
 }
 
 /**
- * Defines the properties for the text_formatted data structure.
- */
-function entity_metadata_text_formatted_properties() {
-  return array(
-    'value' => array(
-      'type' => 'text',
-      'label' => t('Text'),
-      'sanitized' => TRUE,
-      'getter callback' => 'entity_metadata_field_text_get',
-      'raw getter callback' => 'entity_metadata_verbatim_get',
-    ),
-    'format' => array(
-      'type' => 'integer',
-      'label' => t('Text format'),
-      'options list' => 'entity_metadata_field_text_formats',
-      'getter callback' => 'entity_metadata_verbatim_get',
-    ),
-  );
-}
-
-/**
  * Additional callback to adapt the property info for term reference fields.
  * @see entity_metadata_field_entity_property_info_alter().
  */
