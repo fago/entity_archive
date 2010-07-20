@@ -220,16 +220,14 @@ function entity_metadata_field_info_alter(&$field_info) {
 }
 
 /**
- * Implements hook_entity_info().
+ * Implements hook_entity_info_alter().
  */
-function entity_metadata_entity_info() {
-  $entity_info['comment']['name property'] = 'title';
+function entity_metadata_entity_info_alter(&$entity_info) {
   $entity_info['node']['name property'] = 'title';
 
   // Set access callbacks.
   $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
   $entity_info['user']['access callback'] = 'entity_metadata_user_access';
-  $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
 
   // CRUD function callbacks.
   $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
@@ -237,13 +235,17 @@ function entity_metadata_entity_info() {
   $entity_info['node']['deletion callback'] = 'node_delete';
   $entity_info['user']['creation callback'] = 'entity_metadata_create_object';
   $entity_info['user']['save callback'] = 'entity_metadata_user_save';
-  // We don't support user deletion as the user cancelling needs batching.
-  $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
-  $entity_info['comment']['save callback'] = 'comment_save';
-  $entity_info['comment']['deletion callback'] = 'comment_delete';
+  $entity_info['user']['deletion callback'] = 'user_delete';
   $entity_info['file']['save callback'] = 'file_save';
   $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
 
+  if (module_exists('comment')) {
+    $entity_info['comment']['name property'] = 'title';
+    $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
+    $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
+    $entity_info['comment']['save callback'] = 'comment_save';
+    $entity_info['comment']['deletion callback'] = 'comment_delete';
+  }
   if (module_exists('taxonomy')) {
     $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
     $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
@@ -257,7 +259,6 @@ function entity_metadata_entity_info() {
     $entity_info['taxonomy_term']['token type'] = 'term';
     $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
   }
-  return $entity_info;
 }
 
 /**
