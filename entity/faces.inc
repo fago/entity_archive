@@ -286,11 +286,9 @@ if (!class_exists('FacesExtendable', FALSE)) {
      * Makes protected properties accessible.
      */
     public function &property($name) {
-      $var = NULL;
-      if (isset($this->$name)) {
+      if (property_exists($this, $name)) {
         return $this->$name;
       }
-      return $var;
     }
 
     /**
