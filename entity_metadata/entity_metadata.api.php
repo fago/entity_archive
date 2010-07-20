@@ -44,7 +44,7 @@
  *          hook_entity_info(), e.g. 'node' or 'user'.
  *        - struct: This as well as any else not known type may be used for
  *          supporting arbitrary data structures. For that additional metadata
- *          has to be specified by setting 'data info'.
+ *          has to be specified by setting 'property info'.
  *       Also lists of these types are supported. Specify list<TYPE> as type and
  *       return an numerically indexed array of values.
  *     - sanitized: For textual properties only, whether the text is already
