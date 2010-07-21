@@ -19,6 +19,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'label' => t("Term ID"),
     'description' => t("The unique ID of the taxonomy term."),
     'type' => 'integer',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['vid'] = array(
     'label' => t("Vocabulary ID"),
@@ -26,6 +27,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'type' => 'integer',
     'clear' => array('vocabulary'),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['name'] = array(
     'label' => t("Name"),
@@ -89,6 +91,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'label' => t("Vocabulary ID"),
     'description' => t("The unique ID of the taxonomy vocabulary."),
     'type' => 'integer',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['name'] = array(
     'label' => t("Name"),

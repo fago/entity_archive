@@ -93,6 +93,16 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
       $this->pass('Setting an unsupported property.');
     }
 
+    // Test value validation.
+    $this->assertFalse($wrapper->author->name->validate(array(3)), 'Validation correctly checks for valid data types.');
+    try {
+      $wrapper->author->mail = 'foo';
+      $this->fail('An invalid mail address has been set.');
+    }
+    catch (EntityMetadataWrapperException $e) {
+      $this->pass('Setting an invalid mail address throws exception.');
+    }
+
     // Test setting a referenced entity by id.
     $wrapper->author->set($GLOBALS['user']->uid);
     $this->assertEqual($wrapper->author->getIdentifier(), $GLOBALS['user']->uid, 'Get the identifier of a referenced entity.');
@@ -559,6 +569,11 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     if (isset($info['options list'])) {
       $options = array_keys($info['options list']());
       return entity_metadata_list_extract_type($type) ? array(reset($options)) : reset($options);
+    }
+
+    // For mail addresses properly pass an mail address.
+    if ($info['name'] == 'mail') {
+      return 'webmaster@example.com';
     }
 
     switch ($type) {
