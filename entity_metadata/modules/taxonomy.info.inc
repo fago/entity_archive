@@ -35,6 +35,7 @@ function entity_metadata_taxonomy_entity_property_info() {
   );
   $properties['vocabulary-machine-name'] = array(
     'label' => t("Vocabulary machine name"),
+    'type' => 'token',
     'description' => t("The machine readable name of the term's vocabulary."),
   );
   $properties['description'] = array(
@@ -97,6 +98,7 @@ function entity_metadata_taxonomy_entity_property_info() {
   );
   $properties['machine-name'] = array(
     'label' => t("Machine name"),
+    'type' => 'token',
     'description' => t("The machine name of the taxonomy vocabulary."),
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
