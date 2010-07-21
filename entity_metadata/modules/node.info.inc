@@ -20,18 +20,21 @@ function entity_metadata_node_entity_property_info() {
     'type' => 'integer',
     'description' => t("The unique ID of the node."),
     'query callback' => 'entity_metadata_table_query',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['vid'] = array(
     'label' => t("Revision ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the node's revision."),
     'query callback' => 'entity_metadata_table_query',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['tnid'] = array(
     'label' => t("Translation set ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the original-language version of this node, if one exists."),
     'query callback' => 'entity_metadata_table_query',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['uid'] = array(
     'label' => t("User ID"),
@@ -41,6 +44,7 @@ function entity_metadata_node_entity_property_info() {
     'setter permission' => 'administer nodes',
     'clear' => array('author'),
     'query callback' => 'entity_metadata_table_query',
+    'validation callback' => 'entity_metadata_validate_integer_non_negative',
   );
   $properties['is-new'] = array(
     'label' => t("Is new"),

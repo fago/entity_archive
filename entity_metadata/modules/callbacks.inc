@@ -7,6 +7,20 @@
  */
 
 /**
+ * A validation callback ensuring the passed integer is positive.
+ */
+function entity_metadata_validate_integer_positive($value) {
+  return $value > 0;
+}
+
+/**
+ * A validation callback ensuring the passed integer is non-negative.
+ */
+function entity_metadata_validate_integer_non_negative($value) {
+  return $value >= 0;
+}
+
+/**
  * Callback for getting properties of an entity.
  */
 function entity_metadata_entity_get_properties($entity, array $options, $name, $entity_type) {

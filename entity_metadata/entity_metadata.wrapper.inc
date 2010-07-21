@@ -109,6 +109,9 @@ abstract class EntityMetadataWrapper {
    * Set a new data value.
    */
   public function set($value) {
+    if (!$this->validate($value)) {
+      throw new EntityMetadataWrapperException('Invalid data value given. Be sure it matches the required data type and format.');
+    }
     if (empty($this->info['parent'])) {
       $this->clear();
       $this->data = $value;
@@ -117,6 +120,16 @@ abstract class EntityMetadataWrapper {
       $this->info['parent']->setProperty($this->info['name'], $value);
     }
     return $this;
+  }
+
+  /**
+   * Returns whether $value is a valid value to set.
+   */
+  public function validate($value) {
+    if (!entity_metadata_verify_data_type($value, $this->type)) {
+      return FALSE;
+    }
+    return !isset($this->info['validation callback']) || call_user_func($this->info['validation callback'], $value);
   }
 
   public function __toString() {
@@ -692,6 +705,11 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
 
   protected $data = NULL;
 
+  protected function itemType() {
+    $type = entity_metadata_list_extract_type($this->type);
+    return $type ? $type : 'unknown';
+  }
+
   /**
    * Get the wrapper for a single item.
    *
@@ -707,8 +725,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
       }
       if (is_numeric($delta)) {
         $info = array('parent' => $this, 'name' => $delta) + $this->info;
-        $type = entity_metadata_list_extract_type($this->type);
-        $this->cache[$delta] = entity_metadata_wrapper($type, NULL, $info);
+        $this->cache[$delta] = entity_metadata_wrapper($this->itemType(), NULL, $info);
       }
       else {
         throw new EntityMetadataWrapperException('There can be only numerical keyed items in a list.');

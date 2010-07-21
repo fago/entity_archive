@@ -60,6 +60,9 @@
  *       property. Defaults to entity_metadata_verbatim_get().
  *     - 'setter callback': A callback used to set the value of the property.
  *       This is optional, however entity_metadata_verbatim_set() can be used.
+ *     - 'validation callback': An optional callback that returns whether the
+ *       passed data value is valid for the property. May be used to implement
+ *       additional checks, such as to ensure the value is a valid mail address.
  *     - clear: An array of property names, of which the cache should be cleared
  *       too once this property is updated. E.g. the author uid property wants
  *       to have the author property cleared too. Optional.

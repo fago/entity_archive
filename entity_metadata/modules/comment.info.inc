@@ -19,11 +19,13 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Comment ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the comment."),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['pid'] = array(
     'label' => t("Parent ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the comment's parent, if comment threading is active."),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['nid'] = array(
     'label' => t("Node ID"),
@@ -32,6 +34,7 @@ function entity_metadata_comment_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'setter permission' => 'administer comments',
     'clear' => array('node'),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['uid'] = array(
     'label' => t("User ID"),
@@ -40,6 +43,7 @@ function entity_metadata_comment_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'setter permission' => 'administer comments',
     'clear' => array('user'),
+    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['hostname'] = array(
     'label' => t("IP Address"),
@@ -59,6 +63,7 @@ function entity_metadata_comment_entity_property_info() {
     'getter callback' => 'entity_metadata_comment_get_properties',
     'setter callback' => 'entity_metadata_verbatim_set',
     'setter permission' => 'administer comments',
+    'validation callback' => 'valid_email_address',
   );
   $properties['homepage'] = array(
     'label' => t("Home page"),

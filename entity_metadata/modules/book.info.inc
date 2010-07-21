@@ -17,6 +17,7 @@ function entity_metadata_book_entity_property_info_alter(&$info) {
   $properties['book-id'] = array(
     'label' => t("Book ID"),
     'type' => 'integer',
+    'validation callback' => 'entity_metadata_validate_integer_positive',
     'description' => t("If part of a book, the unique ID of this page's book."),
     'getter callback' => 'entity_metadata_book_get_properties',
   );
