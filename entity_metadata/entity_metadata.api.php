@@ -33,20 +33,24 @@
  *     - type: The data type of the property. To make the property actually
  *       useful it's important to map your properties to one of the known data
  *       types, which currently are:
- *        - text
- *        - integer
- *        - decimal
- *        - date: As timestamp.
- *        - duration: In number of seconds.
- *        - boolean
- *        - uri: Be sure to always return absolute URIs.
+ *        - text: Any text.
+ *        - token: A string containing only lowercase letters, numbers, and
+ *          underscores; e.g. this type is useful for machine readable names.
+ *        - integer: A usual PHP integer value.
+ *        - decimal: A PHP float or integer.
+ *        - date: A full date and time, as timestamp.
+ *        - duration: A duration as number of seconds.
+ *        - boolean: A usual PHP boolean value.
+ *        - uri: An absolute URI or URL.
  *        - entities - You may use the type of each entity known by
- *          hook_entity_info(), e.g. 'node' or 'user'.
+ *          hook_entity_info(), e.g. 'node' or 'user'. Internally entities are
+ *          represented by their identifieres.
  *        - struct: This as well as any else not known type may be used for
  *          supporting arbitrary data structures. For that additional metadata
- *          has to be specified by setting 'property info'.
- *       Also lists of these types are supported. Specify list<TYPE> as type and
- *       return an numerically indexed array of values.
+ *          has to be specified with the 'property info' key.
+ *        - list: A list of values, represented as numerically indexed array.
+ *          The list<TYPE> notation may be used to specify the type of the
+ *          contained items, where TYPE may be any valid type expression.
  *     - sanitized: For textual properties only, whether the text is already
  *       sanitized. In this case you might want to also specify a raw getter
  *       callback. Defaults to FALSE.

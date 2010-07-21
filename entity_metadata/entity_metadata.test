@@ -570,8 +570,10 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
         return time();
       case 'boolean':
         return TRUE;
-      case 'text':
+      case 'token':
         return drupal_strtolower($this->randomName(8));
+      case 'text':
+        return $this->randomString(32);
       case 'text_formatted':
         return array('value' => $this->randomName(16));
       case 'list<taxonomy_term>':

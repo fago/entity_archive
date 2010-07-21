@@ -50,6 +50,7 @@ function entity_metadata_node_entity_property_info() {
   );
   $properties['type'] = array(
     'label' => t("Content type"),
+    'type' => 'token',
     'description' => t("The type of the node."),
     'setter callback' => 'entity_metadata_verbatim_set',
     'setter permission' => 'administer nodes',
