@@ -789,7 +789,8 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
    * If we wrap a list, we return an iterator over the data list.
    */
   public function getIterator() {
-    return $this->dataAvailable() ? new EntityMetadataWrapperIterator($this, array_keys($this->data)) : array();
+    // In case there is no data available, just iterate over the first item.
+    return new EntityMetadataWrapperIterator($this, $this->dataAvailable() ? array_keys($this->data) : array(0));
   }
 
   /**

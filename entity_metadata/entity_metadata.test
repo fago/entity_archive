@@ -185,7 +185,15 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $wrapper = entity_metadata_wrapper('list<date>', $list);
     $wrapper[1] = strtotime('2009-09-05');
     $this->assertEqual($wrapper->value(), array(REQUEST_TIME, strtotime('2009-09-05')), 'Setting a list item.');
-    $this->assertEqual($wrapper->count(), 2);
+    $this->assertEqual($wrapper->count(), 2, 'List count is correct.');
+
+    // Test using a list wrapper without data.
+    $wrapper = entity_metadata_wrapper('list<date>');
+    $info = array();
+    foreach ($wrapper as $item) {
+      $info[] = $item->info();
+    }
+    $this->assertTrue($info[0]['type'] == 'date', 'Iterated over empty list wrapper.');
   }
 
   /**
