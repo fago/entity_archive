@@ -91,6 +91,8 @@
  *       type. Specify metadata in the same way as used by this hook.
  *     - 'property info alter': Optionally, a callback for altering the property
  *       info before it is used.
+ *     - 'property defaults': Optionally, an array of defaults for the info of
+ *       each property of the wrapped data item.
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in
