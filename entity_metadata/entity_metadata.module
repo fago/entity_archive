@@ -33,6 +33,10 @@ module_load_include('inc', 'entity_metadata', 'modules/callbacks');
  *    - property info: May be used to use a wrapper with an arbitrary data
  *      structure (type 'struct'). Use this key for specifying info about
  *      properties in the same structure as used by hook_entity_property_info().
+ *   - 'property info alter': Optionally, a callback for altering the property
+ *     info before it is used.
+ *   - 'property defaults': Optionally, an array of defaults for the info of
+ *     each property of the wrapped data item.
  * @return EntityMetadataWrapper
  *   Dependend on the passed data the right wrapper is returned.
  */
