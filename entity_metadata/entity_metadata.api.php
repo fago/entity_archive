@@ -165,7 +165,7 @@ function entity_metadata_hook_field_info() {
  *   optionally the entity and the user account to check for passed. See
  *   entity_metadata_no_hook_node_access() for an example.
  * - creation callback: Optionally, a callback that creates a new instance of
- *   this entity type. See entity_metdata_create_node() for an example.
+ *   this entity type. See entity_metadata_create_node() for an example.
  * - save callback: Optionally, a callback that permanently saves an entity of
  *   this type.
  * - deletion callback: Optionally, a callback that permanently deletes an
