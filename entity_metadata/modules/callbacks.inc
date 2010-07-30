@@ -353,14 +353,14 @@ function entity_metadata_language_list() {
 /**
  * Callback for getting field property values.
  */
-function entity_metadata_field_property_get($object, array $options, $name, $obj_type) {
+function entity_metadata_field_property_get($entity, array $options, $name, $entity_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $columns = array_keys($field['columns']);
-  $langcode = field_language($obj_type, $object, $name, isset($options['language']) ? $options['language']->language : NULL);
+  $langcode = field_language($entity_type, $entity, $name, isset($options['language']) ? $options['language']->language : NULL);
   $values = array();
-  if (isset($object->{$name}[$langcode])) {
-    foreach ($object->{$name}[$langcode] as $delta => $data) {
+  if (isset($entity->{$name}[$langcode])) {
+    foreach ($entity->{$name}[$langcode] as $delta => $data) {
       $values[$delta] = $data[$columns[0]];
     }
   }
@@ -370,7 +370,7 @@ function entity_metadata_field_property_get($object, array $options, $name, $obj
 /**
  * Callback for setting field property values.
  */
-function entity_metadata_field_property_set($object, $name, $value, $langcode, $obj_type) {
+function entity_metadata_field_property_set($entity, $name, $value, $langcode, $entity_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $columns = array_keys($field['columns']);
@@ -381,13 +381,13 @@ function entity_metadata_field_property_set($object, $name, $value, $langcode, $
   foreach ($values as $delta => $value) {
     $items[$delta][$columns[0]] = $value;
   }
-  $object->{$name}[$langcode] = $items;
+  $entity->{$name}[$langcode] = $items;
 }
 
 /**
  * Callback returning the options list of a field.
  */
-function entity_metadata_field_options_list($name, $obj_type) {
+function entity_metadata_field_options_list($name, $entity_type) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   return (array)module_invoke($field['module'], 'options_list', $field);
@@ -397,35 +397,35 @@ function entity_metadata_field_options_list($name, $obj_type) {
  * Callback to verbatim get the data structure of a field. Useful for fields
  * that add metadata for their own data structure.
  */
-function entity_metadata_field_verbatim_get($object, array $options, $name, $obj_type, &$context) {
+function entity_metadata_field_verbatim_get($entity, array $options, $name, $entity_type, &$context) {
   $name = str_replace('-', '_', $name);
   // Set contextual info useful for getters of any child properties.
   $entity_info = $context['parent']->info();
   $context['instance'] = field_info_instance($entity_info['type'], $name, $entity_info['bundle']);
   $context['field'] = field_info_field($name);
 
-  $langcode = field_language($obj_type, $object, $name, isset($options['language']) ? $options['language']->language : NULL);
-  if (!isset($object->{$name}[$langcode])) {
-    $object->{$name}[$langcode] = array(0 => array());
+  $langcode = field_language($entity_type, $entity, $name, isset($options['language']) ? $options['language']->language : NULL);
+  if (!isset($entity->{$name}[$langcode])) {
+    $entity->{$name}[$langcode] = array(0 => array());
   }
   // To avoid loosing the reference wrap the item into an array object. That
   // way the changes through the wrapper are automatically reflected in the
   // entity.
   if ($context['field']['cardinality'] == 1) {
-    return new EntityMetadataArrayObject($object->{$name}[$langcode][0]);
+    return new EntityMetadataArrayObject($entity->{$name}[$langcode][0]);
   }
-  return new EntityMetadataArrayObject($object->{$name}[$langcode]);
+  return new EntityMetadataArrayObject($entity->{$name}[$langcode]);
 }
 
 /**
  * Writes the passed field items in the object. Useful as field level setter
  * to set the whole data structure at once.
  */
-function entity_metadata_field_verbatim_set($object, $name, $items, $langcode) {
+function entity_metadata_field_verbatim_set($entity, $name, $items, $langcode) {
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
-  $object->{$name}[$langcode] = $field['cardinality'] == 1 ? array($items) : $items;
+  $entity->{$name}[$langcode] = $field['cardinality'] == 1 ? array($items) : $items;
 }
 
 /**
@@ -531,18 +531,18 @@ function entity_metadata_field_access_callback($op, $name, $entity = NULL, $acco
 function entity_metadata_create_object($values = array(), $entity_type) {
   $info = entity_get_info($entity_type);
   $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
-  $object = new $class(array(), $entity_type);
+  $entity = new $class(array(), $entity_type);
   // Support specifying the id of the entity for some entity types.
   if (isset($info['entity keys']['id']) && ($id_key = $info['entity keys']['id']) && isset($values[$id_key])) {
-    $object->$id_key = $values[$id_key];
-    $object->is_new = TRUE;
+    $entity->$id_key = $values[$id_key];
+    $entity->is_new = TRUE;
     unset($values[$id_key]);
   }
   // Make sure at least the bundle property is set.
   if (isset($info['entity keys']['bundle']) && $bundle_key = $info['entity keys']['bundle']) {
-    $object->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
+    $entity->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
   }
-  $wrapper = entity_metadata_wrapper($entity_type, $object);
+  $wrapper = entity_metadata_wrapper($entity_type, $entity);
   foreach ($values as $name => $value) {
     $wrapper->$name->set($value);
   }
