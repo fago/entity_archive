@@ -357,7 +357,7 @@ function entity_metadata_field_property_get($object, array $options, $name, $obj
   $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $columns = array_keys($field['columns']);
-  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
+  $langcode = field_language($obj_type, $object, $name, isset($options['language']) ? $options['language']->language : NULL);
   $values = array();
   if (isset($object->{$name}[$langcode])) {
     foreach ($object->{$name}[$langcode] as $delta => $data) {
@@ -365,14 +365,6 @@ function entity_metadata_field_property_get($object, array $options, $name, $obj
     }
   }
   return $field['cardinality'] == 1 ? reset($values) : $values;
-}
-
-function _entity_metadata_field_property_get_langcode($object, $options, $name) {
-  $langcode = LANGUAGE_NONE;
-  if (isset($options['language']) && isset($object->{$name}[$options['language']->language])) {
-    $langcode = $options['language']->language;
-  }
-  return $langcode;
 }
 
 /**
@@ -412,7 +404,7 @@ function entity_metadata_field_verbatim_get($object, array $options, $name, $obj
   $context['instance'] = field_info_instance($entity_info['type'], $name, $entity_info['bundle']);
   $context['field'] = field_info_field($name);
 
-  $langcode = _entity_metadata_field_property_get_langcode($object, $options, $name);
+  $langcode = field_language($obj_type, $object, $name, isset($options['language']) ? $options['language']->language : NULL);
   if (!isset($object->{$name}[$langcode])) {
     $object->{$name}[$langcode] = array(0 => array());
   }
