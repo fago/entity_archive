@@ -42,21 +42,8 @@ function entity_metadata_token_types_chained($type = NULL) {
  */
 function entity_metadata_token_info_alter(&$info) {
   $valid_types = entity_metadata_token_types();
+  $entity_info = entity_get_info();
 
-  foreach (entity_get_info() as $type => $entity_info) {
-    $token_type = isset($entity_info['token type']) ? $entity_info['token type'] : $type;
-    if (!$token_type) {
-      continue;
-    }
-    // Make sure there is a token category for each supported entity.
-    if (!isset($info['types'][$token_type])) {
-      $info['types'][$token_type] = array(
-        'name' => $entity_info['label'],
-        'description' => t('Tokens related to the %name entities.', array('%name' => $entity_info['label'])),
-        'needs-data' => $token_type,
-      );
-    }
-  }
   foreach ($valid_types as $token_type => $type) {
     // Just add all properties regardless whether its in a bundle only if there
     // is no token of the property yet.
@@ -70,6 +57,14 @@ function entity_metadata_token_info_alter(&$info) {
         );
         $info['tokens'][$token_type][$name] += array_intersect_key($property, array_flip(array('description')));
       }
+    }
+    // Make sure there is a token category for each supported entity.
+    if (!empty($info['tokens'][$token_type]) && !isset($info['types'][$token_type]) && isset($entity_info[$type])) {
+      $info['types'][$token_type] = array(
+        'name' => $entity_info[$type]['label'],
+        'description' => t('Tokens related to the %name entities.', array('%name' => $entity_info[$type]['label'])),
+        'needs-data' => $token_type,
+      );
     }
   }
 }
