@@ -295,6 +295,17 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   }
 
   /**
+   * Returns a reference on the property info.
+   *
+   * If possible, use the property info alter callback for spotting metadata.
+   * The reference may be used to alter the property info for any remaining
+   * cases, e.g. if additional metadata has been asserted.
+   */
+  public function &refPropertyInfo() {
+    return $this->propertyInfo;
+  }
+
+  /**
    * Sets a new language to use for retrieving properties.
    *
    * @param $langcode
