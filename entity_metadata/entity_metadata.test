@@ -557,7 +557,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       // And delete it.
       $return = entity_metadata_entity_delete($entity_type, $id);
       if ($return === FALSE) {
-        continue; // No support for saving.
+        continue; // No support for deleting.
       }
       $return = entity_load($entity_type, array($id));
       $this->assertFalse($return, "$entity_type has been successfully deleted.");
@@ -600,7 +600,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       case 'text_formatted':
         return array('value' => $this->randomName(16));
       case 'list<taxonomy_term>':
-        return array(1);
+        return array();
 
       default:
         return $this->$type;
