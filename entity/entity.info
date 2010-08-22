@@ -1,7 +1,6 @@
 ; $Id$
 name = Entity CRUD API
 description = CRUD API for entities.
-version = VERSION
 core = 7.x
 files[] = entity.controller.inc
 files[] = entity.db.inc
