@@ -537,6 +537,10 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
         list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
         $this->info['bundle'] = $bundle;
       }
+      // Like entity_extract_ids() assume the entity type if no key is given.
+      elseif (empty($this->entityInfo['entity keys']['bundle'])) {
+        $this->info['bundle'] = $this->type;
+      }
       elseif (!isset($this->info['bundle'])) {
         $this->info['bundle'] = FALSE;
       }
