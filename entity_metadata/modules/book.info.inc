@@ -14,7 +14,7 @@ function entity_metadata_book_entity_property_info_alter(&$info) {
   // Add meta-data about the added node properties.
   $properties = &$info['node']['properties'];
 
-  $properties['book-id'] = array(
+  $properties['book_id'] = array(
     'label' => t("Book ID"),
     'type' => 'integer',
     'validation callback' => 'entity_metadata_validate_integer_positive',

@@ -46,7 +46,7 @@ function entity_metadata_node_entity_property_info() {
     'query callback' => 'entity_metadata_table_query',
     'validation callback' => 'entity_metadata_validate_integer_non_negative',
   );
-  $properties['is-new'] = array(
+  $properties['is_new'] = array(
     'label' => t("Is new"),
     'type' => 'boolean',
     'description' => t("Whether the node is new and not saved to the database yet."),
@@ -62,7 +62,7 @@ function entity_metadata_node_entity_property_info() {
     'required' => TRUE,
     'query callback' => 'entity_metadata_table_query',
   );
-  $properties['type-name'] = array(
+  $properties['type_name'] = array(
     'label' => t("Content type name"),
     'description' => t("The human-readable name of the node type."),
     'getter callback' => 'entity_metadata_node_get_properties',
@@ -88,7 +88,7 @@ function entity_metadata_node_entity_property_info() {
     'getter callback' => 'entity_metadata_entity_get_properties',
     'type' => 'uri',
   );
-  $properties['edit-url'] = array(
+  $properties['edit_url'] = array(
     'label' => t("Edit URL"),
     'description' => t("The URL of the node's edit page."),
     'getter callback' => 'entity_metadata_node_get_properties',

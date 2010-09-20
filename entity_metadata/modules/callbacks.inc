@@ -39,7 +39,7 @@ function entity_metadata_book_get_properties($node, array $options, $name, $enti
     throw new EntityMetadataWrapperException('This node is no book page.');
   }
   switch ($name) {
-    case 'book-id':
+    case 'book_id':
       return $node->book['bid'];
 
     case 'book':
@@ -63,7 +63,7 @@ function entity_metadata_comment_get_properties($comment, array $options, $name)
       }
       return $comment->mail;
 
-    case 'edit-url':
+    case 'edit_url':
       return url('comment/edit/' . $comment->cid, $options);
 
     case 'node':
@@ -104,10 +104,10 @@ function entity_metadata_comment_setter($comment, $name, $value) {
  */
 function entity_metadata_comment_get_node_properties($node, array $options, $name, $entity_type) {
   switch ($name) {
-    case 'comment-count':
+    case 'comment_count':
       return isset($node->comment_count) ? $node->comment_count : 0;
 
-    case 'comment-count-new':
+    case 'comment_count_new':
       return comment_num_new($node->nid);
   }
 }
@@ -118,13 +118,13 @@ function entity_metadata_comment_get_node_properties($node, array $options, $nam
  */
 function entity_metadata_node_get_properties($node, array $options, $name, $entity_type) {
   switch ($name) {
-    case 'is-new':
+    case 'is_new':
       return empty($node->nid) || !empty($node->is_new);
 
-    case 'type-name':
+    case 'type_name':
       return node_type_get_name($node->type);
 
-    case 'edit-url':
+    case 'edit_url':
       return url('node/' . $node->nid . '/edit', $options);
 
     case 'author':
@@ -163,23 +163,23 @@ function entity_metadata_poll_node_get_properties($node, array $options, $name) 
     $total_votes = $total_votes + $choice['chvotes'];
   }
 
-  if ($name == 'poll-duration') {
+  if ($name == 'poll_duration') {
     return $node->runtime;
   }
-  elseif ($name == 'poll-votes') {
+  elseif ($name == 'poll_votes') {
     return $total_votes;
   }
   elseif (!isset($winner)) {
     throw new EntityMetadataWrapperException('There is no poll winner yet.');
   }
   switch ($name) {
-    case 'poll-winner-votes':
+    case 'poll_winner_votes':
         return $winner['chvotes'];
 
-    case 'poll-winner':
+    case 'poll_winner':
         return $winner['chtext'];
 
-    case 'poll-winner-percent':
+    case 'poll_winner_percent':
         return ($winner['chvotes'] / $total_votes) * 100;
   }
 }
@@ -195,10 +195,10 @@ function entity_metadata_statistics_node_get_properties($node, array $options, $
     case 'views':
       return $statistics['totalviews'];
 
-    case 'day-views':
+    case 'day_views':
       return $statistics['dayviews'];
 
-    case 'last-view':
+    case 'last_view':
       return $statistics['timestamp'];
   }
 }
@@ -215,13 +215,13 @@ function entity_metadata_system_get_properties($data = FALSE, array $options, $n
     case 'url':
       return url('<front>', $options);
 
-    case 'login-url':
+    case 'login_url':
       return url('user', $options);
 
-    case 'current-user':
+    case 'current_user':
       return $GLOBALS['user']->uid;
 
-    case 'current-date':
+    case 'current_date':
       return time();
 
     default:
@@ -258,7 +258,7 @@ function entity_metadata_system_get_file_properties($file, array $options, $name
  */
 function entity_metadata_taxonomy_term_get_properties($term, array $options, $name) {
   switch ($name) {
-    case 'node-count':
+    case 'node_count':
       return count(taxonomy_select_nodes($term->tid));
 
     case 'description':
@@ -294,7 +294,7 @@ function entity_metadata_taxonomy_term_setter($term, $name, $value) {
  */
 function entity_metadata_taxonomy_vocabulary_get_properties($vocabulary, array $options, $name) {
   switch ($name) {
-    case 'term-count':
+    case 'term_count':
       $sql = "SELECT COUNT (1) FROM {taxonomy_term_data} td WHERE td.vid = :vid";
       return db_query($sql, array(':vid' => $vocabulary->vid))->fetchField();
   }
@@ -309,7 +309,7 @@ function entity_metadata_user_get_properties($account, array $options, $name, $e
     case 'name':
       return ($account->uid == 0) ? variable_get('anonymous', t('Anonymous')) : $account->name;
 
-    case 'edit-url':
+    case 'edit_url':
       return url("user/$account->uid/edit", $options);
 
     case 'roles':
@@ -354,7 +354,6 @@ function entity_metadata_language_list() {
  * Callback for getting field property values.
  */
 function entity_metadata_field_property_get($entity, array $options, $name, $entity_type) {
-  $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $columns = array_keys($field['columns']);
   $langcode = field_language($entity_type, $entity, $name, isset($options['language']) ? $options['language']->language : NULL);
@@ -371,7 +370,6 @@ function entity_metadata_field_property_get($entity, array $options, $name, $ent
  * Callback for setting field property values.
  */
 function entity_metadata_field_property_set($entity, $name, $value, $langcode, $entity_type) {
-  $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $columns = array_keys($field['columns']);
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
@@ -388,7 +386,6 @@ function entity_metadata_field_property_set($entity, $name, $value, $langcode, $
  * Callback returning the options list of a field.
  */
 function entity_metadata_field_options_list($name, $entity_type) {
-  $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   return (array)module_invoke($field['module'], 'options_list', $field);
 }
@@ -398,7 +395,6 @@ function entity_metadata_field_options_list($name, $entity_type) {
  * that add metadata for their own data structure.
  */
 function entity_metadata_field_verbatim_get($entity, array $options, $name, $entity_type, &$context) {
-  $name = str_replace('-', '_', $name);
   // Set contextual info useful for getters of any child properties.
   $entity_info = $context['parent']->info();
   $context['instance'] = field_info_instance($entity_info['type'], $name, $entity_info['bundle']);
@@ -422,7 +418,6 @@ function entity_metadata_field_verbatim_get($entity, array $options, $name, $ent
  * to set the whole data structure at once.
  */
 function entity_metadata_field_verbatim_set($entity, $name, $items, $langcode) {
-  $name = str_replace('-', '_', $name);
   $field = field_info_field($name);
   $langcode = isset($langcode) ? $langcode : LANGUAGE_NONE;
   $entity->{$name}[$langcode] = $field['cardinality'] == 1 ? array($items) : $items;
@@ -520,8 +515,7 @@ function entity_metadata_taxonomy_access($op, $entity = NULL, $account = NULL, $
  * Callback to determine access for properties which are fields.
  */
 function entity_metadata_field_access_callback($op, $name, $entity = NULL, $account = NULL, $entity_type) {
-  $field_name = str_replace('-', '_', $name);
-  $field = field_info_field($field_name);
+  $field = field_info_field($name);
   return field_access($op, $field, $entity_type, $entity, $account);
 }
 
@@ -630,7 +624,7 @@ function entity_metadata_table_query($entity_type, $property, $value, $limit) {
  */
 function entity_metadata_field_query($entity_type, $property, $value, $limit) {
   $query = new EntityFieldQuery();
-  $field = field_info_field(str_replace('-', '_', $property));
+  $field = field_info_field($property);
   $columns = array_keys($field['columns']);
 
   $query->entityCondition('entity_type', $entity_type, '=')

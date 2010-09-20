@@ -50,19 +50,19 @@ function entity_metadata_system_entity_property_info() {
     'getter callback' => 'entity_metadata_system_get_properties',
     'type' => 'uri',
   );
-  $properties['login-url'] = array(
+  $properties['login_url'] = array(
     'label' => t("Login page"),
     'description' => t("The URL of the site's login page."),
     'getter callback' => 'entity_metadata_system_get_properties',
     'type' => 'uri',
   );
-  $properties['current-user'] = array(
+  $properties['current_user'] = array(
     'label' => t("Logged in user"),
     'description' => t("The currently logged in user."),
     'getter callback' => 'entity_metadata_system_get_properties',
     'type' => 'user',
   );
-  $properties['current-date'] = array(
+  $properties['current_date'] = array(
     'label' => t("Current date"),
     'description' => t("The current date and time."),
     'getter callback' => 'entity_metadata_system_get_properties',

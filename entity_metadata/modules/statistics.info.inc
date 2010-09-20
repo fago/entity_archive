@@ -19,13 +19,13 @@ function entity_metadata_statistics_entity_property_info_alter(&$info) {
     'type' => 'integer',
     'getter callback' => 'entity_metadata_statistics_node_get_properties',
   );
-  $properties['day-views'] = array(
+  $properties['day_views'] = array(
     'label' => t("Views today"),
     'description' => t("The number of visitors who have read the node today."),
     'type' => 'integer',
     'getter callback' => 'entity_metadata_statistics_node_get_properties',
   );
-  $properties['last-view'] = array(
+  $properties['last_view'] = array(
     'label' => t("Last view"),
     'description' => t("The date on which a visitor last read the node."),
     'type' => 'date',

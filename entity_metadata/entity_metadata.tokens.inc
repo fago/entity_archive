@@ -48,6 +48,8 @@ function entity_metadata_token_info_alter(&$info) {
     // Just add all properties regardless whether its in a bundle only if there
     // is no token of the property yet.
     foreach (entity_metadata_get_properties($type) as $name => $property) {
+      $name = str_replace('_', '-', $name);
+
       if (!isset($info['tokens'][$token_type][$name]) && (!isset($property['type']) || in_array($property['type'], $valid_types))) {
         $info['tokens'][$token_type][$name] = array(
           'name' => $property['label'],
@@ -83,7 +85,8 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
       // Provide the token for all properties marked to stem from us.
       if (!empty($info['tokens'][$type][$name]['entity metadata'])) {
         $wrapper = !isset($wrapper) ? _entity_metadata_token_wrap_data($type, $token_types[$type], $data[$type], $options) : $wrapper;
-        $replacements[$original] = _entity_metadata_get_token($wrapper->$name, $options);
+        $property_name = str_replace('-', '_', $name);
+        $replacements[$original] = _entity_metadata_get_token($wrapper->$property_name, $options);
       }
     }
     // Properly chain everything of a type marked as needs chaining.
@@ -91,7 +94,8 @@ function entity_metadata_tokens($type, $tokens, array $data = array(), array $op
       if (!empty($token_info['entity metadata']) && isset($token_info['type']) && entity_metadata_token_types_chained($token_info['type'])) {
         if ($chained_tokens = token_find_with_prefix($tokens, $name)) {
           $wrapper = !isset($wrapper) ? _entity_metadata_token_wrap_data($type, $token_types[$type], $data[$type], $options) : $wrapper;
-          $replacements += token_generate($token_info['type'], $chained_tokens, array($token_info['type'] => $wrapper->$name->value()), $options);
+          $property_name = str_replace('-', '_', $name);
+          $replacements += token_generate($token_info['type'], $chained_tokens, array($token_info['type'] => $wrapper->$property_name->value()), $options);
         }
       }
     }

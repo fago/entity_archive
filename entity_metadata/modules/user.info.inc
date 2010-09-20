@@ -42,7 +42,7 @@ function entity_metadata_user_entity_property_info() {
     'getter callback' => 'entity_metadata_entity_get_properties',
     'type' => 'uri',
   );
-  $properties['edit-url'] = array(
+  $properties['edit_url'] = array(
     'label' => t("Edit URL"),
     'description' => t("The url of the account edit page."),
     'getter callback' => 'entity_metadata_user_get_properties',

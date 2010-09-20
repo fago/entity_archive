@@ -169,7 +169,6 @@ function entity_metadata_hook_info_alter(&$hook_info) {
  * Gets the property just as it is set in the data.
  */
 function entity_metadata_verbatim_get($data, array $options, $name) {
-  $name = str_replace('-', '_', $name);
   if ((is_array($data) || (is_object($data) && $data instanceof ArrayAccess)) && isset($data[$name])) {
     return $data[$name];
   }
@@ -184,7 +183,6 @@ function entity_metadata_verbatim_get($data, array $options, $name) {
  * Sets the property to the given value. May be used as 'setter callback'.
  */
 function entity_metadata_verbatim_set($data, $name, $value) {
-  $name = str_replace('-', '_', $name);
   if (is_object($data) && $data instanceof ArrayAccess) {
     $data[$name] = $value;
   }
@@ -372,7 +370,6 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
  */
 function entity_metadata_entity_query($entity_type, $property, $value, $limit = 30) {
   $properties = entity_metadata_get_properties($entity_type);
-  $property = str_replace('_', '-', $property);
   if (isset($properties[$property]['query callback'])) {
     return $properties[$property]['query callback']($entity_type, $property, $value, $limit);
   }
