@@ -35,7 +35,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
   );
-  $properties['vocabulary-machine-name'] = array(
+  $properties['vocabulary_machine_name'] = array(
     'label' => t("Vocabulary machine name"),
     'type' => 'token',
     'description' => t("The machine readable name of the term's vocabulary."),
@@ -54,7 +54,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'description' => t('The weight of the term, which is used for ordering terms during display.'),
     'setter callback' => 'entity_metadata_verbatim_set',
   );
-  $properties['node-count'] = array(
+  $properties['node_count'] = array(
     'label' => t("Node count"),
     'type' => 'integer',
     'description' => t("The number of nodes tagged with the taxonomy term."),
@@ -99,7 +99,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
   );
-  $properties['machine-name'] = array(
+  $properties['machine_name'] = array(
     'label' => t("Machine name"),
     'type' => 'token',
     'description' => t("The machine name of the taxonomy vocabulary."),
@@ -112,7 +112,7 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_verbatim_set',
     'sanitize' => 'filter_xss',
   );
-  $properties['term-count'] = array(
+  $properties['term_count'] = array(
     'label' => t("Term count"),
     'type' => 'integer',
     'description' => t("The number of terms belonging to the taxonomy vocabulary."),

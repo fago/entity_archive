@@ -45,7 +45,7 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
       $field_type['property_type'] = 'list<' . $field_type['property_type'] . '>';
     }
     // Add in instance specific property info, if given and apply defaults.
-    $name = str_replace('_', '-', $field['field_name']);
+    $name = $field['field_name'];
     $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
     $instance += array('property info' => array());
     $property = $instance['property info'] + array(
@@ -76,8 +76,7 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
  */
 function entity_metadata_field_text_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($instance['settings']['text_processing'])) {
-    $name = str_replace('_', '-', $field['field_name']);
-    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+    $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
     // Define a data structure so it's possible to deal with formatted text
     // properly. For that use the else undefined type 'text_formatted'.
     $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
@@ -93,8 +92,7 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
  * @see entity_metadata_field_entity_property_info_alter().
  */
 function entity_metadata_field_term_reference_callback(&$info, $entity_type, $field, $instance, $field_type) {
-  $name = str_replace('_', '-', $field['field_name']);
-  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
   $property['options list'] = 'entity_metadata_field_options_list';
   unset($property['query callback']);
 }

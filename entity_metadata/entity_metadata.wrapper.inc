@@ -287,7 +287,6 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
     if (!isset($name)) {
       return $this->propertyInfo['properties'];
     }
-    $name = str_replace('_', '-', $name);
     if (!isset($this->propertyInfo['properties'][$name])) {
       throw new EntityMetadataWrapperException('Unknown data property ' . check_plain($name) . '.');
     }
@@ -342,7 +341,6 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    *   An instance of EntityMetadataWrapper.
    */
   public function get($name) {
-    $name = str_replace('_', '-', $name);
     // Look it up in the cache if possible.
     if (!array_key_exists($name, $this->cache)) {
       if ($info = $this->getPropertyInfo($name)) {
@@ -396,7 +394,6 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * Sets a property.
    */
   protected function setProperty($name, $value) {
-    $name = str_replace('_', '-', $name);
     $info = $this->getPropertyInfo($name);
     if (!empty($info['setter callback']) && $this->dataAvailable()) {
       $info['setter callback']($this->value(), $name, $value, $this->langcode, $this->type);
@@ -414,7 +411,6 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
   }
 
   protected function propertyAccess($name, $op, $account = NULL) {
-    $name = str_replace('_', '-', $name);
     $info = $this->getPropertyInfo($name);
     // If the property should be accessed and it's an entity, make sure the user
     // is allowed to view that entity.
@@ -447,7 +443,6 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    */
   public function __isset($name) {
     $this->spotInfo();
-    $name = str_replace('_', '-', $name);
     return isset($this->propertyInfo['properties'][$name]);
   }
 

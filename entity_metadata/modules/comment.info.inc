@@ -86,7 +86,7 @@ function entity_metadata_comment_entity_property_info() {
     'getter callback' => 'entity_metadata_entity_get_properties',
     'type' => 'uri',
   );
-  $properties['edit-url'] = array(
+  $properties['edit_url'] = array(
     'label' => t("Edit URL"),
     'description' => t("The URL of the comment's edit page."),
     'getter callback' => 'entity_metadata_comment_get_properties',
@@ -142,12 +142,12 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
     'setter permission' => 'administer comments',
     'type' => 'integer',
   );
-  $properties['comment-count'] = array(
+  $properties['comment_count'] = array(
     'label' => t("Comment count"),
     'description' => t("The number of comments posted on a node."),
     'getter callback' => 'entity_metadata_comment_get_node_properties',
   );
-  $properties['comment-count-new'] = array(
+  $properties['comment_count_new'] = array(
     'label' => t("New comment count"),
     'description' => t("The number of comments posted on a node since the reader last viewed it."),
     'getter callback' => 'entity_metadata_comment_get_node_properties',
@@ -157,9 +157,9 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
   // to the comment entity.
   $properties = &$info['comment']['properties'];
   $bundle_info = reset($info['comment']['bundles']);
-  $properties['comment-body'] = $bundle_info['properties']['comment-body'];
+  $properties['comment_body'] = $bundle_info['properties']['comment_body'];
   foreach ($info['comment']['bundles'] as $bundle => $bundle_info) {
-    unset($bundle_info['properties']['comment-body']);
+    unset($bundle_info['properties']['comment_body']);
   }
-  $properties['comment-body']['required'] = TRUE;
+  $properties['comment_body']['required'] = TRUE;
 }
