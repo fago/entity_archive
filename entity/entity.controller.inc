@@ -309,6 +309,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    */
   public function delete($ids) {
     $entities = $this->load($ids);
+    $transaction = db_transaction();
 
     try {
       db_delete($this->entityInfo['base table'])
