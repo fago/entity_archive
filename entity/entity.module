@@ -266,16 +266,23 @@ function entity_menu() {
   $entity_info = entity_get_info();
   foreach ($entity_info as $type => $info) {
     if (isset($info['admin ui']['path'])) {
-      if (isset($info['admin ui']['controller'])) {
-        $ui_controller = new $info['admin ui']['controller']($type, $info);
-      }
-      else {
-        $ui_controller = new EntityDefaultUIController($type, $info);
-      }
-      $items[$info['admin ui']['path']] = $ui_controller->menu();
+      $items[$info['admin ui']['path']] = entity_ui_controller($type)->menu();
     }
   }
   return $items;
+}
+
+/**
+ * Determines the UI controller class for a given entity type.
+ */
+function entity_ui_controller($type) {
+  $info = entity_get_info($type);
+  if (isset($info['admin ui']['controller class'])) {
+    return new $info['admin ui']['controller class']($type, $info);
+  }
+  else {
+    return new EntityDefaultUIController($type, $info);
+  }
 }
 
 /**
