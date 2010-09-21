@@ -20,6 +20,7 @@
  *   specify the entity, for which this is a bundle of, here. If done so, the
  *   API will automatically invoke the field API bundle attachers. For this to
  *   work you also have to set the bundle key for the referred entity.
+ * - module: The module providing the entity. Optionally, but suggested.
  * - exportable: Whether the entity is exportable. Defaults to FALSE.
  * - 'entity keys' - 'name': An optional name of a property that contains a
  *   unique name of the entity. If specified, this is used as uniform identifier
@@ -49,6 +50,9 @@
  *     export process. This is only necessary if the export is more complicated
  *     than simply listing the fields. Defaults to $module . '_' .
  *     $entity_type . '_to_hook_code'.
+ * - 'rules controller class': An optional controller class for providing Rules
+ *   integration. The given class has to inherit from the default class being
+ *   EntityDefaultRulesController.
  *
  * @see hook_entity_info()
  */
@@ -59,6 +63,7 @@ function entity_hook_entity_info() {
       'entity class' => 'EntityDB',
       'controller class' => 'EntityAPIController',
       'base table' => 'entity_test',
+      'module' => 'entity_test',
       'fieldable' => TRUE,
       'entity keys' => array(
         'id' => 'pid',
