@@ -258,4 +258,59 @@ function theme_entity_status($variables) {
   }
 }
 
+/**
+ * Implements hook_menu().
+ */
+function entity_menu() {
+  $items = array();
+  $entity_info = entity_get_info();
+  foreach ($entity_info as $type => $info) {
+    if (isset($info['admin ui']['path'])) {
+      if (isset($info['admin ui']['controller'])) {
+        $ui_controller = new $info['admin ui']['controller']($type, $info);
+      }
+      else {
+        $ui_controller = new EntityUIController($type, $info);
+      }
+      $items[$info['admin ui']['path']] = $ui_controller->menu();
+    }
+  }
+  return $items;
+}
 
+/**
+ * Implements hook_forms().
+ */
+function entity_forms() {
+  $forms = array();
+  if ($entity_info = entity_get_info()) {
+    foreach (array_keys($entity_info) as $type) {
+      $forms[$type . '_entity_overview_form']['callback'] = 'entity_overview_form';
+    }
+  }
+  return $forms;
+}
+
+/**
+ * Determines whether the given user has access to an entity.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param $entity_type
+ *   The entity type of the entity to check for.
+ * @param $entity
+ *   Optionally an entity to check access for. If no entity is given, it will be
+ *   determined whether access is allowed for all entities of the given type.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @return boolean
+ *   Whether access is allowed or not. If no information is available, NULL is
+ *   returned.
+ */
+function entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
+    return $info[$entity_type]['access callback']($op, $entity, $account, $entity_type);
+  }
+  return FALSE;
+}
