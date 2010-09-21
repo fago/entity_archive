@@ -6,7 +6,7 @@
  * Provides a controller for building an entity overview form.
  */
 
-class EntityUIController {
+class EntityDefaultUIController {
 
   protected $entity_type;
 
@@ -15,12 +15,6 @@ class EntityUIController {
   public function __construct($entity_type, $entity_info) {
     $this->entity_type = $entity_type;
     $this->entity_info = $entity_info;
-  }
-
-  /**
-   * Returns an entity overview form.
-   */
-  public function form() {
   }
 
   /**
@@ -36,6 +30,12 @@ class EntityUIController {
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
+  }
+
+  /**
+   * Returns an entity overview form.
+   */
+  public function form() {
   }
 
   public function formValidate() {}

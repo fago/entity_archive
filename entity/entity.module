@@ -270,7 +270,7 @@ function entity_menu() {
         $ui_controller = new $info['admin ui']['controller']($type, $info);
       }
       else {
-        $ui_controller = new EntityUIController($type, $info);
+        $ui_controller = new EntityDefaultUIController($type, $info);
       }
       $items[$info['admin ui']['path']] = $ui_controller->menu();
     }
