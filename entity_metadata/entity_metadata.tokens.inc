@@ -57,7 +57,7 @@ function entity_metadata_token_info_alter(&$info) {
           // Mark the token so we know we have to provide the value afterwards.
           'entity metadata' => TRUE,
         );
-        $info['tokens'][$token_type][$name] += array_intersect_key($property, array_flip(array('description')));
+        $info['tokens'][$token_type][$name]['description'] = isset($property['description']) ? $property['description'] : $property['label'];
       }
     }
     // Make sure there is a token category for each supported entity.

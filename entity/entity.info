@@ -7,5 +7,6 @@ files[] = entity.db.inc
 files[] = entity.db_faces.inc
 files[] = entity.ui.inc
 files[] = tests/entity.test
+files[] = entity.info.inc
 files[] = entity.rules.inc
 files[] = entity.test

@@ -225,8 +225,6 @@ function entity_metadata_field_info_alter(&$field_info) {
  * Implements hook_entity_info_alter().
  */
 function entity_metadata_entity_info_alter(&$entity_info) {
-  $entity_info['node']['name property'] = 'title';
-
   // Set access callbacks.
   $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
   $entity_info['user']['access callback'] = 'entity_metadata_user_access';
@@ -242,7 +240,6 @@ function entity_metadata_entity_info_alter(&$entity_info) {
   $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
 
   if (module_exists('comment')) {
-    $entity_info['comment']['name property'] = 'title';
     $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
     $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
     $entity_info['comment']['save callback'] = 'comment_save';
@@ -458,5 +455,48 @@ function entity_metadata_verify_data_type($data, $type) {
     default:
     case 'struct':
       return is_object($data) || is_array($data);
+  }
+}
+
+/**
+ * Converts the schema information available for the given table to property info.
+ *
+ * @param $table
+ *   The name of the table as used in hook_schema().
+ * @return
+ *   An array of property info as suiting for hook_entity_property_info().
+ */
+function entity_metadata_convert_schema($table) {
+  $schema = drupal_get_schema($table);
+  $properties = array();
+  foreach ($schema['fields'] as $name => $info) {
+    if ($type = _entity_metadata_convert_schema_type($info['type'])) {
+      $properties[$name] = array(
+        'type' => $type,
+        'label' => drupal_ucfirst($name),
+        'query callback' => 'entity_metadata_table_query',
+        // As we cannot know about any setter access, leave out the setter
+        // callback. For getting usually no further access callback is needed.
+      );
+      if ($type == 'serial') {
+        $properties[$name]['validation callback'] = 'entity_metadata_validate_integer_positive';
+      }
+    }
+  }
+  return $properties;
+}
+
+function _entity_metadata_convert_schema_type($type) {
+  switch ($type) {
+    case 'int':
+    case 'serial':
+      return 'integer';
+    case 'float':
+    case 'numeric':
+      return 'decimal';
+    case 'char':
+    case 'varchar':
+    case 'text':
+      return 'text';
   }
 }

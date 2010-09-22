@@ -147,6 +147,19 @@ function entity_export($entity_type, $entity) {
 }
 
 /**
+ * Returns an array of entity info for the entity types provided via the entity CRUD API.
+ */
+function entity_crud_get_info() {
+  $types = array();
+  foreach (entity_get_info() as $type => $info) {
+    if (isset($info['controller class']) && in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+      $types[$type] = $info;
+    }
+  }
+  return $types;
+}
+
+/**
  * Export a variable. Copied from ctools.
  *
  * This is a replacement for var_export(), allowing us to more nicely

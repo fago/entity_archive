@@ -155,7 +155,7 @@ abstract class EntityMetadataWrapper {
    */
   public function optionsList() {
     if (isset($this->info['options list']) && is_callable($this->info['options list']) && isset($this->info['name'])) {
-      return call_user_func($this->info['options list'], $this->info['name'], $this->type);
+      return call_user_func($this->info['options list'], $this->info['name'], $this->info);
     }
     return FALSE;
   }
