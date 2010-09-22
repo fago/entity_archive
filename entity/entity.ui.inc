@@ -42,7 +42,7 @@ class EntityDefaultUIController {
         'load arguments' => array($this->entity_type),
         'access callback' => 'entity_access',
         'access arguments' => array('edit', $this->entity_type),
-        'type' => MENU_LOCAL_ACTION,
+        'type' => MENU_LOCAL_TASK,
         'file' => 'entity.ui.inc',
       );
     }
