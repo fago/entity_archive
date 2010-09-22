@@ -53,6 +53,14 @@
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController.
+ * - 'metadata controller class': A controller class for providing Entity meta-
+ *   data module integration, i.e. entity property info. By default some meta-
+ *   data is generated from your hook_schema() information and *read access* is
+ *   granted to that properties. From that the Entity metadata module also
+ *   generates token integration for you, once activated.
+ *   Override the controller class to adapt the defaults and to improve and
+ *   complete the generated metadata. Defaults to the
+ *   EntityDefaultMetadataController class.
  *
  * @see hook_entity_info()
  */
