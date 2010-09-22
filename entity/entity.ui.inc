@@ -137,7 +137,7 @@ class EntityDefaultUIController {
       'entity' => $entity,
       'op' => $op
     );
-    return form;
+    return $form;
   }
 
   public function operationFormSubmit($form, &$form_state) {
