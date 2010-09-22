@@ -18,10 +18,11 @@ class EntityDefaultUIController {
   }
 
   /**
-   * Provides a menu item as expected by hook_menu().
+   * Provides menu items as expected by hook_menu().
    */
   public function menu() {
-    return array(
+    $items = array();
+    $items[$this->entity_info['admin ui']['path']] = array(
       'title' => $this->entity_info['label'],
       'page callback' => 'drupal_get_form',
       'page arguments' => array('entity_overview_form', $this->entity_type),
@@ -30,6 +31,22 @@ class EntityDefaultUIController {
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
+    $entities = entity_load($this->entity_type);
+    foreach ($entities as $id => $entity) {
+      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
+      $arg_count = count(explode('/', $path)) - 2;
+      $items[$path] = array(
+        'title' => 'Edit entity',
+        'page callback' => 'entity_page_edit',
+        'page arguments' => array($arg_count),
+        'load arguments' => array($this->entity_type),
+        'access callback' => 'entity_access',
+        'access arguments' => array('edit', $this->entity_type),
+        'type' => MENU_LOCAL_ACTION,
+        'file' => 'entity.ui.inc',
+      );
+    }
+    return $items;
   }
 
   /**
@@ -54,9 +71,9 @@ class EntityDefaultUIController {
       else {
         $row[] = $label;
       }
-      $row[] = t('edit');
-      $row[] = t('clone');
-      $row[] = t('delete');
+      $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
+      $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+      $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete');
 
       $rows[] = $row;
     }
@@ -83,6 +100,17 @@ class EntityDefaultUIController {
 
 }
 
+/**
+ * Form API callback that invokes the UI controller of the given type to render
+ * the entity overview form.
+ */
 function entity_overview_form($form, &$form_state, $type) {
   return entity_ui_controller($type)->form();
+}
+
+/**
+ * Entity edit form.
+ */
+function entity_page_edit($entity) {
+
 }

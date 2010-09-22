@@ -266,7 +266,7 @@ function entity_menu() {
   $entity_info = entity_get_info();
   foreach ($entity_info as $type => $info) {
     if (isset($info['admin ui']['path'])) {
-      $items[$info['admin ui']['path']] = entity_ui_controller($type)->menu();
+      $items += entity_ui_controller($type)->menu();
     }
   }
   return $items;
@@ -320,4 +320,12 @@ function entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
     return $info[$entity_type]['access callback']($op, $entity, $account, $entity_type);
   }
   return FALSE;
+}
+
+/**
+ * Load callback to retrieve an entity object from its id.
+ */
+function entity_menu_load($id, $type) {
+  $result = entity_load($type, array($id));
+  return reset($result);
 }
