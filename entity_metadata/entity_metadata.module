@@ -474,8 +474,12 @@ function entity_metadata_convert_schema($table) {
       $properties[$name] = array(
         'type' => $type,
         'label' => $name,
-        'setter callback' => 'entity_metadata_verbatim_set'
+        'setter callback' => 'entity_metadata_verbatim_set',
+        'query callback' => 'entity_metadata_table_query',
       );
+      if ($type == 'serial') {
+        $properties[$name]['validation callback'] = 'entity_metadata_validate_integer_positive';
+      }
     }
   }
   return $properties;
