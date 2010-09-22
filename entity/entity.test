@@ -135,3 +135,51 @@ class EntityAPITestCase extends DrupalWebTestCase {
 
   }
 }
+
+/**
+ * Test the generated Rules integration.
+ */
+class EntityAPIRulesIntegrationTestCase extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Entity CRUD Rules integration',
+      'description' => 'Tests the Rules integration provided by the Entity CRUD API.',
+      'group' => 'Entity API',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('entity', 'entity_test', 'rules');
+  }
+
+  /**
+   * Test the events.
+   */
+  function testEvents() {
+    $rule = rules_reaction_rule();
+    $rule->event('entity_test_presave');
+    $rule->event('entity_test_insert');
+    $rule->event('entity_test_update');
+    $rule->event('entity_test_delete');
+    $rule->action('drupal_message', array('message' => 'hello!'));
+    $rule->save();
+    rules_clear_cache(TRUE);
+
+    // Let the events occur.
+    $user1 = $this->drupalCreateUser();
+    $entity = new EntityClass(array('name' => 'test', 'uid' => $user1->uid));
+    $entity->save();
+    $entity->name = 'update';
+    $entity->save();
+    $entity->delete();
+
+    // Now there should have been 5 events, 2 times presave and once insert,
+    // update and delete.
+
+    $count = substr_count(RulesLog::logger()->render(), '0 ms Reacting on event');
+    $this->assertTrue($count == 5, 'Events have been properly invoked.');
+    RulesLog::logger()->checkLog();
+  }
+
+}
