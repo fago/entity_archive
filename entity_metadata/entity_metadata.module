@@ -473,9 +473,10 @@ function entity_metadata_convert_schema($table) {
     if ($type = _entity_metadata_convert_schema_type($info['type'])) {
       $properties[$name] = array(
         'type' => $type,
-        'label' => $name,
-        'setter callback' => 'entity_metadata_verbatim_set',
+        'label' => drupal_ucfirst($name),
         'query callback' => 'entity_metadata_table_query',
+        // As we cannot know about any setter access, leave out the setter
+        // callback. For getting usually no further access callback is needed.
       );
       if ($type == 'serial') {
         $properties[$name]['validation callback'] = 'entity_metadata_validate_integer_positive';
