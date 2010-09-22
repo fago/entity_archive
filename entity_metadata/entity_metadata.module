@@ -460,3 +460,41 @@ function entity_metadata_verify_data_type($data, $type) {
       return is_object($data) || is_array($data);
   }
 }
+
+/**
+ * Converts the schema information available for the given table to property info.
+ *
+ * @param $table
+ *   The name of the table as used in hook_schema().
+ * @return
+ *   An array of property info as suiting for hook_entity_property_info().
+ */
+function entity_metadata_convert_schema($table) {
+  $schema = drupal_get_schema($table);
+  $properties = array();
+  foreach ($schema['fields'] as $name => $info) {
+    if ($type = _entity_metadata_convert_schema_type($info['type'])) {
+      $properties[$name] = array(
+        'type' => $type,
+        'label' => $name,
+        'setter callback' => 'entity_metadata_verbatim_set'
+      );
+    }
+  }
+  return $properties;
+}
+
+function _entity_metadata_convert_schema_type($type) {
+  switch ($type) {
+    case 'int':
+    case 'serial':
+      return 'integer';
+    case 'float':
+    case 'numeric':
+      return 'decimal';
+    case 'char':
+    case 'varchar':
+    case 'text':
+      return 'text';
+  }
+}
