@@ -5,5 +5,6 @@ core = 7.x
 files[] = entity.controller.inc
 files[] = entity.db.inc
 files[] = entity.db_faces.inc
+files[] = entity.info.inc
 files[] = entity.rules.inc
 files[] = entity.test
