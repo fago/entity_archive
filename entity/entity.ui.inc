@@ -65,6 +65,7 @@ class EntityDefaultUIController {
 
     foreach ($entities as $id => $entity) {
       $row = array();
+      // Label
       $label = entity_label($this->entity_type, $entity);
       if ($entity_uri = entity_uri($this->entity_type, $entity)) {
         $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
@@ -72,13 +73,30 @@ class EntityDefaultUIController {
       else {
         $row[] = $label;
       }
+      // Status (custom, default, overridden or fixed)
+      switch ($entity->status) {
+        case ENTITY_IN_DB:
+          $row[] = t('Custom');
+          break;
+        case ENTITY_IN_CODE:
+          $row[] = t('Default');
+          break;
+        case ENTITY_OVERRIDDEN:
+          $row[] = t('Overridden');
+          break;
+        case ENTITY_FIXED:
+          $row[] = t('Fixed');
+          break;
+      }
+      // Operations (edit, clone, revert, delete)
       $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
       $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+      $row[] = l(t('revert'), $this->entity_info['admin ui']['path'] . '/' . $id . '/revert');
       $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
 
       $rows[] = $row;
     }
-    $header = array(t('Label'), array('data' => t('Operations'), 'colspan' => 3));
+    $header = array(t('Label'), t('Status'), array('data' => t('Operations'), 'colspan' => 4));
 
     $table = array(
       '#theme' => 'table',
@@ -104,11 +122,11 @@ class EntityDefaultUIController {
     switch ($op) {
       case 'revert':
         $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-        $confirm_form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
         break;
       case 'delete':
         $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-        $confirm_form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
         break;
       default:
         drupal_not_found();
@@ -119,7 +137,7 @@ class EntityDefaultUIController {
       'entity' => $entity,
       'op' => $op
     );
-    return $confirm_form;
+    return form;
   }
 
   public function operationFormSubmit($form, &$form_state) {

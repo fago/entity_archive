@@ -33,6 +33,13 @@ define('ENTITY_IN_DB', 0x01);
 define('ENTITY_IN_CODE', 0x02);
 
 /**
+ * A bit flag used to mark entities as overridden, e.g. they were originally
+ * definded in code and are saved now in the database. Same as
+ * (ENTITY_IN_DB | ENTITY_IN_CODE).
+ */
+define('ENTITY_OVERRIDDEN', 0x03);
+
+/**
  * A bit flag used to mark entities as fixed, thus not changeable for any
  * user.
  */
