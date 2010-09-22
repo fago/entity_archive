@@ -33,16 +33,17 @@ class EntityDefaultUIController {
     );
     $entities = entity_load($this->entity_type);
     foreach ($entities as $id => $entity) {
-      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
-      $arg_count = count(explode('/', $path)) - 2;
+      // menu path for edit, clone, delete
+      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
+      $id_count = count(explode('/', $path)) - 2;
+      $op_count = $id_count + 1;
       $items[$path] = array(
-        'title' => 'Edit entity',
-        'page callback' => 'entity_page_edit',
-        'page arguments' => array($arg_count),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('entity_confirm_op', $this->entity_type, $id_count, $op_count),
         'load arguments' => array($this->entity_type),
         'access callback' => 'entity_access',
-        'access arguments' => array('edit', $this->entity_type),
-        'type' => MENU_LOCAL_TASK,
+        'access arguments' => array($op_count, $this->entity_type),
+        'type' => MENU_CALLBACK,
         'file' => 'entity.ui.inc',
       );
     }
@@ -52,7 +53,7 @@ class EntityDefaultUIController {
   /**
    * Returns an entity overview form.
    */
-  public function form() {
+  public function overviewForm($form, &$form_state) {
     // Test form element
     $form['filter'] = array(
       '#type' => 'fieldset',
@@ -73,7 +74,7 @@ class EntityDefaultUIController {
       }
       $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
       $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
-      $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete');
+      $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
 
       $rows[] = $row;
     }
@@ -94,9 +95,53 @@ class EntityDefaultUIController {
     return $form;
   }
 
-  public function formValidate() {}
+  public function overviewFormValidate() {}
 
-  public function formSubmit() {}
+  public function overviewFormSubmit() {}
+
+  public function operationForm($form, &$form_state, $entity, $op) {
+    $label = entity_label($this->entity_type, $entity);
+    switch ($op) {
+      case 'revert':
+        $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+        $confirm_form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        break;
+      case 'delete':
+        $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+        $confirm_form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        break;
+      default:
+        drupal_not_found();
+        exit;
+    }
+    $form_state += array(
+      'type' => $this->entity_type,
+      'entity' => $entity,
+      'op' => $op
+    );
+    return $confirm_form;
+  }
+
+  public function operationFormSubmit($form, &$form_state) {
+    if ($form_state['values']['confirm']) {
+      $entity = $form_state['entity'];
+      $label = entity_label($this->entity_type, $entity);
+      $vars = array('%entity' => $this->entity_info['label'], '%label' => $label);
+
+      switch ($form_state['op']) {
+        case 'revert':
+          $entity->delete();
+          watchdog('entity', 'Reverted %entity %label to the defaults.', $vars);
+          drupal_set_message(t('Reverted %entity %label to the defaults.', $vars));
+          break;
+        case 'delete':
+          $entity->delete();
+          watchdog('entity', 'Deleted %entity %label.', $vars);
+          drupal_set_message(t('Deleted %entity %label.', $vars));
+          break;
+      }
+    }
+  }
 
 }
 
@@ -105,12 +150,20 @@ class EntityDefaultUIController {
  * the entity overview form.
  */
 function entity_overview_form($form, &$form_state, $type) {
-  return entity_ui_controller($type)->form();
+  return entity_ui_controller($type)->overviewForm($form, $form_state);
 }
 
 /**
- * Entity edit form.
+ * Entity operation confirm form.
  */
-function entity_page_edit($entity) {
+function entity_confirm_op($form, &$form_state, $type, $entity, $op) {
+  return entity_ui_controller($type)->operationForm($form, $form_state, $entity, $op);
+}
 
+/**
+ * Entity operation confirm form - submit callback.
+ */
+function entity_confirm_op_submit($form, &$form_state) {
+  $type = $form_state['type'];
+  entity_ui_controller($type)->operationFormSubmit($form, $form_state);
 }
