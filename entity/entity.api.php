@@ -50,6 +50,12 @@
  *     export process. This is only necessary if the export is more complicated
  *     than simply listing the fields. Defaults to $module . '_' .
  *     $entity_type . '_to_hook_code'.
+ * - admin ui: An array of optional information used for providing an
+ *   administrative user interface. Known keys are:
+ *   - path: a path where the UI should show up as expected by hook_menu().
+ *   - controller class: An optional controller class name for providing the
+ *     UI. The given class has to inherit from the default class being
+ *     EntityDefaultUIController.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController.
