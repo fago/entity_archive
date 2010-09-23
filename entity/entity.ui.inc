@@ -33,7 +33,7 @@ class EntityDefaultUIController {
     );
     $entities = entity_load($this->entity_type);
     foreach ($entities as $id => $entity) {
-      // menu path for edit, clone, delete
+      // menu path for edit, clone, revert, delete
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
       $id_count = count(explode('/', $path)) - 2;
       $op_count = $id_count + 1;
@@ -74,25 +74,30 @@ class EntityDefaultUIController {
         $row[] = $label;
       }
       // Status (custom, default, overridden or fixed)
+      // Operations (edit, clone, revert, delete)
       switch ($entity->status) {
         case ENTITY_IN_DB:
           $row[] = t('Custom');
+          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
           break;
         case ENTITY_IN_CODE:
           $row[] = t('Default');
+          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
           break;
         case ENTITY_OVERRIDDEN:
           $row[] = t('Overridden');
+          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('revert'), $this->entity_info['admin ui']['path'] . '/' . $id . '/revert', array('query' => drupal_get_destination()));
           break;
         case ENTITY_FIXED:
           $row[] = t('Fixed');
+          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
           break;
       }
-      // Operations (edit, clone, revert, delete)
-      $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
-      $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
-      $row[] = l(t('revert'), $this->entity_info['admin ui']['path'] . '/' . $id . '/revert');
-      $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
 
       $rows[] = $row;
     }
@@ -121,12 +126,19 @@ class EntityDefaultUIController {
     $label = entity_label($this->entity_type, $entity);
     switch ($op) {
       case 'revert':
-        $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
-        break;
+        if ($entity->status == ENTITY_OVERRIDDEN) {
+          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+          break;
+        }
       case 'delete':
-        $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        if ($entity->status == ENTITY_IN_DB) {
+          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+          break;
+        }
+      case 'clone':
+
         break;
       default:
         drupal_not_found();
@@ -159,6 +171,10 @@ class EntityDefaultUIController {
           break;
       }
     }
+  }
+
+  public function operationApply($op, $entity) {
+
   }
 
 }
