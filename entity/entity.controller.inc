@@ -231,7 +231,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         }
       }
     }
-    $entities = $ids ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
+    $entities = is_array($ids) ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
     if (!$this->defaultsFiltered && $conditions && $entities) {
       // Remove overridden entities. This is not necessary for pure id based
       // lookups though, as in this case overridden entities would get
