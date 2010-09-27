@@ -57,7 +57,7 @@ class EntityDBExtendable extends FacesExtendable {
     }
   }
 
-  public function export() {
-    return entity_get_controller($this->entityType)->export($this);
+  public function export($prefix = '') {
+    return entity_get_controller($this->entityType)->export($this, $prefix);
   }
 }

@@ -133,16 +133,18 @@ function entity_create($entity_type, $values) {
  *   The type of the entity.
  * @param $entity
  *   The entity to export.
+ * @param $prefix
+ *   An optional prefix for each line.
  * @return
  *   The exported entity as code.
  */
-function entity_export($entity_type, $entity) {
+function entity_export($entity_type, $entity, $prefix = '') {
   $info = entity_get_info($entity_type);
   if (method_exists($entity, 'export')) {
-    return $entity->export();
+    return $entity->export($prefix);
   }
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
-    return entity_get_controller($entity_type)->export($entity);
+    return entity_get_controller($entity_type)->export($entity, $prefix);
   }
 }
 

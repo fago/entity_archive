@@ -50,10 +50,15 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Exports an entity.
    *
+   * @param $entity
+   *   The entity to export.
+   * @param $prefix
+   *   An optional prefix for each line.
+   *
    * @return
    *   The exported entity as code.
    */
-  public function export($entity);
+  public function export($entity, $prefix = '');
 }
 
 /**
@@ -379,9 +384,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   /**
    * Implements EntityAPIControllerInterface.
    */
-  public function export($entity) {
+  public function export($entity, $prefix = '') {
     $vars = get_object_vars($entity);
     unset($vars[$this->statusKey]);
-    return "entity_create('$this->entityType', " . entity_var_export($vars) . ")";
+    return "entity_create('$this->entityType', " . entity_var_export($vars, $prefix) . ")";
   }
 }
