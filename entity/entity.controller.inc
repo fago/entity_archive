@@ -387,6 +387,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   public function export($entity, $prefix = '') {
     $vars = get_object_vars($entity);
     unset($vars[$this->statusKey]);
+    if ($this->nameKey != $this->idKey) {
+      unset($vars[$this->idKey]);
+    }
     return "entity_create('$this->entityType', " . entity_var_export($vars, $prefix) . ")";
   }
 }
