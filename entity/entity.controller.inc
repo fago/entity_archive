@@ -368,6 +368,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       else {
         $return = drupal_write_record($this->entityInfo['base table'], $entity);
         $this->invoke('insert', $entity);
+        unset($entity->is_new);
       }
       // Ignore slave server temporarily.
       db_ignore_slave();
