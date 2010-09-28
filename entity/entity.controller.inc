@@ -31,6 +31,9 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Permanently saves the given entity.
    *
+   * @param $entity
+   *   The entity to save.
+   *
    * @return
    *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
    *   SAVED_UPDATED is returned depending on the operation performed.
@@ -318,10 +321,14 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Implements EntityAPIControllerInterface.
+   *
+   * @param $transaction
+   *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
+   *   in their transaction object.
    */
-  public function delete($ids) {
+  public function delete($ids, DatabaseTransaction $transaction = NULL) {
     $entities = $this->load($ids);
-    $transaction = db_transaction();
+    $transaction = isset($transaction) ? $transaction : db_transaction();
 
     try {
       db_delete($this->entityInfo['base table'])
@@ -343,9 +350,13 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Implements EntityAPIControllerInterface.
+   *
+   * @param $transaction
+   *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
+   *   in their transaction object.
    */
-  public function save($entity) {
-    $transaction = db_transaction();
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    $transaction = isset($transaction) ? $transaction : db_transaction();
 
     try {
       $this->invoke('presave', $entity);
