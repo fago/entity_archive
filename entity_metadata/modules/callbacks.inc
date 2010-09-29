@@ -262,7 +262,7 @@ function entity_metadata_taxonomy_term_get_properties($term, array $options, $na
       return count(taxonomy_select_nodes($term->tid));
 
     case 'description':
-      return check_markup($term->description, $term->format, '', TRUE);
+      return check_markup($term->description, isset($term->format) ? $term->format : NULL, '', TRUE);
 
     case 'vocabulary':
       return $term->vid;
