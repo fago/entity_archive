@@ -80,6 +80,7 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($loaded->pid, $entity->pid, 'Loaded the entity unrelated to a user.');
 
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
+
     entity_delete('entity_test', $entities[0]->pid);
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
     $this->assertEqual($entities, array(), 'Entity successfully deleted.');
@@ -126,6 +127,10 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $types = entity_load('entity_test_type', array('test', 'test2'));
     $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded by id.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && $types['test']->status & ENTITY_IN_DB, 'Status of modified type is correct.');
+
+    // Test loading an exportable by its numeric id.
+    $result = entity_load('entity_test_type', array($types['test']->id));
+    $this->assertTrue(isset($result['test']), 'Exportable entity loaded by the numeric id.');
 
     // Test exporting an entity to code.
     $code = $types['test']->export();
