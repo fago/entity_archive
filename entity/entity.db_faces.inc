@@ -57,7 +57,14 @@ class EntityDBExtendable extends FacesExtendable {
     }
   }
 
-  public function export() {
-    return entity_get_controller($this->entityType)->export($this);
+  public function __sleep() {
+    // By default serialize everything but the faces class instances.
+    $all = get_object_vars($this);
+    unset($all['facesClassInstances']);
+    return array_keys($all);
+  }
+
+  public function export($prefix = '') {
+    return entity_get_controller($this->entityType)->export($this, $prefix);
   }
 }

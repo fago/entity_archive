@@ -129,7 +129,7 @@ class EntityAPITestCase extends DrupalWebTestCase {
 
     // Test exporting an entity to code.
     $code = $types['test']->export();
-    $import = eval('return ' . $code);
+    $import = eval('return ' . $code . ';');
     $this->assertTrue(get_class($import) == get_class($types['test']) && $types['test']->label == $import->label, 'Successfully exported entity to code.');
     $this->assertTrue(!isset($import->status), 'Exportable status has not been exported to code.');
 

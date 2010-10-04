@@ -31,6 +31,9 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Permanently saves the given entity.
    *
+   * @param $entity
+   *   The entity to save.
+   *
    * @return
    *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
    *   SAVED_UPDATED is returned depending on the operation performed.
@@ -50,10 +53,15 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Exports an entity.
    *
+   * @param $entity
+   *   The entity to export.
+   * @param $prefix
+   *   An optional prefix for each line.
+   *
    * @return
    *   The exported entity as code.
    */
-  public function export($entity);
+  public function export($entity, $prefix = '');
 }
 
 /**
@@ -231,7 +239,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         }
       }
     }
-    $entities = $ids ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
+    $entities = is_array($ids) ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
     if (!$this->defaultsFiltered && $conditions && $entities) {
       // Remove overridden entities. This is not necessary for pure id based
       // lookups though, as in this case overridden entities would get
@@ -290,7 +298,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       elseif ($hook == 'delete') {
         field_attach_delete_bundle($type, $entity->{$this->bundleKey});
       }
-      elseif ($hook == 'update' && $id = $entity->{$this->idKey}) {
+      elseif ($hook == 'update' && $id = $entity->{$this->nameKey}) {
         $entities = entity_load($this->entityType, array($id));
         if ($entities[$id]->{$this->bundleKey} != $entity->{$this->bundleKey}) {
           field_attach_rename_bundle($type, $entities[$id]->{$this->bundleKey}, $entity->{$this->bundleKey});
@@ -313,10 +321,14 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Implements EntityAPIControllerInterface.
+   *
+   * @param $transaction
+   *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
+   *   in their transaction object.
    */
-  public function delete($ids) {
+  public function delete($ids, DatabaseTransaction $transaction = NULL) {
     $entities = $this->load($ids);
-    $transaction = db_transaction();
+    $transaction = isset($transaction) ? $transaction : db_transaction();
 
     try {
       db_delete($this->entityInfo['base table'])
@@ -338,9 +350,13 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Implements EntityAPIControllerInterface.
+   *
+   * @param $transaction
+   *   Optionally a DatabaseTransaction object to use. Allows overrides to pass
+   *   in their transaction object.
    */
-  public function save($entity) {
-    $transaction = db_transaction();
+  public function save($entity, DatabaseTransaction $transaction = NULL) {
+    $transaction = isset($transaction) ? $transaction : db_transaction();
 
     try {
       $this->invoke('presave', $entity);
@@ -352,6 +368,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       else {
         $return = drupal_write_record($this->entityInfo['base table'], $entity);
         $this->invoke('insert', $entity);
+        unset($entity->is_new);
       }
       // Ignore slave server temporarily.
       db_ignore_slave();
@@ -379,9 +396,12 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   /**
    * Implements EntityAPIControllerInterface.
    */
-  public function export($entity) {
+  public function export($entity, $prefix = '') {
     $vars = get_object_vars($entity);
     unset($vars[$this->statusKey]);
-    return "entity_create('$this->entityType', " . entity_var_export($vars) . ");";
+    if ($this->nameKey != $this->idKey) {
+      unset($vars[$this->idKey]);
+    }
+    return "entity_create('$this->entityType', " . entity_var_export($vars, $prefix) . ")";
   }
 }
