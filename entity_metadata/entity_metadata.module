@@ -445,7 +445,7 @@ function entity_metadata_verify_data_type($data, $type) {
     case 'text':
       return is_scalar($data);
     case 'token':
-      return is_scalar($data) && preg_match('!^[a-z0-9_]+$!', $data);
+      return is_scalar($data) && preg_match('!^[a-z][a-z0-9_]*$!', $data);
     case 'boolean':
       return is_scalar($data) && (is_bool($data) || $data == 0 || $data == 1);
     case 'uri':
