@@ -8,6 +8,10 @@
 
 /**
  * A common class for db entities.
+ *
+ * It is suggested to also implement the label() and uri() methods for the
+ * respective callbacks in hook_entity_info(). For that case the provided
+ * callbacks entity_class_label() and entity_class_uri() may be specified.
  */
 class EntityDBExtendable extends FacesExtendable {
 
@@ -66,5 +70,13 @@ class EntityDBExtendable extends FacesExtendable {
 
   public function export($prefix = '') {
     return entity_get_controller($this->entityType)->export($this, $prefix);
+  }
+
+  public function view($view_mode = 'full', $langcode = NULL) {
+    return entity_get_controller($this->entityType)->view(array($this->identifier() => $this), $view_mode, $langcode);
+  }
+
+  public function buildContent($view_mode = 'full', $langcode = NULL) {
+    return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode);
   }
 }

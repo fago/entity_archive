@@ -142,4 +142,13 @@ class EntityClass extends EntityDBExtendable {
     parent::__construct($values, 'entity_test');
   }
 
+  /**
+   * Override buildContent() to add the username to the output.
+   */
+  public function buildContent($view_mode = 'full', $langcode = NULL) {
+    $content['user'] = array(
+      '#markup' => "User: ". format_username(user_load($this->uid)),
+    );
+    return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode, $content);
+  }
 }
