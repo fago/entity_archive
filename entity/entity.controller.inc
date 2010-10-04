@@ -147,7 +147,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     // Add the id condition ourself, as we might have a separate name key.
     $query = parent::buildQuery(array(), $conditions, $revision_id);
     if ($ids) {
-      $query->condition("base.{$this->nameKey}", $ids, 'IN');
+      // Support loading by numeric ids as well as by machine names.
+      $key = is_numeric(reset($ids)) ? $this->idKey : $this->nameKey;
+      $query->condition("base.$key", $ids, 'IN');
     }
     return $query;
   }
