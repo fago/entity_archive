@@ -14,7 +14,7 @@ function entity_features_get_controller($type) {
   if (!isset($static[$type])) {
     $info = entity_get_info($type);
     $info += array('features controller class' => 'EntityDefaultFeaturesController');
-    $static[$type] = new $info['features controller class']($type);
+    $static[$type] = $info['features controller class'] ? new $info['features controller class']($type) : FALSE;
   }
   return $static[$type];
 }
@@ -130,8 +130,8 @@ class EntityDefaultFeaturesController {
 function entity_features_api() {
   $items = array();
   foreach (entity_crud_get_info() as $type => $info) {
-    if (!empty($info['exportable'])) {
-      $items += entity_features_get_controller($type)->api();
+    if (!empty($info['exportable']) && $controller = entity_features_get_controller($type)) {
+      $items += $controller->api();
     }
   }
   return $items;

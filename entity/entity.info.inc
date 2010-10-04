@@ -76,8 +76,10 @@ function entity_entity_property_info() {
   $items = array();
   foreach (entity_crud_get_info() as $type => $info) {
     $info += array('metadata controller class' => 'EntityDefaultMetadataController');
-    $controller = new $info['metadata controller class']($type);
-    $items += $controller->entityPropertyInfo();
+    if ($info['metadata controller class']) {
+      $controller = new $info['metadata controller class']($type);
+      $items += $controller->entityPropertyInfo();
+    }
   }
   return $items;
 }
