@@ -62,6 +62,40 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    *   The exported entity as code.
    */
   public function export($entity, $prefix = '');
+
+
+  /**
+   * Builds a structured array representing the entity's content.
+   *
+   * The content built for the entity will vary depending on the $view_mode
+   * parameter.
+   *
+   * @param $entity
+   *   An entity object.
+   * @param $view_mode
+   *   View mode, e.g. 'full', 'teaser'...
+   * @param $langcode
+   *   (optional) A language code to use for rendering. Defaults to the global
+   *   content language of the current request.
+   * @return
+   *   The renderable array.
+   */
+  public function buildContent($entity, $view_mode = 'full', $langcode = NULL);
+
+  /**
+   * Generate an array for rendering the given entities.
+   *
+   * @param $entities
+   *   An array of entities to render.
+   * @param $view_mode
+   *   View mode, e.g. 'full', 'teaser'...
+   * @param $langcode
+   *   (optional) A language code to use for rendering. Defaults to the global
+   *   content language of the current request.
+   * @return
+   *   The renderable array.
+   */
+  public function view($entities, $view_mode = 'full', $langcode = NULL);
 }
 
 /**
@@ -404,4 +438,62 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     }
     return "entity_create('$this->entityType', " . entity_var_export($vars, $prefix) . ")";
   }
+
+  /**
+   * Implements EntityAPIControllerInterface.
+   *
+   * @param $content
+   *   Optionally. Allows pre-populating the built content to ease overridding
+   *   this method.
+   */
+  public function buildContent($entity, $view_mode = 'full', $langcode = NULL, $content = array()) {
+    // Remove previously built content, if exists.
+    $entity->content = $content;
+    $langcode = isset($langcode) ? $langcode : $GLOBALS['language_content']->language;
+
+    // Add in fields.
+    if (!empty($this->entityInfo['fieldable'])) {
+      $entity->content += field_attach_view($this->entityType, $entity, $view_mode, $langcode);
+    }
+    // Invoke hook_ENTITY_view() to allow modules to add their additions.
+    if (module_exists('rules')) {
+      rules_invoke_all($this->entityType . '_view', $entity, $view_mode, $langcode);
+    }
+    else {
+      module_invoke_all($this->entityType . '_view', $entity, $view_mode, $langcode);
+    }
+    $build = $entity->content;
+    unset($entity->content);
+    return $build;
+  }
+
+  /**
+   * Implements EntityAPIControllerInterface.
+   */
+  public function view($entities, $view_mode = 'full', $langcode = NULL) {
+    if (!empty($this->entityInfo['fieldable'])) {
+      field_attach_prepare_view($this->entityType, $entities, $view_mode);
+    }
+    entity_prepare_view($this->entityType, $entities);
+    $langcode = isset($langcode) ? $langcode : $GLOBALS['language_content']->language;
+
+    $view = array();
+    foreach ($entities as $key => $entity) {
+      $build = entity_build_content($this->entityType, $entity, $view_mode, $langcode);
+      $build += array(
+        // If the entity type provides an implementation, use this instead the
+        // generic one.
+        '#theme' => array($this->entityType, 'entity'),
+        '#entity_type' => $this->entityType,
+        '#entity' => $entity,
+        '#view_mode' => $view_mode,
+        '#language' => $langcode,
+      );
+      // Allow modules to modify the structured entity.
+      drupal_alter($this->entityType . '_view', $build);
+      $view[$this->entityType][$key] = $build;
+    }
+    return $view;
+  }
+
 }
