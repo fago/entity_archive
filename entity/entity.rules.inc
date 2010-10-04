@@ -71,8 +71,10 @@ function entity_rules_event_info() {
   $items = array();
   foreach (entity_crud_get_info() as $type => $info) {
     $info += array('rules controller class' => 'EntityDefaultRulesController');
-    $controller = new $info['rules controller class']($type);
-    $items += $controller->eventInfo();
+    if ($info['rules controller class']) {
+      $controller = new $info['rules controller class']($type);
+      $items += $controller->eventInfo();
+    }
   }
   return $items;
 }

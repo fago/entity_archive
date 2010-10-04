@@ -156,6 +156,80 @@ function entity_export($entity_type, $entity, $prefix = '') {
 }
 
 /**
+ * Builds a structured array representing the entity's content.
+ *
+ * The content built for the entity will vary depending on the $view_mode
+ * parameter.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   An entity object.
+ * @param $view_mode
+ *   A view mode as used by this entity type, e.g. 'full', 'teaser'...
+ * @param $langcode
+ *   (optional) A language code to use for rendering. Defaults to the global
+ *   content language of the current request.
+ * @return
+ *   The renderable array.
+ */
+function entity_build_content($entity_type, $entity, $view_mode = 'full', $langcode = NULL) {
+  $info = entity_get_info($entity_type);
+  if (method_exists($entity, 'buildContent')) {
+    return $entity->buildContent($view_mode, $langcode);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->buildContent($entity, $view_mode, $langcode);
+  }
+}
+
+/**
+ * Returns the entity identifier.
+ *
+ * Unlike entity_extract_ids() this function returns the uniform identifier,
+ * thus if a name key is defined, the name of the entity is returned. Otherwise
+ * the usual numeric id is returned.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   An entity object.
+ *
+ * @see entity_extract_ids()
+ */
+function entity_id($entity_type, $entity) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['entity class']) && method_exists($info['entity class'], 'identifier')) {
+    return $entity->identifier();
+  }
+  $key = isset($info['entity keys']['name']) ? $info['entity keys']['name'] : $info['entity keys']['id'];
+  return isset($entity->$key) ? $entity->$key : NULL;
+}
+
+/**
+ * Generate an array for rendering the given entities.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entities
+ *   An array of entities to render, keyed by their ids. E.g. as returned from
+ *   entity_load().
+ * @param $view_mode
+ *   A view mode as used by this entity type, e.g. 'full', 'teaser'...
+ * @param $langcode
+ *   (optional) A language code to use for rendering. Defaults to the global
+ *   content language of the current request.
+ * @return
+ *   The renderable array.
+ */
+function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->view($entities, $view_mode, $langcode);
+  }
+}
+
+/**
  * Returns an array of entity info for the entity types provided via the entity CRUD API.
  */
 function entity_crud_get_info() {
@@ -249,6 +323,10 @@ function entity_theme() {
     'entity_status' => array(
       'variables' => array('status' => NULL, 'html' => TRUE),
     ),
+    'entity' => array(
+      'render element' => 'elements',
+      'template' => 'entity',
+    ),
   );
 }
 
@@ -278,6 +356,63 @@ function theme_entity_status($variables) {
     $help = t('A custom configuration by a user.');
     return $html ? "<span class='entity-status-custom' title='$help'>" . $label . "</span>" : $label;
   }
+}
+
+/*
+ * Process variables for entity.tpl.php.
+ */
+function template_preprocess_entity(&$variables) {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $entity_type = $variables['elements']['#entity_type'];
+  $variables['entity_type'] = $entity_type;
+  $entity = $variables['elements']['#entity'];
+  $variables[$variables['elements']['#entity_type']] = $entity;
+  $info = entity_get_info($entity_type);
+
+  $variables['title']      = check_plain(entity_label($entity_type, $entity));
+  if ($uri = entity_uri($entity_type, $entity)) {
+    $variables['entity_url'] = url($uri['path'], $uri['options']);
+  }
+  // If there is no specified URI, there is no "page" we could link to. So
+  // render always as $page == TRUE.
+  $variables['page'] = (!$uri || ($variables['view_mode'] == 'full' && $_GET['q'] == $variables['entity_url']));
+
+  // Helpful $content variable for templates.
+  $variables['content'] = array();
+  foreach (element_children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+
+  if (!empty($info['fieldable'])) {
+    // Make the field variables available with the appropriate language.
+    field_attach_preprocess($entity_type, $entity, $variables['content'], $variables);
+  }
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Gather css classes.
+  $variables['classes_array'][] = drupal_html_class('entity-' . $entity_type);
+  $variables['classes_array'][] = drupal_html_class($entity_type . '-' . $bundle);
+
+  // Add suggestions.
+  $variables['theme_hook_suggestions'][] = $entity_type;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle;
+  if ($id = entity_id($entity_type, $entity)) {
+    $variables['theme_hook_suggestions'][] = $entity_type . '__' . $id;
+  }
+}
+
+/**
+ * Label callback that refers to the entity classes label method.
+ */
+function entity_class_label($entity) {
+  return $entity->label();
+}
+
+/**
+ * URI callback that refers to the entity classes uri method.
+ */
+function entity_class_uri($entity) {
+  return $entity->uri();
 }
 
 /**

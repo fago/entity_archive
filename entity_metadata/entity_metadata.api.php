@@ -35,7 +35,8 @@
  *       types, which currently are:
  *        - text: Any text.
  *        - token: A string containing only lowercase letters, numbers, and
- *          underscores; e.g. this type is useful for machine readable names.
+ *          underscores starting with a letter; e.g. this type is useful for
+ *          machine readable names.
  *        - integer: A usual PHP integer value.
  *        - decimal: A PHP float or integer.
  *        - date: A full date and time, as timestamp.

@@ -63,6 +63,7 @@ class EntityDefaultUIController {
 
     $entities = entity_load($this->entity_type);
 
+    $rows = array();
     foreach ($entities as $id => $entity) {
       $row = array();
       // Label

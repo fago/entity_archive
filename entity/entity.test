@@ -80,6 +80,7 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($loaded->pid, $entity->pid, 'Loaded the entity unrelated to a user.');
 
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
+
     entity_delete('entity_test', $entities[0]->pid);
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test2')));
     $this->assertEqual($entities, array(), 'Entity successfully deleted.');
@@ -127,12 +128,29 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($types['test']->label, 'modified', 'Modified default type loaded by id.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && $types['test']->status & ENTITY_IN_DB, 'Status of modified type is correct.');
 
+    // Test loading an exportable by its numeric id.
+    $result = entity_load('entity_test_type', array($types['test']->id));
+    $this->assertTrue(isset($result['test']), 'Exportable entity loaded by the numeric id.');
+
     // Test exporting an entity to code.
     $code = $types['test']->export();
     $import = eval('return ' . $code . ';');
     $this->assertTrue(get_class($import) == get_class($types['test']) && $types['test']->label == $import->label, 'Successfully exported entity to code.');
     $this->assertTrue(!isset($import->status), 'Exportable status has not been exported to code.');
+  }
 
+  /**
+   * Tests viewing entites.
+   */
+  function testRendering() {
+    $user1 = $this->drupalCreateUser();
+    // Create test entities for the user1 and unrelated to a user.
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
+
+    $render = $entity->view();
+    $output = drupal_render($render);
+    // The entity class adds the user name to the output. Verify it is there.
+    $this->assertTrue(strpos($output, format_username($user1)) !== FALSE, 'Entity has been rendered');
   }
 }
 

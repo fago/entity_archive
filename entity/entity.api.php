@@ -58,15 +58,19 @@
  *     EntityDefaultUIController.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
- *   EntityDefaultRulesController.
+ *   EntityDefaultRulesController. Set it to FALSE to disable this feature.
  * - 'metadata controller class': A controller class for providing Entity meta-
  *   data module integration, i.e. entity property info. By default some meta-
  *   data is generated from your hook_schema() information and *read access* is
  *   granted to that properties. From that the Entity metadata module also
  *   generates token integration for you, once activated.
  *   Override the controller class to adapt the defaults and to improve and
- *   complete the generated metadata. Defaults to the
- *   EntityDefaultMetadataController class.
+ *   complete the generated metadata. Set it to FALSE to disable this feature.
+ *   Defaults to the EntityDefaultMetadataController class.
+ * - 'features controller class': A controller class for providing Features
+ *   module integration for exportable entities. The given class has to inherit
+ *   from the default class being EntityDefaultFeaturesController. Set it to
+ *   FALSE to disable this feature.
  *
  * @see hook_entity_info()
  */
