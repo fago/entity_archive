@@ -192,6 +192,23 @@ function entity_metadata_verbatim_set($data, $name, $value) {
 }
 
 /**
+ * Gets the property using the getter method (named just like the property).
+ */
+function entity_metadata_getter_method($object, array $options, $name) {
+  return $object->$name();
+}
+
+/**
+ * Sets the property to the given value using the setter method. May be used as
+ * 'setter callback'.
+ */
+function entity_metadata_setter_method($object, $name, $value) {
+  $method = 'set' . $name;
+  // Invoke the setProperty() method where 'Property' is the property name.
+  $object->$method($value);
+}
+
+/**
  * Getter callback for getting an array. Makes sure it's numerically indexed.
  */
 function entity_metadata_get_list($data, array $options, $name) {
