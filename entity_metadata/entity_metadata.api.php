@@ -171,6 +171,8 @@ function entity_metadata_hook_field_info() {
  *   this type.
  * - deletion callback: Optionally, a callback that permanently deletes an
  *   entity of this type.
+ * - view callback: Optionally, a callback to render a list of entities.
+ *   See entity_metadata_view_node() as example.
  * - token type: Optionally a type name to use for token replacements. Set it
  *   to FALSE if there aren't any token replacements for this entity type.
  *

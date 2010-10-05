@@ -604,6 +604,25 @@ function entity_metadata_delete_file($fid) {
 }
 
 /**
+ * Callback to view nodes.
+ */
+function entity_metadata_view_node($entities, $view_mode = 'full', $langcode = NULL) {
+  return node_view_multiple($entities, $view_mode, 0, $langcode);
+}
+
+/**
+ * Callback to view an entity, for which just ENTITYTYPE_view() is available.
+ */
+function entity_metadata_view_single($entities, $view_mode = 'full', $langcode = NULL, $entity_type) {
+  $function = $entity_type . '_view';
+  $build = array();
+  foreach ($entities as $key => $entity) {
+    $build[$key] = $function($entity, $view_mode, $langcode);
+  }
+  return $build;
+}
+
+/**
  * Callback for querying entity properties having their values stored in the
  * entities main db table.
  */
