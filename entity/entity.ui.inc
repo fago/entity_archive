@@ -139,7 +139,8 @@ class EntityDefaultUIController {
           break;
         }
       case 'clone':
-
+        $confirm_question = t('Are you sure you want to clone the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path'], t('This will create a new entity with the same properties.'));
         break;
       default:
         drupal_not_found();
@@ -155,27 +156,44 @@ class EntityDefaultUIController {
 
   public function operationFormSubmit($form, &$form_state) {
     if ($form_state['values']['confirm']) {
-      $entity = $form_state['entity'];
-      $label = entity_label($this->entity_type, $entity);
-      $vars = array('%entity' => $this->entity_info['label'], '%label' => $label);
-
-      switch ($form_state['op']) {
-        case 'revert':
-          $entity->delete();
-          watchdog('entity', 'Reverted %entity %label to the defaults.', $vars);
-          drupal_set_message(t('Reverted %entity %label to the defaults.', $vars));
-          break;
-        case 'delete':
-          $entity->delete();
-          watchdog('entity', 'Deleted %entity %label.', $vars);
-          drupal_set_message(t('Deleted %entity %label.', $vars));
-          break;
-      }
+      $msg = $this->applyOperation($form_state['op'], $form_state['entity']);
+      drupal_set_message($msg);
     }
   }
 
+  /**
+   * Applies an operation to the given entity.
+   *
+   * @param string $op
+   *   The operation (edit, clone, revert or delete).
+   * @param $entity
+   *   The entity to manipulate.
+   */
   public function operationApply($op, $entity) {
-
+    $label = entity_label($this->entity_type, $entity);
+    $vars = array('%entity' => $this->entity_info['label'], '%label' => $label);
+    $edit_link = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $entity->id . '/edit');
+    switch ($op) {
+      case 'revert':
+        $entity->delete();
+        watchdog('entity', 'Reverted %entity %label to the defaults.', $vars, WATCHDOG_NOTICE, $edit_link);
+        return t('Reverted %entity %label to the defaults.', $vars);
+      case 'delete':
+        $entity->delete();
+        watchdog('entity', 'Deleted %entity %label.', $vars);
+        return t('Deleted %entity %label.', $vars);
+      case 'clone':
+        $new_entity = clone $entity;
+        $new_entity->id = FALSE;
+        $new_entity->name = '';
+        $new_entity->label .= ' (' . t('cloned') . ')';
+        // Disabled for now.
+        //$new_entity->save();
+        watchdog('entity', 'Cloned %entity %label.', $vars, WATCHDOG_NOTICE, $edit_link);
+        return t('Cloned %entity %label.', $vars);
+      default:
+        return FALSE;
+    }
   }
 
 }
