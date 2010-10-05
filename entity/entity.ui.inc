@@ -31,7 +31,7 @@ class EntityDefaultUIController {
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
-    $entities = entity_load($this->entity_type);
+    $entities = entity_load($this->entity_type, FALSE);
     foreach ($entities as $id => $entity) {
       // menu path for edit, clone, revert, delete
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
