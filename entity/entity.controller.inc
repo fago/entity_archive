@@ -485,7 +485,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       $build += array(
         // If the entity type provides an implementation, use this instead the
         // generic one.
-        '#theme' => array($this->entityType, 'entity'),
+        '#theme' => 'entity',
         '#entity_type' => $this->entityType,
         '#entity' => $entity,
         '#view_mode' => $view_mode,

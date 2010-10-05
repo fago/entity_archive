@@ -11,7 +11,7 @@
  *   hide($content['field_example']) to temporarily suppress the printing of a
  *   given element.
  * - $title: The (sanitized) entity label.
- * - $entity_url: Direct url of the current entity if specified.
+ * - $url: Direct url of the current entity if specified.
  * - $page: Flag for the full page state.
  * - $classes: String of classes that can be used to style contextually through
  *   CSS. It can be manipulated through the variable $classes_array from
@@ -32,7 +32,13 @@
 <div class="<?php print $classes; ?> clearfix"<?php print $attributes; ?>>
 
   <?php if (!$page): ?>
-    <h2<?php print $title_attributes; ?>><a href="<?php print $entity_url; ?>"><?php print $title; ?></a></h2>
+    <h2<?php print $title_attributes; ?>>
+      <?php if ($url): ?>
+        <a href="<?php print $url; ?>"><?php print $title; ?></a>
+      <?php else: ?>
+        <?php print $title; ?>
+      <?php endif; ?>
+    </h2>
   <?php endif; ?>
 
   <div class="content"<?php print $content_attributes; ?>>
