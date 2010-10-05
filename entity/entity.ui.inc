@@ -61,7 +61,7 @@ class EntityDefaultUIController {
       '#collapsible' => TRUE,
     );
 
-    $entities = entity_load($this->entity_type);
+    $entities = entity_load($this->entity_type, FALSE);
 
     $rows = array();
     foreach ($entities as $id => $entity) {
