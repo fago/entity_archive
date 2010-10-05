@@ -126,25 +126,38 @@ class EntityDefaultUIController {
   public function operationForm($form, &$form_state, $entity, $op) {
     $label = entity_label($this->entity_type, $entity);
     switch ($op) {
-      case 'revert':
-        if ($entity->status == ENTITY_OVERRIDDEN) {
-          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
-          break;
-        }
-      case 'delete':
-        if ($entity->status == ENTITY_IN_DB) {
-          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
-          break;
-        }
       case 'clone':
         $confirm_question = t('Are you sure you want to clone the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
         $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path'], t('This will create a new entity with the same properties.'));
         break;
+
+      case 'edit':
+        if (!entity_has_status($this->entity_type, $entity, ENTITY_FIXED)) {
+
+        }
+        break;
+
+      case 'revert':
+        if (entity_has_status($this->entity_type, $entity, ENTITY_OVERRIDDEN)) {
+          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        }
+        break;
+
+      case 'delete':
+        if (entity_has_status($this->entity_type, $entity, ENTITY_IN_DB)) {
+          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
+          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        }
+        break;
+
       default:
         drupal_not_found();
         exit;
+    }
+    if (!$form) {
+      drupal_not_found();
+      exit;
     }
     $form_state += array(
       'type' => $this->entity_type,
@@ -178,10 +191,12 @@ class EntityDefaultUIController {
         $entity->delete();
         watchdog('entity', 'Reverted %entity %label to the defaults.', $vars, WATCHDOG_NOTICE, $edit_link);
         return t('Reverted %entity %label to the defaults.', $vars);
+
       case 'delete':
         $entity->delete();
         watchdog('entity', 'Deleted %entity %label.', $vars);
         return t('Deleted %entity %label.', $vars);
+
       case 'clone':
         $new_entity = clone $entity;
         $new_entity->id = FALSE;
@@ -191,6 +206,7 @@ class EntityDefaultUIController {
         //$new_entity->save();
         watchdog('entity', 'Cloned %entity %label.', $vars, WATCHDOG_NOTICE, $edit_link);
         return t('Cloned %entity %label.', $vars);
+
       default:
         return FALSE;
     }

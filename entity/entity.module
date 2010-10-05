@@ -486,3 +486,26 @@ function entity_menu_load($id, $type) {
   $result = entity_load($type, array($id));
   return reset($result);
 }
+
+/**
+ * Checks if a given entity has a certain status.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to check the status on.
+ * @param $status
+ *   The constant status like ENTITY_IN_DB, ENTITY_IN_CODE, ENTITY_OVERRIDDEN
+ *   or ENTITY_FIXED.
+ *
+ * @return
+ *   TRUE if the entity has the status, FALSE otherwise.
+ */
+function entity_has_status($entity_type, $entity, $status) {
+  $info = entity_get_info($entity_type);
+  $status_property = empty($info['status key']) ? 'status' : $info['status key'];
+  if (($entity->{$status_property} & $status) == $status) {
+    return TRUE;
+  }
+  return FALSE;
+}
