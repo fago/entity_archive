@@ -39,7 +39,7 @@ class EntityDefaultUIController {
       $op_count = $id_count + 1;
       $items[$path] = array(
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('entity_confirm_op', $this->entity_type, $id_count, $op_count),
+        'page arguments' => array('entity_operation_form', $this->entity_type, $id_count, $op_count),
         'load arguments' => array($this->entity_type),
         'access callback' => 'entity_access',
         'access arguments' => array($op_count, $this->entity_type),
@@ -125,46 +125,40 @@ class EntityDefaultUIController {
 
   public function operationForm($form, &$form_state, $entity, $op) {
     $label = entity_label($this->entity_type, $entity);
+    $form_state += array(
+      'type' => $this->entity_type,
+      'entity' => $entity,
+      'op' => $op
+    );
     switch ($op) {
       case 'clone':
-        $confirm_question = t('Are you sure you want to clone the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-        $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path'], t('This will create a new entity with the same properties.'));
-        break;
+        $entity = clone $entity;
+        $entity->id = FALSE;
+        $form_state['entity'] = $entity;
+        return drupal_get_form($this->entity_type . '_entity_form', $entity, $op);
 
       case 'edit':
         if (!entity_has_status($this->entity_type, $entity, ENTITY_FIXED)) {
-
+          return drupal_get_form($this->entity_type . '_entity_form', $entity, $op);
         }
         break;
 
       case 'revert':
         if (entity_has_status($this->entity_type, $entity, ENTITY_OVERRIDDEN)) {
           $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+          return confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
         }
         break;
 
       case 'delete':
         if (entity_has_status($this->entity_type, $entity, ENTITY_IN_DB)) {
           $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          $form = confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+          return confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
         }
         break;
-
-      default:
-        drupal_not_found();
-        exit;
     }
-    if (!$form) {
-      drupal_not_found();
-      exit;
-    }
-    $form_state += array(
-      'type' => $this->entity_type,
-      'entity' => $entity,
-      'op' => $op
-    );
-    return $form;
+    drupal_not_found();
+    exit;
   }
 
   public function operationFormSubmit($form, &$form_state) {
@@ -197,16 +191,6 @@ class EntityDefaultUIController {
         watchdog('entity', 'Deleted %entity %label.', $vars);
         return t('Deleted %entity %label.', $vars);
 
-      case 'clone':
-        $new_entity = clone $entity;
-        $new_entity->id = FALSE;
-        $new_entity->name = '';
-        $new_entity->label .= ' (' . t('cloned') . ')';
-        // Disabled for now.
-        //$new_entity->save();
-        watchdog('entity', 'Cloned %entity %label.', $vars, WATCHDOG_NOTICE, $edit_link);
-        return t('Cloned %entity %label.', $vars);
-
       default:
         return FALSE;
     }
@@ -223,16 +207,16 @@ function entity_overview_form($form, &$form_state, $type) {
 }
 
 /**
- * Entity operation confirm form.
+ * Entity operation form.
  */
-function entity_confirm_op($form, &$form_state, $type, $entity, $op) {
+function entity_operation_form($form, &$form_state, $type, $entity, $op) {
   return entity_ui_controller($type)->operationForm($form, $form_state, $entity, $op);
 }
 
 /**
- * Entity operation confirm form - submit callback.
+ * Entity operation form - submit callback.
  */
-function entity_confirm_op_submit($form, &$form_state) {
+function entity_operation_form_submit($form, &$form_state) {
   $type = $form_state['type'];
   entity_ui_controller($type)->operationFormSubmit($form, $form_state);
 }
