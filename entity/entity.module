@@ -371,11 +371,9 @@ function template_preprocess_entity(&$variables) {
 
   $variables['title']      = check_plain(entity_label($entity_type, $entity));
   if ($uri = entity_uri($entity_type, $entity)) {
-    $variables['entity_url'] = url($uri['path'], $uri['options']);
+    $variables['url'] = url($uri['path'], $uri['options']);
   }
-  // If there is no specified URI, there is no "page" we could link to. So
-  // render always as $page == TRUE.
-  $variables['page'] = (!$uri || ($variables['view_mode'] == 'full' && $_GET['q'] == $variables['entity_url']));
+  $variables['page'] = $uri && $uri['path'] == $_GET['q'];
 
   // Helpful $content variable for templates.
   $variables['content'] = array();

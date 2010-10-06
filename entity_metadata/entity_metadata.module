@@ -192,6 +192,23 @@ function entity_metadata_verbatim_set($data, $name, $value) {
 }
 
 /**
+ * Gets the property using the getter method (named just like the property).
+ */
+function entity_metadata_getter_method($object, array $options, $name) {
+  return $object->$name();
+}
+
+/**
+ * Sets the property to the given value using the setter method. May be used as
+ * 'setter callback'.
+ */
+function entity_metadata_setter_method($object, $name, $value) {
+  $method = 'set' . $name;
+  // Invoke the setProperty() method where 'Property' is the property name.
+  $object->$method($value);
+}
+
+/**
  * Getter callback for getting an array. Makes sure it's numerically indexed.
  */
 function entity_metadata_get_list($data, array $options, $name) {
@@ -239,18 +256,25 @@ function entity_metadata_entity_info_alter(&$entity_info) {
   $entity_info['file']['save callback'] = 'file_save';
   $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
 
+  // View callbacks.
+  $entity_info['node']['view callback'] = 'entity_metadata_view_node';
+  $entity_info['user']['view callback'] = 'entity_metadata_view_single';
+
   if (module_exists('comment')) {
     $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
     $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
     $entity_info['comment']['save callback'] = 'comment_save';
     $entity_info['comment']['deletion callback'] = 'comment_delete';
+    $entity_info['comment']['view callback'] = 'entity_metadata_view_single';
   }
   if (module_exists('taxonomy')) {
     $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
-    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
     $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
     $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
     $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
+    $entity_info['taxonomy_term']['view callback'] = 'entity_metadata_view_single';
+
+    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
     $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
     $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
     $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
@@ -346,6 +370,37 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
   $info = entity_get_info($entity_type);
   if (isset($info['creation callback'])) {
     return $info['creation callback']($values, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->create($values);
+  }
+  return FALSE;
+}
+
+/**
+ * Generate an array for rendering the given entities.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entities
+ *   An array of entities to render, keyed by their ids. E.g. as returned from
+ *   entity_load().
+ * @param $view_mode
+ *   A view mode as used by this entity type, e.g. 'full', 'teaser'...
+ * @param $langcode
+ *   (optional) A language code to use for rendering. Defaults to the global
+ *   content language of the current request.
+ * @return
+ *   The renderable array or FALSE if there were no information how to view the
+ *   entity.
+ */
+function entity_metdata_entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
+  $info = entity_get_info($entity_type);
+  if (isset($info['view callback'])) {
+    return $info['view callback']($entities, $view_mode, $langcode, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->view($entities, $view_mode, $langcode);
   }
   return FALSE;
 }
