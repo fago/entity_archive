@@ -30,7 +30,7 @@ class EntityDefaultRulesController {
     $defaults = array(
       'module' => isset($info['module']) ? $info['module'] : 'entity',
       'group' => $label,
-      'access callback' => 'entity_rules_integration_access',
+      'access callback' => 'entity_rules_integration_event_access',
     );
 
     $items[$type . '_insert'] = $defaults + array(
@@ -82,10 +82,11 @@ function entity_rules_event_info() {
 /**
  * Rules integration access callback.
  */
-function entity_rules_integration_access($type, $name) {
-  if ($type == 'event') {
-    return TRUE;
-    // @todo: Fix once entity_access() has been implemented.
-    //return entity_access('view', $type);
-  }
+function entity_rules_integration_event_access($type, $event_name) {
+  // Cut of _insert/_update/.. from the event name.
+  $entity_type = substr($event_name, 0, strrpos($event_name, '_'));
+
+  $result = entity_access('view', $entity_type);
+  // If no access callback is given, just grant access for viewing.
+  return isset($result) ? $result : TRUE;
 }
