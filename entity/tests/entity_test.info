@@ -7,9 +7,3 @@ files[] = entity_test.module
 files[] = entity_test.install
 dependencies[] = entity
 hidden = TRUE
-
-; #924090 Workaround to fix the drupal.org QA test bot.
-; This module doesn't really depend on Rules, but there is test case using the
-; Rules module. In order for the bot to be able to run this test, we need to
-; to specify Rules here.
-dependencies[] = rules
