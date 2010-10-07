@@ -22,34 +22,25 @@
  *   work you also have to set the bundle key for the referred entity.
  * - module: The module providing the entity. Optionally, but suggested.
  * - exportable: Whether the entity is exportable. Defaults to FALSE.
- * - 'entity keys' - 'name': An optional name of a property that contains a
- *   unique name of the entity. If specified, this is used as uniform identifier
- *   of the entity while the 'id' key is only used to refer to the entity
- *   internally, e.g. in the database. If not specified, this defaults to the
- *   'id' key.
- *   However for exportable entities, it's suggested to use a string here as
- *   strings as names are more portable across systems. It's possible to go with
- *   the numeric 'id', but be aware that export collisions are very likely.
- * - export: An array of optional information used for exporting. Known keys
- *   are:
- *   - default hook: What hook to invoke to find exportable objects that are
- *     currently defined. These will all be gathered into a giant array.
- *     Defaults to 'default_' . $entity_type.
+ * - 'entity keys' An array of keys as defined by core. The following additional
+ *   keys are used by the entity CRUD API:
+ *   - name: An optional name of a property that contains a unique name of the
+ *     entity. If specified, this is used as uniform identifier of the entity
+ *     while the 'id' key is only used to refer to the entity internally, e.g.
+ *     in the database. If not specified, this defaults to the 'id' key.
+ *     For exportable entities, it's strongly recommended to use a machine name
+ *     here as those are more portable across systems.
+ *   - module: Optional. A key for the module property containing the source
+ *     module name for exportable entities provided in code. Defaults to
+ *     'module'.
+ * - export: An array of optional information used for exporting. For ctools
+ *   exportables compatibility any export-keys supported by ctools may be added
+ *   to this array too.
+ *   - default hook: What hook to invoke to find exportable entities that are
+ *     currently defined. This hook is automatically called by the CRUD
+ *     controller during entity_load(). Defaults to 'default_' . $entity_type.
  *   - status key: The name of the entity property to use for setting the
  *     entities status using defined bit flags. Defaults to 'status'.
- *   - identifier: When exporting the object, the identifier is the variable
- *     that the exported object will be placed in. Defaults to the entity type.
- *   - bulk export': Declares whether or not the exportable will be available
- *     for bulk exporting.
- *   - export callback: The callback to use for bulk exporting. Defaults to
- *     $module . '_export_' . $entity_type.
- *   - list callback: Bulk export callback to provide a list of exportable
- *     objects to be chosen for bulk exporting. Defaults to
- *     $module . '_' . $entity_type . '_list'.
- *   - to hook code callback: Function used to generate an export for the bulk
- *     export process. This is only necessary if the export is more complicated
- *     than simply listing the fields. Defaults to $module . '_' .
- *     $entity_type . '_to_hook_code'.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController. Set it to FALSE to disable this feature.
