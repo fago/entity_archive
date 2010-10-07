@@ -31,15 +31,31 @@ class EntityDefaultUIController {
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
-    $entities = entity_load($this->entity_type, FALSE);
+    $entities = entity_load($this->entity_type);
     foreach ($entities as $id => $entity) {
-      // menu path for edit, clone, revert, delete
-      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
+      // Edit form
+      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
       $id_count = count(explode('/', $path)) - 2;
+      $items[$path] = array(
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array($this->entity_type . '_form', $this->entity_type, $id_count),
+        'load arguments' => array($this->entity_type),
+        'access callback' => 'entity_access',
+        'access arguments' => array('update', $this->entity_type),
+        'type' => MENU_CALLBACK,
+        'file' => 'entity.ui.inc',
+      );
+      // Change form id if there is a bundle
+      list(,,$bundle) = entity_extract_ids($this->entity_type, $entity);
+      if ($bundle != $this->entity_type) {
+        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, $op_count);
+      }
+      // menu path for operations like clone, revert, delete
+      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
       $op_count = $id_count + 1;
       $items[$path] = array(
         'page callback' => 'drupal_get_form',
-        'page arguments' => array('entity_operation_form', $this->entity_type, $id_count, $op_count),
+        'page arguments' => array($this->entity_type . '_operation_form', $this->entity_type, $id_count, $op_count),
         'load arguments' => array($this->entity_type),
         'access callback' => 'entity_access',
         'access arguments' => array($op_count, $this->entity_type),
@@ -61,7 +77,7 @@ class EntityDefaultUIController {
       '#collapsible' => TRUE,
     );
 
-    $entities = entity_load($this->entity_type, FALSE);
+    $entities = entity_load($this->entity_type);
 
     $rows = array();
     foreach ($entities as $id => $entity) {
@@ -131,18 +147,6 @@ class EntityDefaultUIController {
       'op' => $op
     );
     switch ($op) {
-      case 'clone':
-        $entity = clone $entity;
-        $entity->id = FALSE;
-        $form_state['entity'] = $entity;
-        return drupal_get_form($this->entity_type . '_entity_form', $entity, $op);
-
-      case 'edit':
-        if (!entity_has_status($this->entity_type, $entity, ENTITY_FIXED)) {
-          return drupal_get_form($this->entity_type . '_entity_form', $entity, $op);
-        }
-        break;
-
       case 'revert':
         if (entity_has_status($this->entity_type, $entity, ENTITY_OVERRIDDEN)) {
           $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));

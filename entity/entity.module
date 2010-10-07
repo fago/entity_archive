@@ -446,8 +446,21 @@ function entity_ui_controller($type) {
 function entity_forms() {
   $forms = array();
   if ($entity_info = entity_get_info()) {
-    foreach (array_keys($entity_info) as $type) {
-      $forms[$type . '_entity_overview_form']['callback'] = 'entity_overview_form';
+    foreach ($entity_info as $type => $info) {
+      if (isset($info['admin ui'])) {
+        $forms[$type . '_overview_form']['callback'] = 'entity_overview_form';
+        $forms[$type . '_operation_form']['callback'] = 'entity_operation_form';
+        // Edit form for single bundle.
+        if (count($info['bundles']) == 1 && isset($info['bundles'][$type])) {
+          $forms[$type . '_form']['callback'] = 'entity_operation_form';
+        }
+        // Edit forms for multiple bundles.
+        else {
+          foreach ($info['bundles'] as $bundle => $bundle_info) {
+            $forms[$type . '_edit_' . $bundle . '_form']['callback'] = 'entity_operation_form';
+          }
+        }
+      }
     }
   }
   return $forms;
