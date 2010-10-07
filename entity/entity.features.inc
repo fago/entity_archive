@@ -29,7 +29,9 @@ class EntityDefaultFeaturesController {
   public function __construct($type) {
     $this->type = $type;
     $this->info = entity_get_info($type);
-    $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+    $this->info['entity keys'] += array('module' => 'module', 'status' => 'status');
+    $this->statusKey = $this->info['entity keys']['status'];
+    $this->moduleKey = $this->info['entity keys']['module'];
     if (!empty($this->info['bundle of'])) {
       $entity_info = entity_get_info($this->info['bundle of']);
       $this->bundleKey = $entity_info['bundle keys']['bundle'];

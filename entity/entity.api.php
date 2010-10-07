@@ -33,14 +33,14 @@
  *   - module: Optional. A key for the module property containing the source
  *     module name for exportable entities provided in code. Defaults to
  *     'module'.
+ *   - status: Optional. The name of the entity property to use for setting the
+ *     exportable entity status using defined bit flags. Defaults to 'status'.
  * - export: An array of optional information used for exporting. For ctools
  *   exportables compatibility any export-keys supported by ctools may be added
  *   to this array too.
  *   - default hook: What hook to invoke to find exportable entities that are
  *     currently defined. This hook is automatically called by the CRUD
  *     controller during entity_load(). Defaults to 'default_' . $entity_type.
- *   - status key: The name of the entity property to use for setting the
- *     entities status using defined bit flags. Defaults to 'status'.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController. Set it to FALSE to disable this feature.

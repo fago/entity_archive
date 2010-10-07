@@ -119,8 +119,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     // Use the name key as primary identifier.
     $this->nameKey = isset($this->entityInfo['entity keys']['name']) ? $this->entityInfo['entity keys']['name'] : $this->idKey;
     if (isset($this->entityInfo['exportable'])) {
-      $this->entityInfo['entity keys'] += array('module' => 'module');
-      $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+      $this->entityInfo['entity keys'] += array('module' => 'module', 'status' => 'status');
+      $this->statusKey = $this->entityInfo['entity keys']['status'];
       $this->moduleKey = $this->entityInfo['entity keys']['module'];
     }
     // If this is the bundle of another entity, set the bundle key.
