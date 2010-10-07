@@ -164,6 +164,9 @@ class EntityAPIRulesIntegrationTestCase extends DrupalWebTestCase {
       'name' => 'Entity CRUD Rules integration',
       'description' => 'Tests the Rules integration provided by the Entity CRUD API.',
       'group' => 'Entity API',
+      // Unfortunately the drupal.org testing bot doesn't pick that up yet, so
+      // this test is excluded from the automated tests. See #924090.
+      'dependencies' => array('rules'),
     );
   }
 

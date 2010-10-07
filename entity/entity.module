@@ -370,9 +370,8 @@ function template_preprocess_entity(&$variables) {
   $info = entity_get_info($entity_type);
 
   $variables['title']      = check_plain(entity_label($entity_type, $entity));
-  if ($uri = entity_uri($entity_type, $entity)) {
-    $variables['url'] = url($uri['path'], $uri['options']);
-  }
+  $uri = entity_uri($entity_type, $entity);
+  $variables['url'] = $uri ? url($uri['path'], $uri['options']) : FALSE;
   $variables['page'] = $uri && $uri['path'] == $_GET['q'];
 
   // Helpful $content variable for templates.
