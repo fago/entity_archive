@@ -65,6 +65,11 @@
  *   module integration for exportable entities. The given class has to inherit
  *   from the default class being EntityDefaultFeaturesController. Set it to
  *   FALSE to disable this feature.
+ * - access callback: Specify a callback that returns access permissions for the
+ *   operations 'create', 'updated', 'delete' and 'view'. The callback gets
+ *   optionally the entity and the user account to check for passed. See
+ *   entity_metadata_no_hook_node_access() for an example.
+ *   Optional, but suggested for the Rules integration.
  *
  * @see hook_entity_info()
  */
