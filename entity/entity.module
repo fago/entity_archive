@@ -230,6 +230,30 @@ function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = N
 }
 
 /**
+ * Determines whether the given user has access to an entity.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param $entity_type
+ *   The entity type of the entity to check for.
+ * @param $entity
+ *   Optionally an entity to check access for. If no entity is given, it will be
+ *   determined whether access is allowed for all entities of the given type.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ *
+ * @return boolean
+ *   Whether access is allowed or not. If the entity type does not specify any
+ *   access information, NULL is returned.
+ */
+function entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
+  if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
+    return $info[$entity_type]['access callback']($op, $entity, $account, $entity_type);
+  }
+}
+
+/**
  * Returns an array of entity info for the entity types provided via the entity CRUD API.
  */
 function entity_crud_get_info() {
