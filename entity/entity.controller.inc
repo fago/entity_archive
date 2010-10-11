@@ -105,7 +105,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
 class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
   protected $defaultEntities, $defaultsFiltered = FALSE;
-  protected $nameKey, $statusKey, $bundleKey;
+  protected $nameKey, $statusKey, $bundleKey, $moduleKey;
 
   /**
    * Overridden.
@@ -119,7 +119,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     // Use the name key as primary identifier.
     $this->nameKey = isset($this->entityInfo['entity keys']['name']) ? $this->entityInfo['entity keys']['name'] : $this->idKey;
     if (isset($this->entityInfo['exportable'])) {
-      $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+      $this->entityInfo['entity keys'] += array('module' => 'module', 'status' => 'status');
+      $this->statusKey = $this->entityInfo['entity keys']['status'];
+      $this->moduleKey = $this->entityInfo['entity keys']['module'];
     }
     // If this is the bundle of another entity, set the bundle key.
     if (isset($this->entityInfo['bundle of'])) {
@@ -190,8 +192,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         $ids = array_keys(array_diff_key($passed_ids, $entities));
       }
     }
-    if (!empty($this->entityInfo['exportable']) && ($ids !== array() || !$passed_ids)) {
-      // Add default entities defined in code.
+    // Add default entities defined in code. Once the defaults have been
+    // applied and filtered, they are already in the cache so we can skip this.
+    if (!empty($this->entityInfo['exportable']) && ($ids !== array() || !$passed_ids) && !$this->defaultsFiltered) {
       $entities += $this->getDefaults($ids, $conditions);
     }
 
@@ -221,6 +224,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
           $id = $record->{$this->nameKey};
           if (isset($this->defaultEntities[$id])) {
             $record->{$this->statusKey} |= ENTITY_IN_CODE;
+            $record->{$this->moduleKey} = $this->defaultEntities[$id]->{$this->moduleKey};
             unset($entities[$id]);
           }
         }
@@ -265,13 +269,16 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         $this->entityInfo += array('export' => array());
         $this->entityInfo['export'] += array('default hook' => 'default_' . $this->entityType);
         if ($hook = $this->entityInfo['export']['default hook']) {
-          $this->defaultEntities = module_invoke_all($hook);
-          drupal_alter($hook, $this->defaultEntities);
-
-          foreach ($this->defaultEntities as $id => $entity) {
-            $entity->{$this->statusKey} |= ENTITY_IN_CODE;
-            $entity->{$this->nameKey} = $id;
+          // Invoke the hook and collect default entities.
+          foreach (module_implements($hook) as $module) {
+            foreach ((array) module_invoke($module, $hook) as $id => $entity) {
+              $entity->{$this->statusKey} |= ENTITY_IN_CODE;
+              $entity->{$this->nameKey} = $id;
+              $entity->{$this->moduleKey} = $module;
+              $this->defaultEntities[$id] = $entity;
+            }
           }
+          drupal_alter($hook, $this->defaultEntities);
         }
       }
     }
@@ -280,11 +287,12 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       // Remove overridden entities. This is not necessary for pure id based
       // lookups though, as in this case overridden entities would get
       // incorporated later anyway.
+      $not_overridden_defaults = $this->defaultEntities;
       foreach ($this->query(array_keys($this->defaultEntities), array()) as $record) {
-        $this->defaultEntities[$record->{$this->nameKey}] = FALSE;
+        unset($not_overridden_defaults[$record->{$this->nameKey}]);
         unset($entities[$record->{$this->nameKey}]);
       }
-      $this->cacheSet(array_filter($this->defaultEntities));
+      $this->cacheSet($not_overridden_defaults);
       $this->defaultsFiltered = TRUE;
     }
     return $this->applyConditions($entities, $conditions);

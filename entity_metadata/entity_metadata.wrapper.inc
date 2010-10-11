@@ -358,14 +358,27 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * Magic method: Get a wrapper for a property.
    */
   public function __get($name) {
-    return $this->get($name);
+    if (strpos($name, 'krumo') === 0) {
+      // #914934 Ugly workaround to allow krumo to write its recursion property.
+      // This is necessary to make dpm() work without throwing exceptions.
+      return NULL;
+    }
+    $get = $this->get($name);
+    return $get;
   }
 
   /**
    * Magic method: Set a property.
    */
   public function __set($name, $value) {
-    $this->get($name)->set($value);
+    if (strpos($name, 'krumo') === 0) {
+      // #914934 Ugly workaround to allow krumo to write its recursion property.
+      // This is necessary to make dpm() work without throwing exceptions.
+      $this->$name = $value;
+    }
+    else {
+      $this->get($name)->set($value);
+    }
   }
 
   /**

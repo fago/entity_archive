@@ -29,7 +29,9 @@ class EntityDefaultFeaturesController {
   public function __construct($type) {
     $this->type = $type;
     $this->info = entity_get_info($type);
-    $this->statusKey = isset($this->entityInfo['export']['status key']) ? $this->entityInfo['export']['status key'] : 'status';
+    $this->info['entity keys'] += array('module' => 'module', 'status' => 'status');
+    $this->statusKey = $this->info['entity keys']['status'];
+    $this->moduleKey = $this->info['entity keys']['module'];
     if (!empty($this->info['bundle of'])) {
       $entity_info = entity_get_info($this->info['bundle of']);
       $this->bundleKey = $entity_info['bundle keys']['bundle'];
@@ -71,27 +73,26 @@ class EntityDefaultFeaturesController {
     foreach (entity_load($this->type, $data) as $name => $entity) {
       // If this entity is provided by a different module, add it as dependency.
       if ($entity->{$this->statusKey} & ENTITY_IN_CODE) {
-        // @todo Add the module providing the entity in code.
-        $export['features'][$this->type][$name] = $name;
+        $module = $entity->{$this->moduleKey};
+        $export['dependencies'][$module] = $module;
       }
       // Otherwise export the entity.
       else {
         $export['features'][$this->type][$name] = $name;
+
+        // If this is a bundle of a fieldable entity, add its fields to the pipe.
+        if (!empty($this->info['bundle of'])) {
+          $fields = field_info_instances($this->info['bundle of'], $entity->{$this->bundleKey});
+          foreach ($fields as $name => $field) {
+            $pipe['field'][] = "{$field['entity_type']}-{$field['bundle']}-{$field['field_name']}";
+          }
+        }
       }
     }
     // Add the module providing the entity type as dependency.
     if ($data && !empty($this->info['module'])) {
       $export['dependencies'][$this->info['module']] = $this->info['module'];
     }
-
-    // If this is a bundle of a fieldable entity, add its fields to the pipe.
-    if (!empty($this->info['bundle of'])) {
-      $fields = field_info_instances($this->info['bundle of'], $entity->{$this->bundleKey});
-      foreach ($fields as $name => $field) {
-        $pipe['field'][] = "{$field['entity_type']}-{$field['bundle']}-{$field['field_name']}";
-      }
-    }
-
     return $pipe;
   }
 
