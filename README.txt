@@ -27,7 +27,10 @@ you may stop reading now.
    As an alternative you may just rely on the provided entity_save(), entity_delete()
    and entity_create() functions and/or add your own ENTITY_TYPE_(save|delete|create)
    API functions.
-
+   
+ * Check out the documentation in the drupal.org handbook:
+   http://drupal.org/node/878804
+ 
 
  How to add a new entity type?
  ------------------------------
@@ -59,8 +62,9 @@ you may stop reading now.
     loading as well as serialized on saving. If the 'merge' attribute is also
     set to TRUE the unserialized data is automatically "merged" into the entity.
 
+  * Further details can be found at http://drupal.org/node/878804.    
     
-    
+
 
 --------------------------------------------------------------------------------
                               Entity Metadata
@@ -68,7 +72,7 @@ you may stop reading now.
 
   * This module introduces a unique place for metadata about entity properties.
     For that hook_entity_info() already used by core is extended, for details
-    have a look at the doxygen documentation. (not yet there)
+    have a look at the doxygen documentation.
 
   * The metadata about entity properties contains information about the
     data type and callbacks for how to get and set the data of property. That
@@ -76,10 +80,12 @@ you may stop reading now.
     data formats like XML.
 
   * The module provides this metadata for all core modules, contrib modules
-    should provide the data on their own. For that hook_entity_info_alter() can
-    be implemented. When only used for the metadata this implementation may
-    reside in a {YOUR_MODULE}.info.inc include file, which is automatically
+    should provide the data on their own.
+    To do so hook_entity_property_info() has to be implemented, what may be done
+    in your module's {YOUR_MODULE}.info.inc include file, which is automatically
     included once this module is active and the hook is invoked.
+    
+    Read more about providing metadata at http://drupal.org/node/878876.
 
   * For making use of this metadata the module provides some wrapper classes
     which ease getting and setting values. The wrapper support chained usage for
@@ -120,3 +126,4 @@ you may stop reading now.
     
       $wrapper->body->value->raw();
       
+ 
