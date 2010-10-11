@@ -382,7 +382,7 @@ function theme_entity_status($variables) {
   }
 }
 
-/*
+/**
  * Process variables for entity.tpl.php.
  */
 function template_preprocess_entity(&$variables) {
