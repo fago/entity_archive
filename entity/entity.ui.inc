@@ -25,14 +25,14 @@ class EntityDefaultUIController {
     $items[$this->entity_info['admin ui']['path']] = array(
       'title' => $this->entity_info['label'],
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('entity_overview_form', $this->entity_type),
+      'page arguments' => array('entity_ui_overview_form', $this->entity_type),
       'description' => 'Administer entity type ' . $this->entity_info['label'],
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
     $items[$this->entity_info['admin ui']['path'] . '/add'] = array(
-      'title callback' => 'entity_operation_title',
+      'title callback' => 'entity_ui_operation_title',
       'title arguments' => array('add', $this->entity_info['label']),
       'page callback' => 'drupal_get_form',
       'page arguments' => array($this->entity_type . '_form', NULL, 'add'),
@@ -48,7 +48,7 @@ class EntityDefaultUIController {
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
       $id_count = count(explode('/', $path)) - 2;
       $items[$path] = array(
-        'title callback' => 'entity_operation_title',
+        'title callback' => 'entity_ui_operation_title',
         'title arguments' => array('edit', $label),
         'page callback' => 'drupal_get_form',
         'page arguments' => array($this->entity_type . '_form', $id_count, 'edit'),
@@ -66,7 +66,7 @@ class EntityDefaultUIController {
       // Clone form, a special case for the edit form.
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/clone';
       $items[$path] = array(
-        'title callback' => 'entity_operation_title',
+        'title callback' => 'entity_ui_operation_title',
         'title arguments' => array('clone', $label),
         'page callback' => 'drupal_get_form',
         'page arguments' => array($this->entity_type . '_form', $id_count, 'clone'),
@@ -84,7 +84,7 @@ class EntityDefaultUIController {
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
       $op_count = $id_count + 1;
       $items[$path] = array(
-        'title callback' => 'entity_operation_title',
+        'title callback' => 'entity_ui_operation_title',
         'title arguments' => array($op_count, $label),
         'page callback' => 'drupal_get_form',
         'page arguments' => array($this->entity_type . '_operation_form', $this->entity_type, $id_count, $op_count),
@@ -238,21 +238,21 @@ class EntityDefaultUIController {
  * Form API callback that invokes the UI controller of the given type to render
  * the entity overview form.
  */
-function entity_overview_form($form, &$form_state, $type) {
+function entity_ui_overview_form($form, &$form_state, $type) {
   return entity_ui_controller($type)->overviewForm($form, $form_state);
 }
 
 /**
  * Entity operation form.
  */
-function entity_operation_form($form, &$form_state, $type, $entity, $op) {
+function entity_ui_operation_form($form, &$form_state, $type, $entity, $op) {
   return entity_ui_controller($type)->operationForm($form, $form_state, $entity, $op);
 }
 
 /**
  * Entity operation form - submit callback.
  */
-function entity_operation_form_submit($form, &$form_state) {
+function entity_ui_operation_form_submit($form, &$form_state) {
   $type = $form_state['type'];
   entity_ui_controller($type)->operationFormSubmit($form, $form_state);
 }
@@ -260,7 +260,7 @@ function entity_operation_form_submit($form, &$form_state) {
 /**
  * Title callback for operations on entities.
  */
-function entity_operation_title($op, $label) {
+function entity_ui_operation_title($op, $label) {
   switch ($op) {
     case 'add':
       return t('Add @entity_type', array('@entity_type' => $label));
