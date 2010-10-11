@@ -38,19 +38,32 @@ class EntityDefaultUIController {
       $id_count = count(explode('/', $path)) - 2;
       $items[$path] = array(
         'page callback' => 'drupal_get_form',
-        'page arguments' => array($this->entity_type . '_form', $this->entity_type, $id_count),
+        'page arguments' => array($this->entity_type . '_form', $this->entity_type, $id_count, 'edit'),
         'load arguments' => array($this->entity_type),
         'access callback' => 'entity_access',
         'access arguments' => array('update', $this->entity_type),
         'type' => MENU_CALLBACK,
-        'file' => 'entity.ui.inc',
       );
       // Change form id if there is a bundle
       list(,,$bundle) = entity_extract_ids($this->entity_type, $entity);
       if ($bundle != $this->entity_type) {
-        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, $op_count);
+        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, 'edit');
       }
-      // menu path for operations like clone, revert, delete
+      // Clone form, a special case for the edit form.
+      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/clone';
+      $items[$path] = array(
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array($this->entity_type . '_form', $this->entity_type, $id_count, 'clone'),
+        'load arguments' => array($this->entity_type),
+        'access callback' => 'entity_access',
+        'access arguments' => array('update', $this->entity_type),
+        'type' => MENU_CALLBACK,
+      );
+      // Change form id if there is a bundle
+      if ($bundle != $this->entity_type) {
+        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, 'clone');
+      }
+      // menu path for operations like revert, delete
       $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
       $op_count = $id_count + 1;
       $items[$path] = array(
