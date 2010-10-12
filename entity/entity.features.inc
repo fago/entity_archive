@@ -72,7 +72,7 @@ class EntityDefaultFeaturesController {
     $pipe = array();
     foreach (entity_load($this->type, $data) as $name => $entity) {
       // If this entity is provided by a different module, add it as dependency.
-      if ($entity->{$this->statusKey} & ENTITY_IN_CODE) {
+      if (($entity->{$this->statusKey} & ENTITY_IN_CODE) && $entity->{$this->moduleKey} != $module_name) {
         $module = $entity->{$this->moduleKey};
         $export['dependencies'][$module] = $module;
       }
