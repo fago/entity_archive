@@ -49,9 +49,8 @@ class EntityDefaultUIController {
     $items[$path] = array(
       'title callback' => 'entity_ui_operation_title',
       'title arguments' => array('edit', $this->entity_type, $id_count),
-      'page callback' => 'drupal_get_form',
-      // @todo: create own page callback to decide between simple and bundle form
-      'page arguments' => array($this->entity_type . '_form', $id_count, 'edit'),
+      'page callback' => 'entity_ui_get_form',
+      'page arguments' => array($this->entity_type, $id_count, 'edit'),
       'load arguments' => array($this->entity_type),
       'access callback' => 'entity_access',
       'access arguments' => array('update', $this->entity_type),
@@ -63,8 +62,8 @@ class EntityDefaultUIController {
     $items[$path] = array(
       'title callback' => 'entity_ui_operation_title',
       'title arguments' => array('clone', $this->entity_type, $id_count),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entity_type . '_form', $id_count, 'clone'),
+      'page callback' => 'entity_ui_get_form',
+      'page arguments' => array($this->entity_type, $id_count, 'clone'),
       'load arguments' => array($this->entity_type),
       'access callback' => 'entity_access',
       'access arguments' => array('update', $this->entity_type),
@@ -230,6 +229,20 @@ class EntityDefaultUIController {
  */
 function entity_ui_overview_form($form, &$form_state, $type) {
   return entity_ui_controller($type)->overviewForm($form, $form_state);
+}
+
+/**
+ * Retrieve the edit form for an entity, which depends on the bundle.
+ */
+function entity_ui_get_form($entity_type, $entity, $op) {
+  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+  if ($bundle == $entity_type) {
+    $form_id = $entity_type . '_form';
+  }
+  else {
+    $form_id = $entity_type . '_edit_' . $bundle . '_form';
+  }
+  return drupal_get_form($form_id, $entity, $op);
 }
 
 /**
