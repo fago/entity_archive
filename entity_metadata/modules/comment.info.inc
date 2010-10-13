@@ -146,11 +146,13 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
     'label' => t("Comment count"),
     'description' => t("The number of comments posted on a node."),
     'getter callback' => 'entity_metadata_comment_get_node_properties',
+    'type' => 'integer',
   );
   $properties['comment_count_new'] = array(
     'label' => t("New comment count"),
     'description' => t("The number of comments posted on a node since the reader last viewed it."),
     'getter callback' => 'entity_metadata_comment_get_node_properties',
+    'type' => 'integer',
   );
 
   // The comment body field is available for all bundles, so add it directly
