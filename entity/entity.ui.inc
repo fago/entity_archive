@@ -8,6 +8,7 @@
 
 class EntityDefaultUIController {
 
+  // @todo change var names to camel case
   protected $entity_type;
 
   protected $entity_info;
@@ -27,13 +28,14 @@ class EntityDefaultUIController {
       'page callback' => 'drupal_get_form',
       'page arguments' => array('entity_ui_overview_form', $this->entity_type),
       'description' => 'Administer entity type ' . $this->entity_info['label'],
+      // @todo description callback?
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entity_type),
       'file' => 'entity.ui.inc',
     );
     $items[$this->entity_info['admin ui']['path'] . '/add'] = array(
-      'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array('add', $this->entity_info['label']),
+      'title callback' => 'entity_ui_add_title',
+      'title arguments' => array($this->entity_info['label']),
       'page callback' => 'drupal_get_form',
       'page arguments' => array($this->entity_type . '_form', NULL, 'add'),
       'access callback' => 'entity_access',
@@ -41,60 +43,48 @@ class EntityDefaultUIController {
       'type' => MENU_LOCAL_ACTION,
       'file' => 'entity.ui.inc',
     );
-    $entities = entity_load($this->entity_type);
-    foreach ($entities as $id => $entity) {
-      $label = entity_label($this->entity_type, $entity);
-      // Edit form
-      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
-      $id_count = count(explode('/', $path)) - 2;
-      $items[$path] = array(
-        'title callback' => 'entity_ui_operation_title',
-        'title arguments' => array('edit', $label),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array($this->entity_type . '_form', $id_count, 'edit'),
-        'load arguments' => array($this->entity_type),
-        'access callback' => 'entity_access',
-        'access arguments' => array('update', $this->entity_type),
-        'type' => MENU_CALLBACK,
-        'file' => 'entity.ui.inc',
-      );
-      // Change form id if there is a bundle
-      list(,,$bundle) = entity_extract_ids($this->entity_type, $entity);
-      if ($bundle != $this->entity_type) {
-        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, 'edit');
-      }
-      // Clone form, a special case for the edit form.
-      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/clone';
-      $items[$path] = array(
-        'title callback' => 'entity_ui_operation_title',
-        'title arguments' => array('clone', $label),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array($this->entity_type . '_form', $id_count, 'clone'),
-        'load arguments' => array($this->entity_type),
-        'access callback' => 'entity_access',
-        'access arguments' => array('update', $this->entity_type),
-        'type' => MENU_CALLBACK,
-        'file' => 'entity.ui.inc',
-      );
-      // Change form id if there is a bundle
-      if ($bundle != $this->entity_type) {
-        $itmes[$path]['page arguments'] = array($this->entity_type . '_edit_' . $bundle . '_form', $this->entity_type, $id_count, 'clone');
-      }
-      // menu path for operations like revert, delete
-      $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
-      $op_count = $id_count + 1;
-      $items[$path] = array(
-        'title callback' => 'entity_ui_operation_title',
-        'title arguments' => array($op_count, $label),
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array($this->entity_type . '_operation_form', $this->entity_type, $id_count, $op_count),
-        'load arguments' => array($this->entity_type),
-        'access callback' => 'entity_access',
-        'access arguments' => array($op_count, $this->entity_type),
-        'type' => MENU_CALLBACK,
-        'file' => 'entity.ui.inc',
-      );
-    }
+    // Edit form
+    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
+    $id_count = count(explode('/', $path)) - 2;
+    $items[$path] = array(
+      'title callback' => 'entity_ui_operation_title',
+      'title arguments' => array('edit', $this->entity_type, $id_count),
+      'page callback' => 'drupal_get_form',
+      // @todo: create own page callback to decide between simple and bundle form
+      'page arguments' => array($this->entity_type . '_form', $id_count, 'edit'),
+      'load arguments' => array($this->entity_type),
+      'access callback' => 'entity_access',
+      'access arguments' => array('update', $this->entity_type),
+      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
+      'file' => 'entity.ui.inc',
+    );
+    // Clone form, a special case for the edit form.
+    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/clone';
+    $items[$path] = array(
+      'title callback' => 'entity_ui_operation_title',
+      'title arguments' => array('clone', $this->entity_type, $id_count),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($this->entity_type . '_form', $id_count, 'clone'),
+      'load arguments' => array($this->entity_type),
+      'access callback' => 'entity_access',
+      'access arguments' => array('update', $this->entity_type),
+      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
+      'file' => 'entity.ui.inc',
+    );
+    // menu path for operations like revert, delete
+    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
+    $op_count = $id_count + 1;
+    $items[$path] = array(
+      'title callback' => 'entity_ui_operation_title',
+      'title arguments' => array($op_count, $this->entity_type, $id_count),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array($this->entity_type . '_operation_form', $this->entity_type, $id_count, $op_count),
+      'load arguments' => array($this->entity_type),
+      'access callback' => 'entity_access',
+      'access arguments' => array($op_count, $this->entity_type),
+      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
+      'file' => 'entity.ui.inc',
+    );
     return $items;
   }
 
@@ -258,12 +248,18 @@ function entity_ui_operation_form_submit($form, &$form_state) {
 }
 
 /**
+ * Title callback for add operations on entities.
+ */
+function entity_ui_add_title($type_label) {
+  return t('Add @entity_type', array('@entity_type' => $type_label));
+}
+
+/**
  * Title callback for operations on entities.
  */
-function entity_ui_operation_title($op, $label) {
+function entity_ui_operation_title($op, $entity_type, $entity) {
+  $label = entity_label($entity_type, $entity);
   switch ($op) {
-    case 'add':
-      return t('Add @entity_type', array('@entity_type' => $label));
     case 'edit':
       return t('Edit @entity', array('@entity' => $label));
     case 'clone':
