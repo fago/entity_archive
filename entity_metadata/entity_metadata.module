@@ -333,12 +333,17 @@ function entity_metadata_entity_save($entity_type, &$entity) {
 /**
  * Permanently delete the given entity.
  *
+ * Note: This is no hook_entity_delete() implementation. See
+ * entity_metadata_module_implements_alter().
+ *
  * @param $entity_type
  *   The type of the entity.
  * @param $id
  *   The uniform identifier of the entity to delete.
  * @return
  *   FALSE, if there were no information how to delete the entity.
+ *
+ * @see entity_metadata_module_implements_alter()
  */
 function entity_metadata_entity_delete($entity_type, $id) {
   $info = entity_get_info($entity_type);
@@ -351,6 +356,18 @@ function entity_metadata_entity_delete($entity_type, $id) {
   }
   else {
     return FALSE;
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * Avoid an undesired implementation of hook_entity_delete() for
+ * entity_metadata_entity_delete().
+ */
+function entity_metadata_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'entity_delete') {
+    unset($implementations['entity_metadata']);
   }
 }
 
