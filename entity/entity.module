@@ -267,6 +267,26 @@ function entity_crud_get_info() {
 }
 
 /**
+ * Checks if a given entity has a certain status.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to check the status on.
+ * @param $status
+ *   The constant status like ENTITY_IN_DB, ENTITY_IN_CODE, ENTITY_OVERRIDDEN
+ *   or ENTITY_FIXED.
+ *
+ * @return
+ *   TRUE if the entity has the status, FALSE otherwise.
+ */
+function entity_has_status($entity_type, $entity, $status) {
+  $info = entity_get_info($entity_type);
+  $status_property = empty($info['status key']) ? 'status' : $info['status key'];
+  return ($entity->{$status_property} & $status) == $status;
+}
+
+/**
  * Export a variable. Copied from ctools.
  *
  * This is a replacement for var_export(), allowing us to more nicely
@@ -365,7 +385,7 @@ function theme_entity_status($variables) {
     $help = t('The configuration is fixed and cannot be changed.');
     return $html ? "<span class='entity-status-fixed' title='$help'>" . $label . "</span>" : $label;
   }
-  elseif ($status & ENTITY_IN_CODE && $status & ENTITY_IN_DB) {
+  elseif ($status & ENTITY_OVERRIDDEN == ENTITY_OVERRIDDEN) {
     $label = t('Overridden');
     $help = t('This configuration is provided by a module, but has been changed.');
     return $html ? "<span class='entity-status-overridden' title='$help'>" . $label . "</span>" : $label;
@@ -486,27 +506,4 @@ function entity_forms() {
     $forms += $controller->hook_forms();
   }
   return $forms;
-}
-
-/**
- * Checks if a given entity has a certain status.
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $entity
- *   The entity to check the status on.
- * @param $status
- *   The constant status like ENTITY_IN_DB, ENTITY_IN_CODE, ENTITY_OVERRIDDEN
- *   or ENTITY_FIXED.
- *
- * @return
- *   TRUE if the entity has the status, FALSE otherwise.
- */
-function entity_has_status($entity_type, $entity, $status) {
-  $info = entity_get_info($entity_type);
-  $status_property = empty($info['status key']) ? 'status' : $info['status key'];
-  if (($entity->{$status_property} & $status) == $status) {
-    return TRUE;
-  }
-  return FALSE;
 }
