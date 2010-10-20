@@ -436,31 +436,45 @@ function entity_class_uri($entity) {
   return $entity->uri();
 }
 
+
+/**
+ * Determines the UI controller class for a given entity type.
+ *
+ * @return
+ *   If a type is given, the controller for the given entity type. Else an array
+ *   of all enabled UI controllers keyed by entity type is returned.
+ */
+function entity_ui_controller($type = NULL) {
+  $static = &drupal_static(__FUNCTION__);
+  if (!isset($static[$type])) {
+    $entity_info = entity_get_info();
+    foreach ($entity_info as $entity_type => $info) {
+      if (isset($info['admin ui']['path'])) {
+        $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
+        $static[$entity_type] = $class ? new $class($entity_type, $info) : FALSE;
+      }
+    }
+  }
+  return $type ? $static[$type] : $static;
+}
+
 /**
  * Implements hook_menu().
  */
 function entity_menu() {
   $items = array();
-  $entity_info = entity_get_info();
-  foreach ($entity_info as $type => $info) {
-    if (isset($info['admin ui']['path'])) {
-      $items += entity_ui_controller($type)->menu();
-    }
+  foreach (entity_ui_controller() as $controller) {
+    $items += $controller->hook_menu();
   }
   return $items;
 }
 
 /**
- * Determines the UI controller class for a given entity type.
+ * Menu load callback to retrieve an entity object from its id.
  */
-function entity_ui_controller($type) {
-  $static = &drupal_static(__FUNCTION__);
-  if (!isset($static[$type])) {
-    $info = entity_get_info($type);
-    $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
-    $static[$type] = $class ? new $class($type, $info) : FALSE;
-  }
-  return $static[$type];
+function entity_menu_load($id, $type) {
+  $result = entity_load($type, array($id));
+  return reset($result);
 }
 
 /**
@@ -468,33 +482,10 @@ function entity_ui_controller($type) {
  */
 function entity_forms() {
   $forms = array();
-  if ($entity_info = entity_get_info()) {
-    foreach ($entity_info as $type => $info) {
-      if (isset($info['admin ui'])) {
-        $forms[$type . '_overview_form']['callback'] = 'entity_ui_overview_form';
-        $forms[$type . '_operation_form']['callback'] = 'entity_ui_operation_form';
-        // Edit form for single bundle.
-        if (count($info['bundles']) == 1 && isset($info['bundles'][$type])) {
-          $forms[$type . '_form']['callback'] = 'entity_ui_operation_form';
-        }
-        // Edit forms for multiple bundles.
-        else {
-          foreach ($info['bundles'] as $bundle => $bundle_info) {
-            $forms[$type . '_edit_' . $bundle . '_form']['callback'] = 'entity_ui_operation_form';
-          }
-        }
-      }
-    }
+  foreach (entity_ui_controller() as $controller) {
+    $forms += $controller->hook_forms();
   }
   return $forms;
-}
-
-/**
- * Load callback to retrieve an entity object from its id.
- */
-function entity_menu_load($id, $type) {
-  $result = entity_load($type, array($id));
-  return reset($result);
 }
 
 /**

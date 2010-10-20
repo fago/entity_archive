@@ -6,6 +6,9 @@
  * Provides a controller for building an entity overview form.
  */
 
+/**
+ * Default controller for providing UI.
+ */
 class EntityDefaultUIController {
 
   protected $entityType;
@@ -17,9 +20,9 @@ class EntityDefaultUIController {
   }
 
   /**
-   * Provides menu items as expected by hook_menu().
+   * Provides definitions for implementing hook_menu().
    */
-  public function menu() {
+  public function hook_menu() {
     $items = array();
     $items[$this->entityInfo['admin ui']['path']] = array(
       'title' => $this->entityInfo['label'],
@@ -83,6 +86,25 @@ class EntityDefaultUIController {
       'file' => 'entity.ui.inc',
     );
     return $items;
+  }
+
+  /**
+   * Provides definitions for implementing hook_forms().
+   */
+  public function hook_forms() {
+    $forms[$this->entityType . '_overview_form']['callback'] = 'entity_ui_overview_form';
+    $forms[$this->entityType . '_operation_form']['callback'] = 'entity_ui_operation_form';
+    // Edit form for the default bundle.
+    if (count($this->entityInfo['bundles']) == 1 && isset($this->entityInfo['bundles'][$this->entityType])) {
+      $forms[$this->entityType . '_form']['callback'] = 'entity_ui_operation_form';
+    }
+    // Edit forms for multiple bundles.
+    else {
+      foreach ($this->entityInfo['bundles'] as $bundle => $bundle_info) {
+        $forms[$this->entityType . '_edit_' . $bundle . '_form']['callback'] = 'entity_ui_operation_form';
+      }
+    }
+    return $forms;
   }
 
   /**
