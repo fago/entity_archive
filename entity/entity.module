@@ -454,13 +454,13 @@ function entity_menu() {
  * Determines the UI controller class for a given entity type.
  */
 function entity_ui_controller($type) {
-  $info = entity_get_info($type);
-  if (isset($info['admin ui']['controller class'])) {
-    return new $info['admin ui']['controller class']($type, $info);
+  $static = &drupal_static(__FUNCTION__);
+  if (!isset($static[$type])) {
+    $info = entity_get_info($type);
+    $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
+    $static[$type] = $class ? new $class($type, $info) : FALSE;
   }
-  else {
-    return new EntityDefaultUIController($type, $info);
-  }
+  return $static[$type];
 }
 
 /**
