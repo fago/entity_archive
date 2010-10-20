@@ -90,6 +90,9 @@ class EntityDefaultUIController {
 
   /**
    * Provides definitions for implementing hook_forms().
+   *
+   * User per bundle form ids if possible, such that easy per bundle alterations
+   * are supported too.
    */
   public function hook_forms() {
     $forms[$this->entityType . '_overview_form']['callback'] = 'entity_ui_overview_form';
@@ -133,6 +136,7 @@ class EntityDefaultUIController {
       }
       // Status (custom, default, overridden or fixed)
       // Operations (edit, clone, revert, delete)
+      // @todo: This has to use entity_has_status().
       switch ($entity->status) {
         case ENTITY_IN_DB:
           $row[] = t('Custom');
@@ -252,10 +256,15 @@ function entity_ui_overview_form($form, &$form_state, $type) {
 }
 
 /**
- * Retrieve the edit form for an entity, which depends on the bundle.
+ * Gets the edit form for an entity.
+ *
+ * This is an wrapper around drupal_get_form(), which is invoked with the right
+ * form id.
+ *
+ * @see EntityDefaultUIController::hook_forms()
  */
 function entity_ui_get_form($entity_type, $entity, $op) {
-  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
   if ($bundle == $entity_type) {
     $form_id = $entity_type . '_form';
   }
