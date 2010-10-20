@@ -8,14 +8,12 @@
 
 class EntityDefaultUIController {
 
-  // @todo change var names to camel case
-  protected $entity_type;
-
-  protected $entity_info;
+  protected $entityType;
+  protected $entityInfo;
 
   public function __construct($entity_type, $entity_info) {
-    $this->entity_type = $entity_type;
-    $this->entity_info = $entity_info;
+    $this->entityType = $entity_type;
+    $this->entityInfo = $entity_info;
   }
 
   /**
@@ -23,64 +21,64 @@ class EntityDefaultUIController {
    */
   public function menu() {
     $items = array();
-    $items[$this->entity_info['admin ui']['path']] = array(
-      'title' => $this->entity_info['label'],
+    $items[$this->entityInfo['admin ui']['path']] = array(
+      'title' => $this->entityInfo['label'],
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('entity_ui_overview_form', $this->entity_type),
-      'description' => 'Administer entity type ' . $this->entity_info['label'],
+      'page arguments' => array('entity_ui_overview_form', $this->entityType),
+      'description' => 'Administer entity type ' . $this->entityInfo['label'],
       // @todo description callback?
       'access callback' => 'entity_access',
-      'access arguments' => array('view', $this->entity_type),
+      'access arguments' => array('view', $this->entityType),
       'file' => 'entity.ui.inc',
     );
-    $items[$this->entity_info['admin ui']['path'] . '/add'] = array(
+    $items[$this->entityInfo['admin ui']['path'] . '/add'] = array(
       'title callback' => 'entity_ui_add_title',
-      'title arguments' => array($this->entity_info['label']),
+      'title arguments' => array($this->entityInfo['label']),
       'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entity_type . '_form', NULL, 'add'),
+      'page arguments' => array($this->entityType . '_form', NULL, 'add'),
       'access callback' => 'entity_access',
-      'access arguments' => array('create', $this->entity_type),
+      'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
       'file' => 'entity.ui.inc',
     );
     // Edit form
-    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/edit';
+    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/edit';
     $id_count = count(explode('/', $path)) - 2;
     $items[$path] = array(
       'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array('edit', $this->entity_type, $id_count),
+      'title arguments' => array('edit', $this->entityType, $id_count),
       'page callback' => 'entity_ui_get_form',
-      'page arguments' => array($this->entity_type, $id_count, 'edit'),
-      'load arguments' => array($this->entity_type),
+      'page arguments' => array($this->entityType, $id_count, 'edit'),
+      'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('update', $this->entity_type),
+      'access arguments' => array('update', $this->entityType),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
     // Clone form, a special case for the edit form.
-    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/clone';
+    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/clone';
     $items[$path] = array(
       'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array('clone', $this->entity_type, $id_count),
+      'title arguments' => array('clone', $this->entityType, $id_count),
       'page callback' => 'entity_ui_get_form',
-      'page arguments' => array($this->entity_type, $id_count, 'clone'),
-      'load arguments' => array($this->entity_type),
+      'page arguments' => array($this->entityType, $id_count, 'clone'),
+      'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('update', $this->entity_type),
+      'access arguments' => array('update', $this->entityType),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
     // menu path for operations like revert, delete
-    $path = $this->entity_info['admin ui']['path'] . '/%entity_menu/%';
+    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/%';
     $op_count = $id_count + 1;
     $items[$path] = array(
       'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array($op_count, $this->entity_type, $id_count),
+      'title arguments' => array($op_count, $this->entityType, $id_count),
       'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entity_type . '_operation_form', $this->entity_type, $id_count, $op_count),
-      'load arguments' => array($this->entity_type),
+      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $op_count),
+      'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array($op_count, $this->entity_type),
+      'access arguments' => array($op_count, $this->entityType),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
@@ -98,14 +96,14 @@ class EntityDefaultUIController {
       '#collapsible' => TRUE,
     );
 
-    $entities = entity_load($this->entity_type);
+    $entities = entity_load($this->entityType);
 
     $rows = array();
     foreach ($entities as $id => $entity) {
       $row = array();
       // Label
-      $label = entity_label($this->entity_type, $entity);
-      if ($entity_uri = entity_uri($this->entity_type, $entity)) {
+      $label = entity_label($this->entityType, $entity);
+      if ($entity_uri = entity_uri($this->entityType, $entity)) {
         $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
       }
       else {
@@ -116,24 +114,24 @@ class EntityDefaultUIController {
       switch ($entity->status) {
         case ENTITY_IN_DB:
           $row[] = t('Custom');
-          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
-          $row[] = l(t('delete'), $this->entity_info['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('delete'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
           break;
         case ENTITY_IN_CODE:
           $row[] = t('Default');
-          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
           break;
         case ENTITY_OVERRIDDEN:
           $row[] = t('Overridden');
-          $row[] = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
-          $row[] = l(t('revert'), $this->entity_info['admin ui']['path'] . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
+          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('revert'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/revert', array('query' => drupal_get_destination()));
           break;
         case ENTITY_FIXED:
           $row[] = t('Fixed');
-          $row[] = l(t('clone'), $this->entity_info['admin ui']['path'] . '/' . $id . '/clone');
+          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
           break;
       }
 
@@ -161,24 +159,24 @@ class EntityDefaultUIController {
   public function overviewFormSubmit() {}
 
   public function operationForm($form, &$form_state, $entity, $op) {
-    $label = entity_label($this->entity_type, $entity);
+    $label = entity_label($this->entityType, $entity);
     $form_state += array(
-      'type' => $this->entity_type,
+      'type' => $this->entityType,
       'entity' => $entity,
       'op' => $op
     );
     switch ($op) {
       case 'revert':
-        if (entity_has_status($this->entity_type, $entity, ENTITY_OVERRIDDEN)) {
-          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          return confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        if (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
+          return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
         }
         break;
 
       case 'delete':
-        if (entity_has_status($this->entity_type, $entity, ENTITY_IN_DB)) {
-          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entity_info['label'], '%label' => $label));
-          return confirm_form($form, $confirm_question, $this->entity_info['admin ui']['path']);
+        if (entity_has_status($this->entityType, $entity, ENTITY_IN_DB)) {
+          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
+          return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
         }
         break;
     }
@@ -202,9 +200,9 @@ class EntityDefaultUIController {
    *   The entity to manipulate.
    */
   public function operationApply($op, $entity) {
-    $label = entity_label($this->entity_type, $entity);
-    $vars = array('%entity' => $this->entity_info['label'], '%label' => $label);
-    $edit_link = l(t('edit'), $this->entity_info['admin ui']['path'] . '/' . $entity->id . '/edit');
+    $label = entity_label($this->entityType, $entity);
+    $vars = array('%entity' => $this->entityInfo['label'], '%label' => $label);
+    $edit_link = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $entity->id . '/edit');
     switch ($op) {
       case 'revert':
         $entity->delete();
