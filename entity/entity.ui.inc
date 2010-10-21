@@ -12,11 +12,13 @@
 class EntityDefaultUIController {
 
   protected $entityType;
-  protected $entityInfo;
+  protected $entityInfo, $path;
 
   public function __construct($entity_type, $entity_info) {
     $this->entityType = $entity_type;
     $this->entityInfo = $entity_info;
+    $this->path = $this->entityInfo['admin ui']['path'];
+    $this->statusKey = empty($this->entityInfo['entity keys']['status']) ? 'status' : $this->entityInfo['entity keys']['status'];
   }
 
   /**
@@ -24,10 +26,9 @@ class EntityDefaultUIController {
    */
   public function hook_menu() {
     $items = array();
-    $path = $this->entityInfo['admin ui']['path'];
-    $id_count = count(explode('/', $path));
+    $id_count = count(explode('/', $this->path));
 
-    $items[$path] = array(
+    $items[$this->path] = array(
       'title' => $this->entityInfo['label'] . 's',
       'page callback' => 'drupal_get_form',
       'page arguments' => array($this->entityType . '_overview_form', $this->entityType),
@@ -36,7 +37,7 @@ class EntityDefaultUIController {
       'access arguments' => array('view', $this->entityType),
       'file' => 'entity.ui.inc',
     );
-    $items[$this->entityInfo['admin ui']['path'] . '/add'] = array(
+    $items[$this->path . '/add'] = array(
       'title' => 'Add',
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, NULL, 'add'),
@@ -45,7 +46,7 @@ class EntityDefaultUIController {
       'type' => MENU_LOCAL_ACTION,
       'file' => 'entity.ui.inc',
     );
-    $items[$path . '/%entity_menu/edit'] = array(
+    $items[$this->path . '/%entity_menu/edit'] = array(
       'title' => 'Edit',
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, $id_count),
@@ -67,7 +68,7 @@ class EntityDefaultUIController {
       'file' => 'entity.ui.inc',
     );
     // Menu item for operations like revert and delete.
-    $items[$path . '/%entity_menu/%'] = array(
+    $items[$this->path . '/%entity_menu/%'] = array(
       'page callback' => 'drupal_get_form',
       'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $id_count + 1),
       'load arguments' => array($this->entityType),
@@ -112,57 +113,40 @@ class EntityDefaultUIController {
 
   /**
    * Builds the entity overview form.
-   *
-   * @todo: split into utility function that can be re-used ala rules.
    */
   public function overviewForm($form, &$form_state) {
-    // @todo: implement or remove.
-    $form['filter'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Filter'),
-      '#collapsible' => TRUE,
-    );
+    // By default just show a simple overview for all entities.
+    $form['table'] = $this->overviewTable();
+    return $form;
+  }
+
+  /**
+   * Overview form validation callback.
+   */
+  public function overviewFormValidate() {}
+
+  /**
+   * Overview form submit callback.
+   */
+  public function overviewFormSubmit() {}
+
+
+  /**
+   * Generates the render array for a overview table for arbitrary entities
+   * matching the given conditions.
+   *
+   * @param $conditions
+   *   An array of conditions as needed by entity_load().
+
+   * @return Array
+   *   A renderable array.
+   */
+  public function overviewTable($conditions = array()) {
     $entities = entity_load($this->entityType);
-    $path = $this->entityInfo['admin ui']['path'];
-    $status_key = empty($this->entityInfo['entity keys']['status']) ? 'status' : $this->entityInfo['entity keys']['status'];
 
     $rows = array();
     foreach ($entities as $id => $entity) {
-      $row = array();
-      // Optionally link to the entity if we have the URI.
-      $label = entity_label($this->entityType, $entity);
-      if ($entity_uri = entity_uri($this->entityType, $entity)) {
-        $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
-      }
-      else {
-        $row[] = $label;
-      }
-      // Add a row for the exportable status.
-      if (!empty($this->entityInfo['exportable'])) {
-        $row[] = array('data' => array(
-          '#theme' => 'entity_status',
-          '#status' => $entity->$status_key,
-        ));
-      }
-
-      // Add operations depending on the status.
-      if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
-        $row[] = array('data' => l(t('clone'), $path . '/' . $id . '/clone'), 'colspan' => 3);
-      }
-      else {
-        $row[] = l(t('edit'), $path . '/' . $id . '/edit');
-        $row[] = l(t('clone'), $path . '/' . $id . '/clone');
-        if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
-          $row[] = l(t('delete'), $path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
-        }
-        elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
-          $row[] = l(t('revert'), $path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
-        }
-        else {
-          $row[] = '';
-        }
-      }
-      $rows[] = $row;
+      $rows[] = $this->overviewTableRow($conditions, $id, $entity);
     }
     // Assemble the right table header.
     $header = array(t('Label'));
@@ -171,21 +155,64 @@ class EntityDefaultUIController {
     }
     $header[] = array('data' => t('Operations'), 'colspan' => 3);
 
-    //$table['#attributes']['class'][] = 'rules-overview-table';
-    //$table['#attached']['css'][] = drupal_get_path('module', 'rules') . '/ui/rules.ui.css';
-
-    $form['table'] = array(
+    $render = array(
       '#theme' => 'table',
       '#header' => $header,
       '#rows' => $rows,
       '#empty' => t('None.'),
     );
-    return $form;
+    return $render;
   }
 
-  public function overviewFormValidate() {}
+  /**
+   * Generates the row for the passed entity and may be overridden in order to
+   * customize the rows.
+   *
+   * @param $additional_cols
+   *   Additional columns to be added after the entity label column.
+   */
+  protected function overviewTableRow($conditions, $id, $entity, $additional_cols = array()) {
+    // Optionally link to the entity if we have the URI.
+    $label = entity_label($this->entityType, $entity);
+    if ($entity_uri = entity_uri($this->entityType, $entity)) {
+      $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
+    }
+    else {
+      $row[] = $label;
+    }
 
-  public function overviewFormSubmit() {}
+    // Add in any passed additional cols.
+    foreach ($additional_cols as $col) {
+      $row[] = $col;
+    }
+
+    // Add a row for the exportable status.
+    if (!empty($this->entityInfo['exportable'])) {
+      $row[] = array('data' => array(
+        '#theme' => 'entity_status',
+        '#status' => $entity->{$this->statusKey},
+      ));
+    }
+
+    // Add operations depending on the status.
+    if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
+      $row[] = array('data' => l(t('clone'), $this->path . '/' . $id . '/clone'), 'colspan' => 3);
+    }
+    else {
+      $row[] = l(t('edit'), $this->path . '/' . $id . '/edit');
+      $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
+      if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+      }
+      elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+      }
+      else {
+        $row[] = '';
+      }
+    }
+    return $row;
+  }
 
 
   /**
@@ -196,11 +223,11 @@ class EntityDefaultUIController {
     switch ($op) {
       case 'revert':
         $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
-        return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
+        return confirm_form($form, $confirm_question, $this->path);
 
       case 'delete':
         $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
-        return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
+        return confirm_form($form, $confirm_question, $this->path);
     }
     drupal_not_found();
     exit;
@@ -226,7 +253,7 @@ class EntityDefaultUIController {
     $label = entity_label($this->entityType, $entity);
     $vars = array('%entity' => $this->entityInfo['label'], '%label' => $label);
     $id = entity_id($this->entityType, $entity);
-    $edit_link = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
+    $edit_link = l(t('edit'), $this->path . '/' . $id . '/edit');
 
     switch ($op) {
       case 'revert':
