@@ -95,6 +95,8 @@ class EntityDefaultUIController {
    * are supported too.
    */
   public function hook_forms() {
+    // @todo We should not use the operation form for edit, but directly
+    // $this->entityType . '_form'.
     $forms[$this->entityType . '_overview_form']['callback'] = 'entity_ui_overview_form';
     $forms[$this->entityType . '_operation_form']['callback'] = 'entity_ui_operation_form';
     // Edit form for the default bundle.
