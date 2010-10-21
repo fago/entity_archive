@@ -308,9 +308,9 @@ class EntityDefaultUIController {
 /**
  * Gets the edit form for an entity.
  *
- * This is an wrapper around drupal_get_form(), which is invoked with the right
- * form id being ENTITY_TYPE_form or, if the entity type has bundles
- * ENTITY_TYPE_edit_BUNDLE_form.
+ * This function is to be used instead of drupal_get_form() for the entity
+ * forms. It ensures the wrapper callback is set accordingly, such that the
+ * entity form defaults are applied.
  *
  * @param $entity_type
  *   The entity type for which to get the form.
@@ -324,13 +324,20 @@ class EntityDefaultUIController {
  *   The fully built and processed form, ready to be rendered.
  *
  * @see EntityDefaultUIController::hook_forms()
+ * @see entity_ui_form_submit_build_entity()
  */
 function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
   if (isset($entity)) {
     list(, , $bundle) = entity_extract_ids($entity_type, $entity);
   }
   $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
-  return drupal_get_form($form_id, $entity, $op);
+
+  // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
+  // we can prepulate the form state.
+  $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
+  $form_state['build_info']['args'] = array($entity, $op);
+  $form_state['entity_type'] = $entity_type;
+  return drupal_build_form($form_id, $form_state);
 }
 
 /**
@@ -350,6 +357,22 @@ function entity_ui_overview_form($form, &$form_state, $entity_type) {
 function entity_ui_operation_form($form, &$form_state, $entity_type, $entity, $op) {
   $form_state['op'] = $op;
   return entity_ui_controller($entity_type)->operationForm($form, $form_state, $entity, $op);
+}
+
+/**
+ * Form wrapper the main entity form.
+ *
+ * @see entity_ui_form_defaults()
+ */
+function entity_ui_main_form_defaults($form, &$form_state, $entity = NULL, $op = NULL) {
+  if ($op == 'clone') {
+    // Clone the entity and make sure it will get saved as a new entity.
+    $entity = clone $entity;
+    $entity_info = entity_get_info($form_state['entity_type']);
+    $entity->{$entity_info['entity keys']['id']} = FALSE;
+    $entity->is_new = TRUE;
+  }
+  return entity_ui_form_defaults($form, $form_state, $form_state['entity_type'], $entity, $op);
 }
 
 /**
@@ -374,8 +397,8 @@ function entity_ui_form_defaults($form, &$form_state, $entity_type, $entity = NU
   if (isset($op)) {
     drupal_set_title(entity_ui_get_page_title($op, $entity_type, $entity));
   }
-  // Add in handlers pointing to the controller for forms implemented by it.
-  if ($form_state['build_info']['base_form_id'] != $entity_type . '_form') {
+  // Add in handlers pointing to the controller for the forms implemented by it.
+  if (isset($form_state['build_info']['base_form_id']) && $form_state['build_info']['base_form_id'] != $entity_type . '_form') {
     $form['#validate'][] = 'entity_ui_controller_form_validate';
     $form['#submit'][] = 'entity_ui_controller_form_submit';
   }
