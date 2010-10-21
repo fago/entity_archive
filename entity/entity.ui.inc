@@ -32,7 +32,7 @@ class EntityDefaultUIController {
       'title' => $this->entityInfo['label'] . 's',
       'page callback' => 'drupal_get_form',
       'page arguments' => array($this->entityType . '_overview_form', $this->entityType),
-      'description' => 'Manage ' . $this->entityInfo['label'] . 's',
+      'description' => 'Manage ' . $this->entityInfo['label'] . 's.',
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entityType),
       'file' => 'entity.ui.inc',
