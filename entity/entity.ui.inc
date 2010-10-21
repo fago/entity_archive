@@ -38,7 +38,8 @@ class EntityDefaultUIController {
       'file' => 'entity.ui.inc',
     );
     $items[$this->path . '/add'] = array(
-      'title' => 'Add',
+      'title callback' => 'entity_ui_add_title',
+      'title arguments' => array($this->entityType),
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, NULL, 'add'),
       'access callback' => 'entity_access',
@@ -57,7 +58,7 @@ class EntityDefaultUIController {
       'file' => 'entity.ui.inc',
     );
     // Clone form, a special case for the edit form.
-    $items[$path . '/%entity_menu/clone'] = array(
+    $items[$this->path . '/%entity_menu/clone'] = array(
       'title' => 'Clone',
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, $id_count, 'clone'),
@@ -248,6 +249,7 @@ class EntityDefaultUIController {
   public function operationFormSubmit($form, &$form_state) {
     $msg = $this->applyOperation($form_state['op'], $form_state[$this->entityType]);
     drupal_set_message($msg);
+    $form_state['redirect'] = $this->path;
   }
 
   /**
@@ -281,6 +283,25 @@ class EntityDefaultUIController {
       default:
         return FALSE;
     }
+  }
+
+  /**
+   * Entity submit builder invoked via entity_ui_form_submit_build_entity().
+   *
+   * Extracts the form values and updates the entity.
+   *
+   * The provided implementation makes use of the helper function
+   * entity_form_submit_build_entity() provided by core, which already invokes
+   * the field API attacher for fieldable entities.
+   *
+   * @return
+   *   The updated entity.
+   *
+   * @see entity_ui_form_submit_build_entity()
+   */
+  public function entityFormSubmitBuildEntity($form, &$form_state) {
+    entity_form_submit_build_entity($this->entityType, $form_state[$this->entityType], $form, $form_state);
+    return $form_state[$this->entityType];
   }
 }
 
@@ -401,4 +422,12 @@ function entity_ui_get_page_title($op, $entity_type, $entity = NULL) {
     case 'delete':
       return t('Delete @label', array('@label' => $label));
   }
+}
+
+/**
+ * Menu title callback for the 'Add' menu item.
+ */
+function entity_ui_add_title($entity_type) {
+  $entity_info = entity_get_info($entity_type);
+  return t('Add a @entity', array('@entity' => drupal_strtolower($entity_info['label'])));
 }

@@ -460,7 +460,7 @@ function entity_class_uri($entity) {
 /**
  * Determines the UI controller class for a given entity type.
  *
- * @return
+ * @return EntityDefaultUIController
  *   If a type is given, the controller for the given entity type. Else an array
  *   of all enabled UI controllers keyed by entity type is returned.
  */
@@ -506,4 +506,21 @@ function entity_forms() {
     $forms += $controller->hook_forms();
   }
   return $forms;
+}
+
+/**
+ * Submit builder for the main entity form, which extracts the form values and updates the entity.
+ *
+ *
+ * This is a helper function for entities making use of the entity UI, thus it
+ * assumes the defaults by entity_ui_form_defaults() have been set.
+ *
+ * @return
+ *   The updated entity.
+ *
+ * @see EntityDefaultUIController::hook_forms()
+ * @see EntityDefaultUIController::entityFormSubmitBuildEntity()
+ */
+function entity_ui_form_submit_build_entity($form, &$form_state) {
+  return entity_ui_controller($form_state['entity_type'])->entityFormSubmitBuildEntity($form, $form_state);
 }
