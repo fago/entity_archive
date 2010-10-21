@@ -86,11 +86,22 @@ class EntityDefaultUIController {
    * are supported too.
    */
   public function hook_forms() {
-    $forms[$this->entityType . '_overview_form']['callback'] = 'entity_ui_overview_form';
-    $forms[$this->entityType . '_operation_form']['callback'] = 'entity_ui_operation_form';
+    $forms[$this->entityType . '_overview_form'] = array(
+      'callback' => 'entity_ui_overview_form',
+      'wrapper_callback' => 'entity_ui_form_defaults',
+    );
+    $forms[$this->entityType . '_operation_form'] = array(
+      'callback' => 'entity_ui_operation_form',
+      'wrapper_callback' => 'entity_ui_form_defaults',
+    );
+    $forms[$this->entityType . '_form'] = array(
+      'callback' => $this->entityType . '_form',
+      'wrapper_callback' => 'entity_ui_form_defaults',
+    );
 
     // If there are bundles, use a form id including the bundle name to ease
-    // per bundle alterations for the edit form.
+    // per bundle alterations for the edit form. In that case the general form
+    // id needs to be defined too as done above, as it is invoked during 'add'.
     if (!(count($this->entityInfo['bundles']) == 1 && isset($this->entityInfo['bundles'][$this->entityType]))) {
       foreach ($this->entityInfo['bundles'] as $bundle => $bundle_info) {
         $forms[$this->entityType . '_edit_' . $bundle . '_form']['callback'] = $this->entityType . '_form';
@@ -109,7 +120,6 @@ class EntityDefaultUIController {
       '#title' => t('Filter'),
       '#collapsible' => TRUE,
     );
-
     $entities = entity_load($this->entityType);
 
     $rows = array();
@@ -175,11 +185,6 @@ class EntityDefaultUIController {
 
   public function operationForm($form, &$form_state, $entity, $op) {
     $label = entity_label($this->entityType, $entity);
-    $form_state += array(
-      'type' => $this->entityType,
-      'entity' => $entity,
-      'op' => $op
-    );
     switch ($op) {
       case 'revert':
         if (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
@@ -269,8 +274,8 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
  *
  * Invokes the UI controller of the given entity type.
  */
-function entity_ui_overview_form($form, &$form_state, $type) {
-  return entity_ui_controller($type)->overviewForm($form, $form_state);
+function entity_ui_overview_form($form, &$form_state, $entity_type) {
+  return entity_ui_controller($entity_type)->overviewForm($form, $form_state);
 }
 
 /**
@@ -278,42 +283,62 @@ function entity_ui_overview_form($form, &$form_state, $type) {
  *
  * Invokes the UI controller of the given entity type.
  */
-function entity_ui_operation_form($form, &$form_state, $type, $entity, $op) {
-  return entity_ui_controller($type)->operationForm($form, $form_state, $entity, $op);
+function entity_ui_operation_form($form, &$form_state, $entity_type, $entity, $op) {
+  $form_state['op'] = $op;
+  return entity_ui_controller($entity_type)->operationForm($form, $form_state, $entity, $op);
+}
+
+/**
+ * Form wrapper callback for all forms.
+ *
+ * This callback makes sure the form state is properly initialized and sets
+ * some useful default titles.
+ *
+ * @see EntityDefaultUIController::hook_forms()
+ */
+function entity_ui_form_defaults($form, &$form_state, $entity_type, $entity = NULL, $op = NULL) {
+  $defaults = array(
+    'entity_type' => $entity_type,
+  );
+  if (isset($entity)) {
+    $defaults[$entity_type] = $entity;
+  }
+  if (isset($op)) {
+    $defaults['op'] = $op;
+  }
+  $form_state += $defaults;
+  if (isset($op)) {
+    drupal_set_title(entity_ui_get_page_title($op, $entity_type, $entity));
+  }
+  return $form;
 }
 
 /**
  * Entity operation form - submit callback.
  */
 function entity_ui_operation_form_submit($form, &$form_state) {
-  $type = $form_state['type'];
+  $type = $form_state['entity_type'];
   entity_ui_controller($type)->operationFormSubmit($form, $form_state);
 }
 
 /**
- * Title callback for add operations on entities.
- *
- * @todo: currently unused.
+ * Gets the page title for the passed operation.
  */
-function entity_ui_add_title($type_label) {
-  return t('Add @entity_type', array('@entity_type' => $type_label));
-}
-
-/**
- * Title callback for operations on entities.
- *
- * @todo: currently unused.
- */
-function entity_ui_operation_title($op, $entity_type, $entity) {
-  $label = entity_label($entity_type, $entity);
+function entity_ui_get_page_title($op, $entity_type, $entity = NULL) {
+  if ($op != 'add') {
+    $label = entity_label($entity_type, $entity);
+  }
   switch ($op) {
+    case 'add':
+      $info = entity_get_info($entity_type);
+      return t('Add @entity_type', array('@entity_type' => $info['label']));
     case 'edit':
-      return t('Edit @entity', array('@entity' => $label));
+      return t('Edit @label', array('@label' => $label));
     case 'clone':
-      return t('Clone @entity', array('@entity' => $label));
+      return t('Clone @label', array('@label' => $label));
     case 'revert':
-      return t('Revert @entity', array('@entity' => $label));
+      return t('Revert @label', array('@label' => $label));
     case 'delete':
-      return t('Delete @entity', array('@entity' => $label));
+      return t('Delete @label', array('@label' => $label));
   }
 }
