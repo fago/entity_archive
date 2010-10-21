@@ -117,7 +117,7 @@ function entity_metadata_comment_entity_property_info() {
   );
   $properties['author'] = array(
     'label' => t("Author"),
-    'description' => t("The author of the comment, if they were logged in."),
+    'description' => t("The author of the comment."),
     'type' => 'user',
     'getter callback' => 'entity_metadata_comment_get_properties',
     'setter callback' => 'entity_metadata_comment_setter',
