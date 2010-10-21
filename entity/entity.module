@@ -33,6 +33,13 @@ define('ENTITY_IN_DB', 0x01);
 define('ENTITY_IN_CODE', 0x02);
 
 /**
+ * A bit flag used to mark entities as overridden, e.g. they were originally
+ * definded in code and are saved now in the database. Same as
+ * (ENTITY_IN_DB | ENTITY_IN_CODE).
+ */
+define('ENTITY_OVERRIDDEN', 0x03);
+
+/**
  * A bit flag used to mark entities as fixed, thus not changeable for any
  * user.
  */
@@ -260,6 +267,26 @@ function entity_crud_get_info() {
 }
 
 /**
+ * Checks if a given entity has a certain status.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $entity
+ *   The entity to check the status on.
+ * @param $status
+ *   The constant status like ENTITY_IN_DB, ENTITY_IN_CODE, ENTITY_OVERRIDDEN
+ *   or ENTITY_FIXED.
+ *
+ * @return
+ *   TRUE if the entity has the status, FALSE otherwise.
+ */
+function entity_has_status($entity_type, $entity, $status) {
+  $info = entity_get_info($entity_type);
+  $status_key = empty($info['entity keys']['status']) ? 'status' : $info['entity keys']['status'];
+  return ($entity->{$status_key} & $status) == $status;
+}
+
+/**
  * Export a variable. Copied from ctools.
  *
  * This is a replacement for var_export(), allowing us to more nicely
@@ -358,7 +385,7 @@ function theme_entity_status($variables) {
     $help = t('The configuration is fixed and cannot be changed.');
     return $html ? "<span class='entity-status-fixed' title='$help'>" . $label . "</span>" : $label;
   }
-  elseif ($status & ENTITY_IN_CODE && $status & ENTITY_IN_DB) {
+  elseif (($status & ENTITY_OVERRIDDEN) == ENTITY_OVERRIDDEN) {
     $label = t('Overridden');
     $help = t('This configuration is provided by a module, but has been changed.');
     return $html ? "<span class='entity-status-overridden' title='$help'>" . $label . "</span>" : $label;
@@ -427,4 +454,98 @@ function entity_class_label($entity) {
  */
 function entity_class_uri($entity) {
   return $entity->uri();
+}
+
+
+/**
+ * Determines the UI controller class for a given entity type.
+ *
+ * @return EntityDefaultUIController
+ *   If a type is given, the controller for the given entity type. Else an array
+ *   of all enabled UI controllers keyed by entity type is returned.
+ */
+function entity_ui_controller($type = NULL) {
+  $static = &drupal_static(__FUNCTION__);
+  if (!isset($static[$type])) {
+    $entity_info = entity_get_info();
+    foreach ($entity_info as $entity_type => $info) {
+      if (isset($info['admin ui']['path'])) {
+        $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
+        $static[$entity_type] = $class ? new $class($entity_type, $info) : FALSE;
+      }
+    }
+  }
+  return $type ? $static[$type] : $static;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function entity_menu() {
+  $items = array();
+  foreach (entity_ui_controller() as $controller) {
+    $items += $controller->hook_menu();
+  }
+  return $items;
+}
+
+/**
+ * Menu load callback to retrieve an entity object from its id.
+ */
+function entity_menu_load($id, $type) {
+  $result = entity_load($type, array($id));
+  return reset($result);
+}
+
+/**
+ * Implements hook_forms().
+ */
+function entity_forms() {
+  $forms = array();
+  foreach (entity_ui_controller() as $controller) {
+    $forms += $controller->hook_forms();
+  }
+  return $forms;
+}
+
+/**
+ * Gets an entity form.
+ *
+ * This function may be used by entities to build their entity form. It has to
+ * be used instead of calling drupal_get_form().
+ * Entity forms built with this helper receive useful defaults suiting for
+ * editing a single entity, whereas the special cases of adding and cloning
+ * of entities are supported too.
+ *
+ * While this function is intended to be used to get entity forms for entities
+ * using the entity ui controller, it may be used for entity types not using
+ * the controller too.
+ *
+ * @param $entity_type
+ *   The entity type for which to get the form.
+ * @param $entity
+ *   The entity for whicht to return the form. If $op is 'add', NULL may be
+ *   passed.
+ * @param $op
+ *   One of 'edit', 'add' or 'clone. Defaults to edit.
+ *
+ * @return
+ *   The fully built and processed form, ready to be rendered.
+ *
+ * @see EntityDefaultUIController::hook_forms()
+ * @see entity_ui_form_submit_build_entity()
+ */
+function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
+  if (isset($entity)) {
+    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  }
+  $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
+
+  // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
+  // we can prepulate the form state.
+  $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
+  $form_state['build_info']['args'] = array($entity, $op);
+  $form_state['entity_type'] = $entity_type;
+  module_load_include('inc', 'entity', 'entity.ui');
+  return drupal_build_form($form_id, $form_state);
 }

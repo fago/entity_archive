@@ -10,3 +10,4 @@ files[] = entity.info.inc
 files[] = entity.module
 files[] = entity.rules.inc
 files[] = entity.test
+files[] = entity.ui.inc

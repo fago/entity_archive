@@ -41,6 +41,17 @@
  *   - default hook: What hook to invoke to find exportable entities that are
  *     currently defined. This hook is automatically called by the CRUD
  *     controller during entity_load(). Defaults to 'default_' . $entity_type.
+ * - admin ui: An array of optional information used for providing an
+ *   administrative user interface. To enable the UI at least the path must be
+ *   given and the 'ENTITY_TYPE_form' for editing, adding and cloning has to be
+ *   created. See entity_ui_get_form() for details on which parameters are
+ *   passed to that form.
+ *   Known keys are:
+ *   - path: a path where the UI should show up as expected by hook_menu().
+ *   - controller class: An optional controller class name for providing the
+ *     UI. Defaults to EntityDefaultUIController.
+ *     For customizing the UI inherit from the default class and overide methods
+ *     as suiting and specify your class as controller class.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController. Set it to FALSE to disable this feature.
