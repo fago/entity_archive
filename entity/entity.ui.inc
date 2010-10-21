@@ -95,18 +95,14 @@ class EntityDefaultUIController {
    * are supported too.
    */
   public function hook_forms() {
-    // @todo We should not use the operation form for edit, but directly
-    // $this->entityType . '_form'.
     $forms[$this->entityType . '_overview_form']['callback'] = 'entity_ui_overview_form';
     $forms[$this->entityType . '_operation_form']['callback'] = 'entity_ui_operation_form';
-    // Edit form for the default bundle.
-    if (count($this->entityInfo['bundles']) == 1 && isset($this->entityInfo['bundles'][$this->entityType])) {
-      $forms[$this->entityType . '_form']['callback'] = 'entity_ui_operation_form';
-    }
-    // Edit forms for multiple bundles.
-    else {
+
+    // If there are bundles, use a form id including the bundle name to ease
+    // per bundle alterations for the edit form.
+    if (!(count($this->entityInfo['bundles']) == 1 && isset($this->entityInfo['bundles'][$this->entityType]))) {
       foreach ($this->entityInfo['bundles'] as $bundle => $bundle_info) {
-        $forms[$this->entityType . '_edit_' . $bundle . '_form']['callback'] = 'entity_ui_operation_form';
+        $forms[$this->entityType . '_edit_' . $bundle . '_form']['callback'] = $this->entityType . '_form';
       }
     }
     return $forms;
