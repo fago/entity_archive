@@ -24,64 +24,55 @@ class EntityDefaultUIController {
    */
   public function hook_menu() {
     $items = array();
-    $items[$this->entityInfo['admin ui']['path']] = array(
-      'title' => $this->entityInfo['label'],
+    $path = $this->entityInfo['admin ui']['path'];
+    $id_count = count(explode('/', $path));
+
+    $items[$path] = array(
+      'title' => $this->entityInfo['label'] . 's',
       'page callback' => 'drupal_get_form',
-      'page arguments' => array('entity_ui_overview_form', $this->entityType),
-      'description' => 'Administer entity type ' . $this->entityInfo['label'],
-      // @todo description callback?
+      'page arguments' => array($this->entityType . '_overview_form', $this->entityType),
+      'description' => 'Manage ' . $this->entityInfo['label'] . 's',
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entityType),
       'file' => 'entity.ui.inc',
     );
     $items[$this->entityInfo['admin ui']['path'] . '/add'] = array(
-      'title callback' => 'entity_ui_add_title',
-      'title arguments' => array($this->entityInfo['label']),
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entityType . '_form', NULL, 'add'),
+      'title' => 'Add',
+      'page callback' => 'entity_ui_get_form',
+      'page arguments' => array($this->entityType, NULL, 'add'),
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
       'file' => 'entity.ui.inc',
     );
-    // Edit form
-    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/edit';
-    $id_count = count(explode('/', $path)) - 2;
-    $items[$path] = array(
-      'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array('edit', $this->entityType, $id_count),
+    $items[$path . '/%entity_menu/edit'] = array(
+      'title' => 'Edit',
       'page callback' => 'entity_ui_get_form',
-      'page arguments' => array($this->entityType, $id_count, 'edit'),
+      'page arguments' => array($this->entityType, $id_count),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('update', $this->entityType),
+      'access arguments' => array('update', $this->entityType, $id_count),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
     // Clone form, a special case for the edit form.
-    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/clone';
-    $items[$path] = array(
-      'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array('clone', $this->entityType, $id_count),
+    $items[$path . '/%entity_menu/clone'] = array(
+      'title' => 'Clone',
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, $id_count, 'clone'),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('update', $this->entityType),
+      'access arguments' => array('create', $this->entityType),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
-    // menu path for operations like revert, delete
-    $path = $this->entityInfo['admin ui']['path'] . '/%entity_menu/%';
-    $op_count = $id_count + 1;
-    $items[$path] = array(
-      'title callback' => 'entity_ui_operation_title',
-      'title arguments' => array($op_count, $this->entityType, $id_count),
+    // Menu item for operations like revert and delete.
+    $items[$path . '/%entity_menu/%'] = array(
       'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $op_count),
+      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $id_count + 1),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array($op_count, $this->entityType),
+      'access arguments' => array('delete', $this->entityType, $id_count),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
@@ -246,34 +237,46 @@ class EntityDefaultUIController {
 }
 
 /**
- * Form API callback that invokes the UI controller of the given type to render
- * the entity overview form.
+ * Gets the edit form for an entity.
+ *
+ * This is an wrapper around drupal_get_form(), which is invoked with the right
+ * form id being ENTITY_TYPE_form or, if the entity type has bundles
+ * ENTITY_TYPE_edit_BUNDLE_form.
+ *
+ * @param $entity_type
+ *   The entity type for which to get the form.
+ * @param $entity
+ *   The entity for whicht to return the form. If $op is 'add', NULL may be
+ *   passed.
+ * @param $op
+ *   One of 'edit', 'add' or 'clone. Defaults to edit.
+ *
+ * @return
+ *   The fully built and processed form, ready to be rendered.
+ *
+ * @see EntityDefaultUIController::hook_forms()
+ */
+function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
+  if (isset($entity)) {
+    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  }
+  $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
+  return drupal_get_form($form_id, $entity, $op);
+}
+
+/**
+ * Form builder function for the overview form.
+ *
+ * Invokes the UI controller of the given entity type.
  */
 function entity_ui_overview_form($form, &$form_state, $type) {
   return entity_ui_controller($type)->overviewForm($form, $form_state);
 }
 
 /**
- * Gets the edit form for an entity.
+ * Form builder for the entity operation form.
  *
- * This is an wrapper around drupal_get_form(), which is invoked with the right
- * form id.
- *
- * @see EntityDefaultUIController::hook_forms()
- */
-function entity_ui_get_form($entity_type, $entity, $op) {
-  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
-  if ($bundle == $entity_type) {
-    $form_id = $entity_type . '_form';
-  }
-  else {
-    $form_id = $entity_type . '_edit_' . $bundle . '_form';
-  }
-  return drupal_get_form($form_id, $entity, $op);
-}
-
-/**
- * Entity operation form.
+ * Invokes the UI controller of the given entity type.
  */
 function entity_ui_operation_form($form, &$form_state, $type, $entity, $op) {
   return entity_ui_controller($type)->operationForm($form, $form_state, $entity, $op);
@@ -289,6 +292,8 @@ function entity_ui_operation_form_submit($form, &$form_state) {
 
 /**
  * Title callback for add operations on entities.
+ *
+ * @todo: currently unused.
  */
 function entity_ui_add_title($type_label) {
   return t('Add @entity_type', array('@entity_type' => $type_label));
@@ -296,6 +301,8 @@ function entity_ui_add_title($type_label) {
 
 /**
  * Title callback for operations on entities.
+ *
+ * @todo: currently unused.
  */
 function entity_ui_operation_title($op, $entity_type, $entity) {
   $label = entity_label($entity_type, $entity);
