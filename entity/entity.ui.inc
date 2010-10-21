@@ -87,6 +87,8 @@ class EntityDefaultUIController {
    * are supported too.
    */
   public function hook_forms() {
+    // The overview and the operation form are implemented by the controller,
+    // the callback and validation + submit handlers just invoke the controller.
     $forms[$this->entityType . '_overview_form'] = array(
       'callback' => 'entity_ui_overview_form',
       'wrapper_callback' => 'entity_ui_form_defaults',
@@ -95,6 +97,8 @@ class EntityDefaultUIController {
       'callback' => 'entity_ui_operation_form',
       'wrapper_callback' => 'entity_ui_form_defaults',
     );
+
+    // This is the main form for editing, adding and cloning.
     $forms[$this->entityType . '_form'] = array(
       'callback' => $this->entityType . '_form',
       'wrapper_callback' => 'entity_ui_form_defaults',
@@ -233,6 +237,14 @@ class EntityDefaultUIController {
     exit;
   }
 
+  /**
+   * Operation form validation callback.
+   */
+  public function operationFormValidate($form, &$form_state) { }
+
+  /**
+   * Operation form submit callback.
+   */
   public function operationFormSubmit($form, &$form_state) {
     $msg = $this->applyOperation($form_state['op'], $form_state[$this->entityType]);
     drupal_set_message($msg);
@@ -303,7 +315,7 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
 /**
  * Form builder function for the overview form.
  *
- * Invokes the UI controller of the given entity type.
+ * @see EntityDefaultUIController::overviewForm()
  */
 function entity_ui_overview_form($form, &$form_state, $entity_type) {
   return entity_ui_controller($entity_type)->overviewForm($form, $form_state);
@@ -312,7 +324,7 @@ function entity_ui_overview_form($form, &$form_state, $entity_type) {
 /**
  * Form builder for the entity operation form.
  *
- * Invokes the UI controller of the given entity type.
+ * @see EntityDefaultUIController::operationForm()
  */
 function entity_ui_operation_form($form, &$form_state, $entity_type, $entity, $op) {
   $form_state['op'] = $op;
@@ -320,7 +332,7 @@ function entity_ui_operation_form($form, &$form_state, $entity_type, $entity, $o
 }
 
 /**
- * Form wrapper callback for all forms.
+ * Form wrapper callback for all entity ui forms.
  *
  * This callback makes sure the form state is properly initialized and sets
  * some useful default titles.
@@ -341,15 +353,32 @@ function entity_ui_form_defaults($form, &$form_state, $entity_type, $entity = NU
   if (isset($op)) {
     drupal_set_title(entity_ui_get_page_title($op, $entity_type, $entity));
   }
+  // Add in handlers pointing to the controller for forms implemented by it.
+  if ($form_state['build_info']['base_form_id'] != $entity_type . '_form') {
+    $form['#validate'][] = 'entity_ui_controller_form_validate';
+    $form['#submit'][] = 'entity_ui_controller_form_submit';
+  }
   return $form;
 }
 
 /**
- * Entity operation form - submit callback.
+ * Validation callback for forms implemented by the UI controller.
  */
-function entity_ui_operation_form_submit($form, &$form_state) {
-  $type = $form_state['entity_type'];
-  entity_ui_controller($type)->operationFormSubmit($form, $form_state);
+function entity_ui_controller_form_validate($form, &$form_state) {
+  // Remove 'entity_ui_' prefix and the '_form' suffix.
+  $base = substr($form_state['build_info']['base_form_id'], 10, -5);
+  $method = $base . 'FormValidate';
+  entity_ui_controller($form_state['entity_type'])->$method($form, $form_state);
+}
+
+/**
+ * Submit callback for forms implemented by the UI controller.
+ */
+function entity_ui_controller_form_submit($form, &$form_state) {
+  // Remove 'entity_ui_' prefix and the '_form' suffix.
+  $base = substr($form_state['build_info']['base_form_id'], 10, -5);
+  $method = $base . 'FormSubmit';
+  entity_ui_controller($form_state['entity_type'])->$method($form, $form_state);
 }
 
 /**
