@@ -45,7 +45,8 @@ class EntityDefaultUIController {
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
-      'file' => 'entity.ui.inc',
+      //@todo Support custom includes without having to override this.
+      //'file' => 'entity.ui.inc',
     );
     $items[$this->path . '/%entity_menu/edit'] = array(
       'title' => 'Edit',
@@ -55,7 +56,8 @@ class EntityDefaultUIController {
       'access callback' => 'entity_access',
       'access arguments' => array('update', $this->entityType, $id_count),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
-      'file' => 'entity.ui.inc',
+      //@todo Support custom includes without having to override this.
+      //'file' => 'entity.ui.inc',
     );
     // Clone form, a special case for the edit form.
     $items[$this->path . '/%entity_menu/clone'] = array(
@@ -65,8 +67,8 @@ class EntityDefaultUIController {
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
-      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
-      'file' => 'entity.ui.inc',
+      //@todo Support custom includes without having to override this.
+      //'file' => 'entity.ui.inc',
     );
     // Menu item for operations like revert and delete.
     $items[$this->path . '/%entity_menu/%'] = array(
@@ -305,40 +307,7 @@ class EntityDefaultUIController {
   }
 }
 
-/**
- * Gets the edit form for an entity.
- *
- * This function is to be used instead of drupal_get_form() for the entity
- * forms. It ensures the wrapper callback is set accordingly, such that the
- * entity form defaults are applied.
- *
- * @param $entity_type
- *   The entity type for which to get the form.
- * @param $entity
- *   The entity for whicht to return the form. If $op is 'add', NULL may be
- *   passed.
- * @param $op
- *   One of 'edit', 'add' or 'clone. Defaults to edit.
- *
- * @return
- *   The fully built and processed form, ready to be rendered.
- *
- * @see EntityDefaultUIController::hook_forms()
- * @see entity_ui_form_submit_build_entity()
- */
-function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
-  if (isset($entity)) {
-    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
-  }
-  $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
 
-  // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
-  // we can prepulate the form state.
-  $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
-  $form_state['build_info']['args'] = array($entity, $op);
-  $form_state['entity_type'] = $entity_type;
-  return drupal_build_form($form_id, $form_state);
-}
 
 /**
  * Form builder function for the overview form.
@@ -453,4 +422,20 @@ function entity_ui_get_page_title($op, $entity_type, $entity = NULL) {
 function entity_ui_add_title($entity_type) {
   $entity_info = entity_get_info($entity_type);
   return t('Add a @entity', array('@entity' => drupal_strtolower($entity_info['label'])));
+}
+
+/**
+ * Submit builder for the main entity form, which extracts the form values and updates the entity.
+ *
+ * This is a helper function for entities making use of the entity UI
+ * controller.
+ *
+ * @return
+ *   The updated entity.
+ *
+ * @see EntityDefaultUIController::hook_forms()
+ * @see EntityDefaultUIController::entityFormSubmitBuildEntity()
+ */
+function entity_ui_form_submit_build_entity($form, &$form_state) {
+  return entity_ui_controller($form_state['entity_type'])->entityFormSubmitBuildEntity($form, $form_state);
 }

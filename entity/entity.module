@@ -509,18 +509,43 @@ function entity_forms() {
 }
 
 /**
- * Submit builder for the main entity form, which extracts the form values and updates the entity.
+ * Gets an entity form.
  *
+ * This function may be used by entities to build their entity form. It has to
+ * be used instead of calling drupal_get_form().
+ * Entity forms built with this helper receive useful defaults suiting for
+ * editing a single entity, whereas the special cases of adding and cloning
+ * of entities are supported too.
  *
- * This is a helper function for entities making use of the entity UI, thus it
- * assumes the defaults by entity_ui_form_defaults() have been set.
+ * While this function is intended to be used to get entity forms for entities
+ * using the entity ui controller, it may be used for entity types not using
+ * the controller too.
+ *
+ * @param $entity_type
+ *   The entity type for which to get the form.
+ * @param $entity
+ *   The entity for whicht to return the form. If $op is 'add', NULL may be
+ *   passed.
+ * @param $op
+ *   One of 'edit', 'add' or 'clone. Defaults to edit.
  *
  * @return
- *   The updated entity.
+ *   The fully built and processed form, ready to be rendered.
  *
  * @see EntityDefaultUIController::hook_forms()
- * @see EntityDefaultUIController::entityFormSubmitBuildEntity()
+ * @see entity_ui_form_submit_build_entity()
  */
-function entity_ui_form_submit_build_entity($form, &$form_state) {
-  return entity_ui_controller($form_state['entity_type'])->entityFormSubmitBuildEntity($form, $form_state);
+function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
+  if (isset($entity)) {
+    list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+  }
+  $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
+
+  // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
+  // we can prepulate the form state.
+  $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
+  $form_state['build_info']['args'] = array($entity, $op);
+  $form_state['entity_type'] = $entity_type;
+  module_load_include('inc', 'entity', 'entity.ui');
+  return drupal_build_form($form_id, $form_state);
 }
