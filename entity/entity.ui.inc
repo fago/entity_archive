@@ -111,21 +111,25 @@ class EntityDefaultUIController {
   }
 
   /**
-   * Returns an entity overview form.
+   * Builds the entity overview form.
+   *
+   * @todo: split into utility function that can be re-used ala rules.
    */
   public function overviewForm($form, &$form_state) {
-    // Test form element
+    // @todo: implement or remove.
     $form['filter'] = array(
       '#type' => 'fieldset',
       '#title' => t('Filter'),
       '#collapsible' => TRUE,
     );
     $entities = entity_load($this->entityType);
+    $path = $this->entityInfo['admin ui']['path'];
+    $status_key = empty($this->entityInfo['entity keys']['status']) ? 'status' : $this->entityInfo['entity keys']['status'];
 
     $rows = array();
     foreach ($entities as $id => $entity) {
       $row = array();
-      // Label
+      // Optionally link to the entity if we have the URI.
       $label = entity_label($this->entityType, $entity);
       if ($entity_uri = entity_uri($this->entityType, $entity)) {
         $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
@@ -133,49 +137,49 @@ class EntityDefaultUIController {
       else {
         $row[] = $label;
       }
-      // Status (custom, default, overridden or fixed)
-      // Operations (edit, clone, revert, delete)
-      // @todo: This has to use entity_has_status().
-      switch ($entity->status) {
-        case ENTITY_IN_DB:
-          $row[] = t('Custom');
-          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
-          $row[] = l(t('delete'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/delete', array('query' => drupal_get_destination()));
-          break;
-        case ENTITY_IN_CODE:
-          $row[] = t('Default');
-          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
-          break;
-        case ENTITY_OVERRIDDEN:
-          $row[] = t('Overridden');
-          $row[] = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
-          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
-          $row[] = l(t('revert'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/revert', array('query' => drupal_get_destination()));
-          break;
-        case ENTITY_FIXED:
-          $row[] = t('Fixed');
-          $row[] = l(t('clone'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/clone');
-          break;
+      // Add a row for the exportable status.
+      if (!empty($this->entityInfo['exportable'])) {
+        $row[] = array('data' => array(
+          '#theme' => 'entity_status',
+          '#status' => $entity->$status_key,
+        ));
       }
 
+      // Add operations depending on the status.
+      if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
+        $row[] = array('data' => l(t('clone'), $path . '/' . $id . '/clone'), 'colspan' => 3);
+      }
+      else {
+        $row[] = l(t('edit'), $path . '/' . $id . '/edit');
+        $row[] = l(t('clone'), $path . '/' . $id . '/clone');
+        if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+          $row[] = l(t('delete'), $path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+        }
+        elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
+          $row[] = l(t('revert'), $path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+        }
+        else {
+          $row[] = '';
+        }
+      }
       $rows[] = $row;
     }
-    $header = array(t('Label'), t('Status'), array('data' => t('Operations'), 'colspan' => 4));
+    // Assemble the right table header.
+    $header = array(t('Label'));
+    if (!empty($this->entityInfo['exportable'])) {
+      $header[] = t('Status');
+    }
+    $header[] = array('data' => t('Operations'), 'colspan' => 3);
 
-    $table = array(
-      '#theme' => 'table',
-      '#header' => $header,
-      '#rows' => $rows,
-      '#empty' => t('None'),
-    );
     //$table['#attributes']['class'][] = 'rules-overview-table';
     //$table['#attached']['css'][] = drupal_get_path('module', 'rules') . '/ui/rules.ui.css';
 
-    $form['list'] = $table;
-    $form['list']['#caption'] = t('Available entities');
-    $form['list']['#empty'] = t('There are no matching entities.');
+    $form['table'] = array(
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $rows,
+      '#empty' => t('None.'),
+    );
     return $form;
   }
 
@@ -183,32 +187,28 @@ class EntityDefaultUIController {
 
   public function overviewFormSubmit() {}
 
+
+  /**
+   * Builds the operation form.
+   */
   public function operationForm($form, &$form_state, $entity, $op) {
     $label = entity_label($this->entityType, $entity);
     switch ($op) {
       case 'revert':
-        if (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
-          $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
-          return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
-        }
-        break;
+        $confirm_question = t('Are you sure you want to revert the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
+        return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
 
       case 'delete':
-        if (entity_has_status($this->entityType, $entity, ENTITY_IN_DB)) {
-          $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
-          return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
-        }
-        break;
+        $confirm_question = t('Are you sure you want to delete the %entity %label?', array('%entity' => $this->entityInfo['label'], '%label' => $label));
+        return confirm_form($form, $confirm_question, $this->entityInfo['admin ui']['path']);
     }
     drupal_not_found();
     exit;
   }
 
   public function operationFormSubmit($form, &$form_state) {
-    if ($form_state['values']['confirm']) {
-      $msg = $this->applyOperation($form_state['op'], $form_state['entity']);
-      drupal_set_message($msg);
-    }
+    $msg = $this->applyOperation($form_state['op'], $form_state[$this->entityType]);
+    drupal_set_message($msg);
   }
 
   /**
@@ -218,27 +218,31 @@ class EntityDefaultUIController {
    *   The operation (edit, clone, revert or delete).
    * @param $entity
    *   The entity to manipulate.
+   *
+   * @return
+   *   The status message of what has been applied.
    */
-  public function operationApply($op, $entity) {
+  public function applyOperation($op, $entity) {
     $label = entity_label($this->entityType, $entity);
     $vars = array('%entity' => $this->entityInfo['label'], '%label' => $label);
-    $edit_link = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $entity->id . '/edit');
+    $id = entity_id($this->entityType, $entity);
+    $edit_link = l(t('edit'), $this->entityInfo['admin ui']['path'] . '/' . $id . '/edit');
+
     switch ($op) {
       case 'revert':
-        $entity->delete();
-        watchdog('entity', 'Reverted %entity %label to the defaults.', $vars, WATCHDOG_NOTICE, $edit_link);
+        entity_delete($this->entityType, $id);
+        watchdog($this->entityType, 'Reverted %entity %label to the defaults.', $vars, WATCHDOG_NOTICE, $edit_link);
         return t('Reverted %entity %label to the defaults.', $vars);
 
       case 'delete':
-        $entity->delete();
-        watchdog('entity', 'Deleted %entity %label.', $vars);
+        entity_delete($this->entityType, $id);
+        watchdog($this->entityType, 'Deleted %entity %label.', $vars);
         return t('Deleted %entity %label.', $vars);
 
       default:
         return FALSE;
     }
   }
-
 }
 
 /**

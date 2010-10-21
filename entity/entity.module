@@ -282,8 +282,8 @@ function entity_crud_get_info() {
  */
 function entity_has_status($entity_type, $entity, $status) {
   $info = entity_get_info($entity_type);
-  $status_property = empty($info['status key']) ? 'status' : $info['status key'];
-  return ($entity->{$status_property} & $status) == $status;
+  $status_key = empty($info['entity keys']['status']) ? 'status' : $info['entity keys']['status'];
+  return ($entity->{$status_key} & $status) == $status;
 }
 
 /**
@@ -385,7 +385,7 @@ function theme_entity_status($variables) {
     $help = t('The configuration is fixed and cannot be changed.');
     return $html ? "<span class='entity-status-fixed' title='$help'>" . $label . "</span>" : $label;
   }
-  elseif ($status & ENTITY_OVERRIDDEN == ENTITY_OVERRIDDEN) {
+  elseif (($status & ENTITY_OVERRIDDEN) == ENTITY_OVERRIDDEN) {
     $label = t('Overridden');
     $help = t('This configuration is provided by a module, but has been changed.');
     return $html ? "<span class='entity-status-overridden' title='$help'>" . $label . "</span>" : $label;
