@@ -159,6 +159,7 @@ class EntityDefaultUIController {
    */
   public function overviewTable($conditions = array()) {
     $entities = entity_load($this->entityType);
+    ksort($entities);
 
     $rows = array();
     foreach ($entities as $id => $entity) {
@@ -190,14 +191,15 @@ class EntityDefaultUIController {
    *   Additional columns to be added after the entity label column.
    */
   protected function overviewTableRow($conditions, $id, $entity, $additional_cols = array()) {
-    // Optionally link to the entity if we have the URI.
-    $label = entity_label($this->entityType, $entity);
-    if ($entity_uri = entity_uri($this->entityType, $entity)) {
-      $row[] = l($label, url($entity_uri['path'], $entity_uri['options']));
-    }
-    else {
-      $row[] = $label;
-    }
+    $entity_uri = entity_uri($this->entityType, $entity);
+
+    $row[] = array('data' => array(
+      '#theme' => 'entity_ui_overview_item',
+      '#label' => entity_label($this->entityType, $entity),
+      '#name' => !empty($this->entityInfo['exportable']) ? entity_id($this->entityType, $entity) : FALSE,
+      '#url' => $entity_uri ? url($entity_uri['path'], $entity_uri['options']) : FALSE,
+      '#entity_type' => $this->entityType),
+    );
 
     // Add in any passed additional cols.
     foreach ($additional_cols as $col) {
@@ -457,4 +459,17 @@ function entity_ui_add_title($entity_type) {
  */
 function entity_ui_form_submit_build_entity($form, &$form_state) {
   return entity_ui_controller($form_state['entity_type'])->entityFormSubmitBuildEntity($form, $form_state);
+}
+
+/**
+ * Returns HTML for an entity on the entity overview listing.
+ *
+ * @ingroup themeable
+ */
+function theme_entity_ui_overview_item($variables) {
+  $output = $variables['url'] ? l($variables['label'], $variables['url']) : check_plain($variables['label']);
+  if ($variables['name']) {
+    $output .= ' <small> (' . t('Machine name') . ': ' . check_plain($variables['name']) . ')</small>';
+  }
+  return $output;
 }

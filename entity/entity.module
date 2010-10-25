@@ -371,6 +371,10 @@ function entity_theme() {
       'render element' => 'elements',
       'template' => 'entity',
     ),
+    'entity_ui_overview_item' => array(
+      'variables' => array('label' => NULL, 'entity_type' => NULL, 'url' => FALSE, 'name' => FALSE),
+      'file' => 'entity.ui.inc'
+    ),
   );
 }
 
