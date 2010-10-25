@@ -45,8 +45,6 @@ class EntityDefaultUIController {
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
-      //@todo Support custom includes without having to override this.
-      //'file' => 'entity.ui.inc',
     );
     $items[$this->path . '/%entity_menu/edit'] = array(
       'title' => 'Edit',
@@ -56,8 +54,6 @@ class EntityDefaultUIController {
       'access callback' => 'entity_access',
       'access arguments' => array('update', $this->entityType, $id_count),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
-      //@todo Support custom includes without having to override this.
-      //'file' => 'entity.ui.inc',
     );
     // Clone form, a special case for the edit form.
     $items[$this->path . '/%entity_menu/clone'] = array(
@@ -67,8 +63,6 @@ class EntityDefaultUIController {
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
-      //@todo Support custom includes without having to override this.
-      //'file' => 'entity.ui.inc',
     );
     // Menu item for operations like revert and delete.
     $items[$this->path . '/%entity_menu/%'] = array(
@@ -80,6 +74,14 @@ class EntityDefaultUIController {
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
       'file' => 'entity.ui.inc',
     );
+
+    if (!empty($this->entityInfo['admin ui']['file'])) {
+      // Add in the include file for the entity form.
+      foreach (array('/%entity_menu/edit', '/%entity_menu/clone', '/add') as $path_end) {
+        $items[$this->path . $path_end]['file'] = $this->entityInfo['admin ui']['file'];
+        $items[$this->path . $path_end]['file path'] = isset($this->entityInfo['admin ui']['file path']) ? $this->entityInfo['admin ui']['file path'] : drupal_get_path('module', $this->entityInfo['module']);
+      }
+    }
     return $items;
   }
 

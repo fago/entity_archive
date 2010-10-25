@@ -52,6 +52,11 @@
  *     UI. Defaults to EntityDefaultUIController.
  *     For customizing the UI inherit from the default class and overide methods
  *     as suiting and specify your class as controller class.
+ *   - file: Optionally, the name of the file in which the entity form resides
+ *     as it is required by hook_menu().
+ *   - file path: Optionally, the path to the file as required by hook_menu. If
+ *     not set, it defaults to entity module's path, thus the entity types
+ *     'module' key is required.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController. Set it to FALSE to disable this feature.
