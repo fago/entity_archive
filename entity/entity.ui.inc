@@ -27,6 +27,7 @@ class EntityDefaultUIController {
   public function hook_menu() {
     $items = array();
     $id_count = count(explode('/', $this->path));
+    $wildcard = isset($this->entityInfo['admin ui']['menu wildcard']) ? $this->entityInfo['admin ui']['menu wildcard'] : '%' . $this->entityType;
 
     $items[$this->path] = array(
       'title' => $this->entityInfo['label'] . 's',
@@ -46,44 +47,44 @@ class EntityDefaultUIController {
       'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
     );
-    $items[$this->path . '/%entity_menu'] = array(
+    $items[$this->path . '/manage/' . $wildcard] = array(
       'title' => 'Edit',
       'page callback' => 'entity_ui_get_form',
-      'page arguments' => array($this->entityType, $id_count),
+      'page arguments' => array($this->entityType, $id_count + 1),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('update', $this->entityType, $id_count),
-      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
+      'access arguments' => array('update', $this->entityType, $id_count + 1),
+      'type' => MENU_CALLBACK,
     );
-    $items[$this->path . '/%entity_menu/edit'] = array(
+    $items[$this->path . '/manage/' . $wildcard . '/edit'] = array(
       'title' => 'Edit',
       'load arguments' => array($this->entityType),
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
 
     // Clone form, a special case for the edit form.
-    $items[$this->path . '/%entity_menu/clone'] = array(
+    $items[$this->path . '/manage/' . $wildcard . '/clone'] = array(
       'title' => 'Clone',
       'page callback' => 'entity_ui_get_form',
-      'page arguments' => array($this->entityType, $id_count, 'clone'),
+      'page arguments' => array($this->entityType, $id_count + 1, 'clone'),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('create', $this->entityType),
     );
     // Menu item for operations like revert and delete.
-    $items[$this->path . '/%entity_menu/%'] = array(
+    $items[$this->path . '/manage/' . $wildcard . '/%'] = array(
       'page callback' => 'drupal_get_form',
-      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count, $id_count + 1),
+      'page arguments' => array($this->entityType . '_operation_form', $this->entityType, $id_count + 1, $id_count + 2),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
-      'access arguments' => array('delete', $this->entityType, $id_count),
-      'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
+      'access arguments' => array('delete', $this->entityType, $id_count + 1),
+      'type' => MENU_CALLBACK,
       'file' => 'entity.ui.inc',
     );
 
     if (!empty($this->entityInfo['admin ui']['file'])) {
       // Add in the include file for the entity form.
-      foreach (array('/%entity_menu', '/%entity_menu/clone', '/add') as $path_end) {
+      foreach (array("/manage/$wildcard", "/manage/$wildcard/clone", '/add') as $path_end) {
         $items[$this->path . $path_end]['file'] = $this->entityInfo['admin ui']['file'];
         $items[$this->path . $path_end]['file path'] = isset($this->entityInfo['admin ui']['file path']) ? $this->entityInfo['admin ui']['file path'] : drupal_get_path('module', $this->entityInfo['module']);
       }
@@ -211,16 +212,16 @@ class EntityDefaultUIController {
 
     // Add operations depending on the status.
     if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
-      $row[] = array('data' => l(t('clone'), $this->path . '/' . $id . '/clone'), 'colspan' => 3);
+      $row[] = array('data' => l(t('clone'), $this->path . '/manage/' . $id . '/clone'), 'colspan' => 3);
     }
     else {
-      $row[] = l(t('edit'), $this->path . '/' . $id);
-      $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
+      $row[] = l(t('edit'), $this->path . '/manage/' . $id);
+      $row[] = l(t('clone'), $this->path . '/manage/' . $id . '/clone');
       if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
-        $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
+        $row[] = l(t('delete'), $this->path . '/manage/' . $id . '/delete', array('query' => drupal_get_destination()));
       }
       elseif (entity_has_status($this->entityType, $entity, ENTITY_OVERRIDDEN)) {
-        $row[] = l(t('revert'), $this->path . '/' . $id . '/revert', array('query' => drupal_get_destination()));
+        $row[] = l(t('revert'), $this->path . '/manage/' . $id . '/revert', array('query' => drupal_get_destination()));
       }
       else {
         $row[] = '';
@@ -277,7 +278,7 @@ class EntityDefaultUIController {
     $label = entity_label($this->entityType, $entity);
     $vars = array('%entity' => $this->entityInfo['label'], '%label' => $label);
     $id = entity_id($this->entityType, $entity);
-    $edit_link = l(t('edit'), $this->path . '/' . $id . '/edit');
+    $edit_link = l(t('edit'), $this->path . '/manage/' . $id . '/edit');
 
     switch ($op) {
       case 'revert':
