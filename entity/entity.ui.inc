@@ -46,7 +46,7 @@ class EntityDefaultUIController {
       'access arguments' => array('create', $this->entityType),
       'type' => MENU_LOCAL_ACTION,
     );
-    $items[$this->path . '/%entity_menu/edit'] = array(
+    $items[$this->path . '/%entity_menu'] = array(
       'title' => 'Edit',
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, $id_count),
@@ -55,6 +55,12 @@ class EntityDefaultUIController {
       'access arguments' => array('update', $this->entityType, $id_count),
       'type' => MENU_CALLBACK | MENU_VISIBLE_IN_BREADCRUMB,
     );
+    $items[$this->path . '/%entity_menu/edit'] = array(
+      'title' => 'Edit',
+      'load arguments' => array($this->entityType),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+
     // Clone form, a special case for the edit form.
     $items[$this->path . '/%entity_menu/clone'] = array(
       'title' => 'Clone',
@@ -77,7 +83,7 @@ class EntityDefaultUIController {
 
     if (!empty($this->entityInfo['admin ui']['file'])) {
       // Add in the include file for the entity form.
-      foreach (array('/%entity_menu/edit', '/%entity_menu/clone', '/add') as $path_end) {
+      foreach (array('/%entity_menu', '/%entity_menu/clone', '/add') as $path_end) {
         $items[$this->path . $path_end]['file'] = $this->entityInfo['admin ui']['file'];
         $items[$this->path . $path_end]['file path'] = isset($this->entityInfo['admin ui']['file path']) ? $this->entityInfo['admin ui']['file path'] : drupal_get_path('module', $this->entityInfo['module']);
       }
@@ -208,7 +214,7 @@ class EntityDefaultUIController {
       $row[] = array('data' => l(t('clone'), $this->path . '/' . $id . '/clone'), 'colspan' => 3);
     }
     else {
-      $row[] = l(t('edit'), $this->path . '/' . $id . '/edit');
+      $row[] = l(t('edit'), $this->path . '/' . $id);
       $row[] = l(t('clone'), $this->path . '/' . $id . '/clone');
       if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
         $row[] = l(t('delete'), $this->path . '/' . $id . '/delete', array('query' => drupal_get_destination()));
