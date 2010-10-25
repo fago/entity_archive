@@ -494,14 +494,6 @@ function entity_menu() {
 }
 
 /**
- * Menu load callback to retrieve an entity object from its id.
- */
-function entity_menu_load($id, $type) {
-  $result = entity_load($type, array($id));
-  return reset($result);
-}
-
-/**
  * Implements hook_forms().
  */
 function entity_forms() {

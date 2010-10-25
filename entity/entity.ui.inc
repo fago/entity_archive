@@ -49,12 +49,13 @@ class EntityDefaultUIController {
     );
     $items[$this->path . '/manage/' . $wildcard] = array(
       'title' => 'Edit',
+      'title callback' => 'entity_label',
+      'title arguments' => array($this->entityType, $id_count + 1),
       'page callback' => 'entity_ui_get_form',
       'page arguments' => array($this->entityType, $id_count + 1),
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('update', $this->entityType, $id_count + 1),
-      'type' => MENU_CALLBACK,
     );
     $items[$this->path . '/manage/' . $wildcard . '/edit'] = array(
       'title' => 'Edit',
@@ -78,7 +79,6 @@ class EntityDefaultUIController {
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('delete', $this->entityType, $id_count + 1),
-      'type' => MENU_CALLBACK,
       'file' => 'entity.ui.inc',
     );
 
@@ -169,7 +169,9 @@ class EntityDefaultUIController {
     if (!empty($this->entityInfo['exportable'])) {
       $header[] = t('Status');
     }
-    $header[] = array('data' => t('Operations'), 'colspan' => 3);
+    // Add operations with the right colspan.
+    $field_ui = !empty($this->entityInfo['bundle of']) && module_exists('field_ui');
+    $header[] = array('data' => t('Operations'), 'colspan' => $field_ui ? 5 : 3);
 
     $render = array(
       '#theme' => 'table',
@@ -209,13 +211,21 @@ class EntityDefaultUIController {
         '#status' => $entity->{$this->statusKey},
       ));
     }
+    // In case this is a bundle, we add links to the field ui tabs.
+    $field_ui = !empty($this->entityInfo['bundle of']) && module_exists('field_ui');
 
     // Add operations depending on the status.
     if (entity_has_status($this->entityType, $entity, ENTITY_FIXED)) {
-      $row[] = array('data' => l(t('clone'), $this->path . '/manage/' . $id . '/clone'), 'colspan' => 3);
+      $row[] = array('data' => l(t('clone'), $this->path . '/manage/' . $id . '/clone'), 'colspan' => $field_ui ? 5 : 3);
     }
     else {
       $row[] = l(t('edit'), $this->path . '/manage/' . $id);
+
+      if ($field_ui) {
+        $row[] = l(t('manage fields'), $this->path . '/manage/' . $id . '/fields');
+        $row[] = l(t('manage display'), $this->path . '/manage/' . $id . '/display');
+      }
+
       $row[] = l(t('clone'), $this->path . '/manage/' . $id . '/clone');
       if (empty($this->entityInfo['exportable']) || !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
         $row[] = l(t('delete'), $this->path . '/manage/' . $id . '/delete', array('query' => drupal_get_destination()));
