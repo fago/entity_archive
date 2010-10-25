@@ -456,7 +456,6 @@ function entity_class_uri($entity) {
   return $entity->uri();
 }
 
-
 /**
  * Determines the UI controller class for a given entity type.
  *
@@ -466,16 +465,21 @@ function entity_class_uri($entity) {
  */
 function entity_ui_controller($type = NULL) {
   $static = &drupal_static(__FUNCTION__);
-  if (!isset($static[$type])) {
-    $entity_info = entity_get_info();
-    foreach ($entity_info as $entity_type => $info) {
-      if (isset($info['admin ui']['path'])) {
-        $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
-        $static[$entity_type] = $class ? new $class($entity_type, $info) : FALSE;
-      }
+  $all = &drupal_static(__FUNCTION__);
+
+  if (isset($type) && !isset($static[$type])) {
+    $info = entity_get_info($type);
+    $class = isset($info['admin ui']['controller class']) ? $info['admin ui']['controller class'] : 'EntityDefaultUIController';
+    $static[$type] = (isset($info['admin ui']['path']) && $class) ? new $class($type, $info) : FALSE;
+  }
+  if (!isset($type) && !isset($all)) {
+    // Invoke the function for each type to ensure we have fully populated the
+    // static variable $static.
+    foreach (entity_get_info() as $entity_type => $info) {
+      $all[$entity_type] = entity_ui_controller($entity_type);
     }
   }
-  return $type ? $static[$type] : $static;
+  return isset($static[$type]) ? $static[$type] : array_filter($static);
 }
 
 /**
@@ -519,13 +523,16 @@ function entity_forms() {
  *
  * While this function is intended to be used to get entity forms for entities
  * using the entity ui controller, it may be used for entity types not using
- * the controller too.
+ * the ui controller too.
  *
  * @param $entity_type
  *   The entity type for which to get the form.
  * @param $entity
- *   The entity for whicht to return the form. If $op is 'add', NULL may be
- *   passed.
+ *   The entity for which to return the form.
+ *   If $op is 'add' the entity has to be either initialized before calling this
+ *   function, or NULL may be passed. If NULL is passed, an entity will be
+ *   initialized with empty values using entity_create(). Thus entities, for
+ *   which this is problematic have to care to pass in an initialized entity.
  * @param $op
  *   One of 'edit', 'add' or 'clone. Defaults to edit.
  *
@@ -540,6 +547,10 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
     list(, , $bundle) = entity_extract_ids($entity_type, $entity);
   }
   $form_id = (!isset($bundle) || $bundle == $entity_type) ? $entity_type . '_form' : $entity_type . '_edit_' . $bundle . '_form';
+
+  if (!isset($entity) && $op == 'add') {
+    $entity = entity_create($entity_type, array());
+  }
 
   // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
   // we can prepulate the form state.
