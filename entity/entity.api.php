@@ -43,9 +43,10 @@
  *     controller during entity_load(). Defaults to 'default_' . $entity_type.
  * - admin ui: An array of optional information used for providing an
  *   administrative user interface. To enable the UI at least the path must be
- *   given and the 'ENTITY_TYPE_form' for editing, adding and cloning has to be
- *   created. See entity_ui_get_form() for details on which parameters are
- *   passed to that form.
+ *   given. Apart from that at least a loader function ENTITY_TYPE_load() has to
+ *   be defined, as well as the 'ENTITY_TYPE_form' for editing, adding and
+ *   cloning. The form gets the entity and the operation ('edit', 'add' or
+ *   'clone') passed. See entity_ui_get_form() for more details.
  *   Known keys are:
  *   - path: a path where the UI should show up as expected by hook_menu().
  *   - controller class: An optional controller class name for providing the
@@ -57,6 +58,9 @@
  *   - file path: Optionally, the path to the file as required by hook_menu. If
  *     not set, it defaults to entity module's path, thus the entity types
  *     'module' key is required.
+ *   - 'menu wildcard': The wildcard to use in paths of the hook_menu() items.
+ *     Defaults to %ENTITY_TYPE, for which a respective loader function
+ *     ENTITY_TYPE_load() has to be defined by the implementing module.
  * - 'rules controller class': An optional controller class for providing Rules
  *   integration. The given class has to inherit from the default class being
  *   EntityDefaultRulesController. Set it to FALSE to disable this feature.
