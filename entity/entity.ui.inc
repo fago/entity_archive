@@ -474,6 +474,18 @@ function entity_ui_validate_machine_name($element, &$form_state) {
 }
 
 /**
+ * Validation callback for machine names of exportables.
+ *
+ * We don't allow numeric machine names, as entity_load() treats them as the
+ * numeric identifier and they are easily confused with ids in general.
+ */
+function entity_ui_validate_machine_name($element, &$form_state) {
+  if (is_numeric($element['#value'])) {
+    form_error($element, t('Machine-readable names must not consist of numbers only.'));
+  }
+}
+
+/**
  * Returns HTML for an entity on the entity overview listing.
  *
  * @ingroup themeable
