@@ -481,7 +481,7 @@ function entity_metadata_text_formatted_properties() {
       'raw getter callback' => 'entity_metadata_verbatim_get',
     ),
     'format' => array(
-      'type' => 'integer',
+      'type' => 'token',
       'label' => t('Text format'),
       'options list' => 'entity_metadata_field_text_formats',
       'getter callback' => 'entity_metadata_verbatim_get',
