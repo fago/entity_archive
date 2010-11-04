@@ -197,7 +197,7 @@ class EntityDefaultUIController {
       '#theme' => 'entity_ui_overview_item',
       '#label' => entity_label($this->entityType, $entity),
       '#name' => !empty($this->entityInfo['exportable']) ? entity_id($this->entityType, $entity) : FALSE,
-      '#url' => $entity_uri ? url($entity_uri['path'], $entity_uri['options']) : FALSE,
+      '#url' => $entity_uri ? $entity_uri : FALSE,
       '#entity_type' => $this->entityType),
     );
 
@@ -479,7 +479,7 @@ function entity_ui_validate_machine_name($element, &$form_state) {
  * @ingroup themeable
  */
 function theme_entity_ui_overview_item($variables) {
-  $output = $variables['url'] ? l($variables['label'], $variables['url']) : check_plain($variables['label']);
+  $output = $variables['url'] ? l($variables['label'], $variables['url']['path'], $variables['url']['options']) : check_plain($variables['label']);
   if ($variables['name']) {
     $output .= ' <small> (' . t('Machine name') . ': ' . check_plain($variables['name']) . ')</small>';
   }
