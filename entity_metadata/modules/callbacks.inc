@@ -363,7 +363,8 @@ function entity_metadata_field_property_get($entity, array $options, $name, $ent
       $values[$delta] = $data[$columns[0]];
     }
   }
-  return $field['cardinality'] == 1 ? reset($values) : $values;
+  // For an empty single-valued field, we have to return NULL.
+  return $field['cardinality'] == 1 ? ($values ? reset($values) : NULL) : $values;
 }
 
 /**

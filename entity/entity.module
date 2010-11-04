@@ -417,7 +417,7 @@ function template_preprocess_entity(&$variables) {
   $variables[$variables['elements']['#entity_type']] = $entity;
   $info = entity_get_info($entity_type);
 
-  $variables['title']      = check_plain(entity_label($entity_type, $entity));
+  $variables['title'] = check_plain(entity_label($entity_type, $entity));
   $uri = entity_uri($entity_type, $entity);
   $variables['url'] = $uri ? url($uri['path'], $uri['options']) : FALSE;
   $variables['page'] = $uri && $uri['path'] == $_GET['q'];
