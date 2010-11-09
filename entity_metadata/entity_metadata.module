@@ -361,11 +361,11 @@ function entity_metadata_entity_delete($entity_type, $id) {
 /**
  * Implements hook_module_implements_alter().
  *
- * Avoid an undesired implementation of hook_entity_delete() for
- * entity_metadata_entity_delete().
+ * Avoid an undesired implementations of hook_entity_delete() and
+ * hook_entity_view().
  */
 function entity_metadata_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'entity_delete') {
+  if ($hook == 'entity_delete' || $hook == 'entity_view') {
     unset($implementations['entity_metadata']);
   }
 }
@@ -395,6 +395,9 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
 
 /**
  * Generate an array for rendering the given entities.
+ *
+ * Note: This is no hook_entity_view() implementation. See
+ * entity_metadata_module_implements_alter().
  *
  * @param $entity_type
  *   The type of the entity.
