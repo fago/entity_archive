@@ -461,6 +461,16 @@ function entity_class_uri($entity) {
 }
 
 /**
+ * Implements hook_file_download_access() for entity types provided by the CRUD API.
+ */
+function entity_file_download_access($field, $entity_type, $entity) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_access('view', $entity_type, $entity);
+  }
+}
+
+/**
  * Determines the UI controller class for a given entity type.
  *
  * @return EntityDefaultUIController
