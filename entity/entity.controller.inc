@@ -472,6 +472,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     else {
       module_invoke_all($this->entityType . '_view', $entity, $view_mode, $langcode);
     }
+    module_invoke_all('entity_view', $entity, $this->entityType, $view_mode, $langcode);
     $build = $entity->content;
     unset($entity->content);
     return $build;
@@ -500,7 +501,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         '#language' => $langcode,
       );
       // Allow modules to modify the structured entity.
-      drupal_alter($this->entityType . '_view', $build);
+      drupal_alter(array($this->entityType . '_view', 'entity_view'), $build, $this->entityType);
       $view[$this->entityType][$key] = $build;
     }
     return $view;
