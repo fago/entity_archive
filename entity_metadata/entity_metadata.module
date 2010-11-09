@@ -322,8 +322,8 @@ function entity_metadata_entity_save($entity_type, &$entity) {
   if (isset($info['save callback'])) {
     $info['save callback']($entity);
   }
-  elseif (method_exists($entity, 'save')) {
-    $entity->save();
+  elseif (entity_metadata_entity_type_supports($entity_type, 'save')) {
+    entity_save($entity_type, $entity);
   }
   else {
     return FALSE;
@@ -350,9 +350,8 @@ function entity_metadata_entity_delete($entity_type, $id) {
   if (isset($info['deletion callback'])) {
     $info['deletion callback']($id);
   }
-  elseif (isset($info['entity class']) && method_exists($info['entity class'], 'delete')) {
-    $entities = entity_load($entity_type, array($id));
-    reset($entities)->delete();
+  elseif (entity_metadata_entity_type_supports($entity_type, 'delete')) {
+    entity_delete($entity_type, $id);
   }
   else {
     return FALSE;
@@ -388,8 +387,8 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
   if (isset($info['creation callback'])) {
     return $info['creation callback']($values, $entity_type);
   }
-  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
-    return entity_get_controller($entity_type)->create($values);
+  elseif (entity_metadata_entity_type_supports($entity_type, 'create')) {
+    return entity_metadata_wrapper($entity_type, entity_create($entity_type, $values));
   }
   return FALSE;
 }
@@ -411,16 +410,39 @@ function entity_metadata_entity_create($entity_type, $values = array()) {
  *   The renderable array or FALSE if there were no information how to view the
  *   entity.
  */
-function entity_metdata_entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
+function entity_metadata_entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
   $info = entity_get_info($entity_type);
   if (isset($info['view callback'])) {
     return $info['view callback']($entities, $view_mode, $langcode, $entity_type);
   }
-  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
-    return entity_get_controller($entity_type)->view($entities, $view_mode, $langcode);
+  elseif (entity_metadata_entity_type_supports($entity_type, 'view')) {
+    return entity_view($entity_type, $entities, $view_mode, $langcode);
   }
   return FALSE;
 }
+
+/**
+ * Determines whether for the given entity type a given operation is available.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $op
+ *   One of 'create', 'view', 'save', 'delete' or 'access.
+ */
+function entity_metadata_entity_type_supports($entity_type, $op) {
+  $info = entity_get_info($entity_type);
+  $keys = array(
+    'view' => 'view callback',
+    'create' => 'creation callback',
+    'delete' => 'deletion callback',
+    'save' => 'save callback',
+    'access' => 'access callback',
+  );
+  if (isset($info[$keys[$op]]) || in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return TRUE;
+  }
+}
+
 
 /**
  * Queries for entities having the given property value.
