@@ -329,7 +329,9 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    */
   public function getPropertyLanguage() {
     if (isset($this->langcode) && $list = language_list()) {
-      return $list[$this->langcode];
+      if (isset($list[$this->langcode])) {
+        return $list[$this->langcode];
+      }
     }
     return NULL;
   }
