@@ -33,12 +33,6 @@ function entity_metadata_system_entity_property_info() {
     'getter callback' => 'entity_metadata_system_get_properties',
     'sanitize' => 'check_plain',
   );
-  $properties['mission'] = array(
-    'label' => t("Mission"),
-    'description' => t("The optional 'mission' of the site."),
-    'getter callback' => 'entity_metadata_system_get_properties',
-    'sanitize' => 'filter_xss',
-  );
   $properties['mail'] = array(
     'label' => t("Email"),
     'description' => t("The administrative email address for the site."),
