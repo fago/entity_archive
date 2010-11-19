@@ -46,7 +46,8 @@
  *   given. Apart from that at least a loader function ENTITY_TYPE_load() has to
  *   be defined, as well as the 'ENTITY_TYPE_form' for editing, adding and
  *   cloning. The form gets the entity and the operation ('edit', 'add' or
- *   'clone') passed. See entity_ui_get_form() for more details.
+ *   'clone') passed. Also the 'access callback' (see below) is required for the
+ *   UI. See entity_ui_get_form() for more details.
  *   Known keys are:
  *   - path: a path where the UI should show up as expected by hook_menu().
  *   - controller class: An optional controller class name for providing the
