@@ -493,11 +493,16 @@ function entity_ui_controller($type = NULL) {
       $all[$entity_type] = entity_ui_controller($entity_type);
     }
   }
-  return isset($static[$type]) ? $static[$type] : array_filter($static);
+  if ($type) {
+    return isset($static[$type]) ? $static[$type] : FALSE;
+  }
+  return array_filter($static);
 }
 
 /**
  * Implements hook_menu().
+ *
+ * @see EntityDefaultUIController::hook_menu()
  */
 function entity_menu() {
   $items = array();
@@ -509,13 +514,16 @@ function entity_menu() {
 
 /**
  * Implements hook_forms().
+ *
+ * @see EntityDefaultUIController::hook_forms()
  */
-function entity_forms() {
-  $forms = array();
-  foreach (entity_ui_controller() as $controller) {
-    $forms += $controller->hook_forms();
+function entity_forms($form_id, $args) {
+  // If the first argument is an entity type name, add in the types forms.
+  if (isset($args[0]) && is_string($args[0]) && entity_get_info($args[0])) {
+    if ($controller = entity_ui_controller($args[0])) {
+      return $controller->hook_forms();
+    }
   }
-  return $forms;
 }
 
 /**
