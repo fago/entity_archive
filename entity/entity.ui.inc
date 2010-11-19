@@ -95,8 +95,14 @@ class EntityDefaultUIController {
   /**
    * Provides definitions for implementing hook_forms().
    *
-   * User per bundle form ids if possible, such that easy per bundle alterations
+   * Use per bundle form ids if possible, such that easy per bundle alterations
    * are supported too.
+   *
+   * Note that for performance reasons, this method is only invoked for forms,
+   * which receive the entity_type as first argument. Thus any forms added, must
+   * follow that pattern.
+   *
+   * @see entity_forms()
    */
   public function hook_forms() {
     // The overview and the operation form are implemented by the controller,
@@ -113,7 +119,7 @@ class EntityDefaultUIController {
     // This is the main form for editing, adding and cloning.
     $forms[$this->entityType . '_form'] = array(
       'callback' => $this->entityType . '_form',
-      'wrapper_callback' => 'entity_ui_form_defaults',
+      'wrapper_callback' => 'entity_ui_main_form_defaults',
     );
 
     // If there are bundles, use a form id including the bundle name to ease
