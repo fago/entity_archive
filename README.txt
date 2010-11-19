@@ -28,6 +28,8 @@ you may stop reading now.
    and entity_create() functions and/or add your own ENTITY_TYPE_(save|delete|create)
    API functions.
    
+ * The provided controller does not yet support revisions.
+
  * Check out the documentation in the drupal.org handbook:
    http://drupal.org/node/878804
  
