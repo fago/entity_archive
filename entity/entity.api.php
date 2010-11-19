@@ -20,7 +20,7 @@
  *   specify the entity, for which this is a bundle of, here. If done so, the
  *   API will automatically invoke the field API bundle attachers. For this to
  *   work you also have to set the bundle key for the referred entity.
- * - module: The module providing the entity. Optionally, but suggested.
+ * - module: The module providing the entity type. Optionally, but suggested.
  * - exportable: Whether the entity is exportable. Defaults to FALSE.
  * - 'entity keys' An array of keys as defined by core. The following additional
  *   keys are used by the entity CRUD API:
@@ -30,11 +30,12 @@
  *     in the database. If not specified, this defaults to the 'id' key.
  *     For exportable entities, it's strongly recommended to use a machine name
  *     here as those are more portable across systems.
- *   - module: Optional. A key for the module property containing the source
- *     module name for exportable entities provided in code. Defaults to
- *     'module'.
- *   - status: Optional. The name of the entity property to use for setting the
- *     exportable entity status using defined bit flags. Defaults to 'status'.
+ *   - module: Optional. A key for the module property used by the entity CRUD
+ *     API to provide the source module name for exportable entities, which are
+ *     provided in code. Defaults to 'module'.
+ *   - status: Optional. The name of the entity property used by the entity CRUD
+ *     API to provide the exportable entity status using defined bit flags.
+ *     Defaults to 'status'.
  * - export: An array of optional information used for exporting. For ctools
  *   exportables compatibility any export-keys supported by ctools may be added
  *   to this array too.
