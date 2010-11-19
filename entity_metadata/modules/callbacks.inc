@@ -389,9 +389,15 @@ function entity_metadata_field_property_set($entity, $name, $value, $langcode, $
 /**
  * Callback returning the options list of a field.
  */
-function entity_metadata_field_options_list($name) {
-  $field = field_info_field($name);
-  return (array) module_invoke($field['module'], 'options_list', $field);
+function entity_metadata_field_options_list($name, $info) {
+  if (is_numeric($name) && isset($info['parent'])) {
+    // The options list is to be returned for a single item of a multiple field.
+    $field_property_info = $info['parent']->info();
+    $name = $field_property_info['name'];
+  }
+  if ($field = field_info_field($name)) {
+    return (array) module_invoke($field['module'], 'options_list', $field);
+  }
 }
 
 /**
