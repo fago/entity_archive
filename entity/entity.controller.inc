@@ -15,10 +15,10 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Delete permanently saved entities.
    *
+   * In case of failures, an exception is thrown.
+   *
    * @param $ids
    *   An array of entity IDs.
-   * @return
-   *   FALSE, if deleting failed. Else NULL.
    */
   public function delete($ids);
 
@@ -31,12 +31,14 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Permanently saves the given entity.
    *
+   * In case of failures, an exception is thrown.
+   *
    * @param $entity
    *   The entity to save.
    *
    * @return
-   *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
-   *   SAVED_UPDATED is returned depending on the operation performed.
+   *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation
+   *   performed.
    */
   public function save($entity);
 
@@ -387,8 +389,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       db_ignore_slave();
     }
     catch (Exception $e) {
-      $transaction->rollback($this->entityType, $e->getMessage(), array(), WATCHDOG_ERROR);
-      return FALSE;
+      $transaction->rollback();
+      watchdog_exception($this->entityType, $e);
+      throw $e;
     }
     $this->resetCache();
   }
@@ -402,10 +405,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    */
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     $transaction = isset($transaction) ? $transaction : db_transaction();
-
     try {
       $this->invoke('presave', $entity);
-
       if (!empty($entity->{$this->idKey}) && empty($entity->is_new)) {
         $return = drupal_write_record($this->entityInfo['base table'], $entity, $this->idKey);
         $this->invoke('update', $entity);
@@ -421,8 +422,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       return $return;
     }
     catch (Exception $e) {
-      $transaction->rollback($this->entityType, $e->getMessage(), array(), WATCHDOG_ERROR);
-      return FALSE;
+      $transaction->rollback();
+      watchdog_exception($this->entityType, $e);
+      throw $e;
     }
   }
 
