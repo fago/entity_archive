@@ -443,7 +443,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    */
   public function export($entity, $prefix = '') {
     $vars = get_object_vars($entity);
-    unset($vars[$this->statusKey]);
+    unset($vars[$this->statusKey], $vars['is_new']);
     if ($this->nameKey != $this->idKey) {
       unset($vars[$this->idKey]);
     }
