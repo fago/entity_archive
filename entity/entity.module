@@ -50,14 +50,16 @@ define('ENTITY_FIXED', 0x04);
 /**
  * Permanently save an entity.
  *
+ * In case of failures, an exception is thrown.
+ *
  * @param $entity_type
  *   The type of the entity.
  * @param $entity
  *   The entity to save.
  * @return
- *   Failure to write a record will return FALSE. Otherwise SAVED_NEW or
- *   SAVED_UPDATED is returned depending on the operation performed. If the
- *   given entity type isn't compatible to the CRUD API NULL is returned.
+ *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation
+ *   performed. If the given entity type isn't compatible to the CRUD API, FALSE
+ *   is returned.
  */
 function entity_save($entity_type, $entity) {
   $info = entity_get_info($entity_type);
@@ -67,10 +69,15 @@ function entity_save($entity_type, $entity) {
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->save($entity);
   }
+  else {
+    return FALSE;
+  }
 }
 
 /**
  * Permanently delete the given entity.
+ *
+ * In case of failures, an exception is thrown.
  *
  * @param $entity_type
  *   The type of the entity.
