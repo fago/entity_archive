@@ -283,7 +283,7 @@ function entity_crud_get_info() {
 function entity_has_status($entity_type, $entity, $status) {
   $info = entity_get_info($entity_type);
   $status_key = empty($info['entity keys']['status']) ? 'status' : $info['entity keys']['status'];
-  return ($entity->{$status_key} & $status) == $status;
+  return isset($entity->{$status_key}) && ($entity->{$status_key} & $status) == $status;
 }
 
 /**
