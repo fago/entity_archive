@@ -306,6 +306,9 @@ function entity_metadata_taxonomy_vocabulary_get_properties($vocabulary, array $
  */
 function entity_metadata_user_get_properties($account, array $options, $name, $entity_type) {
   switch ($name) {
+    case 'last-login':
+      return $account->login;
+
     case 'name':
       return ($account->uid == 0) ? variable_get('anonymous', t('Anonymous')) : $account->name;
 
