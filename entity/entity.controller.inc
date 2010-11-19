@@ -292,6 +292,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         unset($not_overridden_defaults[$record->{$this->nameKey}]);
         unset($entities[$record->{$this->nameKey}]);
       }
+      // For any further requests handle fetching defaults via the cache.
       $this->cacheSet($not_overridden_defaults);
       $this->defaultsFiltered = TRUE;
     }
