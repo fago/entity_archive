@@ -526,11 +526,17 @@ function entity_menu() {
  * @see entity_ui_get_form()
  */
 function entity_forms($form_id, $args) {
-  // If the third argument is an entity type name, add in the types forms.
-  if (isset($args[2]) && is_string($args[2]) && entity_get_info($args[2])) {
-    if ($controller = entity_ui_controller($args[2])) {
-      return $controller->hook_forms();
-    }
+  // For efficiency only invoke an entity types controller, if a form of it is
+  // requrested. Thus if the first (overview and operation form) or the third
+  // argument (edit form) is an entity type name, add in the types forms.
+  if (isset($args[0]) && is_string($args[0]) && entity_get_info($args[0])) {
+    $type = $args[0];
+  }
+  elseif (isset($args[2]) && is_string($args[2]) && entity_get_info($args[2])) {
+    $type = $args[2];
+  }
+  if (isset($type) && $controller = entity_ui_controller($type)) {
+    return $controller->hook_forms();
   }
 }
 
