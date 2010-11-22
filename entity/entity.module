@@ -523,11 +523,12 @@ function entity_menu() {
  * Implements hook_forms().
  *
  * @see EntityDefaultUIController::hook_forms()
+ * @see entity_ui_get_form()
  */
 function entity_forms($form_id, $args) {
-  // If the first argument is an entity type name, add in the types forms.
-  if (isset($args[0]) && is_string($args[0]) && entity_get_info($args[0])) {
-    if ($controller = entity_ui_controller($args[0])) {
+  // If the third argument is an entity type name, add in the types forms.
+  if (isset($args[2]) && is_string($args[2]) && entity_get_info($args[2])) {
+    if ($controller = entity_ui_controller($args[2])) {
       return $controller->hook_forms();
     }
   }
@@ -576,8 +577,13 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
   // Do not use drupal_get_form(), but invoke drupal_build_form() ourself so
   // we can prepulate the form state.
   $form_state['wrapper_callback'] = 'entity_ui_main_form_defaults';
-  $form_state['build_info']['args'] = array($entity, $op);
   $form_state['entity_type'] = $entity_type;
+  // We don't pass the entity type as first parameter, as the implementing
+  // module knows the type anyway. However, in order to allow for efficient
+  // hook_forms() implementiations we append the entity type as last argument,
+  // which the module implementing the form constructor may safely ignore.
+  // @see entity_forms()
+  $form_state['build_info']['args'] = array($entity, $op, $entity_type);
   module_load_include('inc', 'entity', 'entity.ui');
   return drupal_build_form($form_id, $form_state);
 }
