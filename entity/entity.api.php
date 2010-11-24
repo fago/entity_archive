@@ -44,11 +44,11 @@
  *     controller during entity_load(). Defaults to 'default_' . $entity_type.
  * - admin ui: An array of optional information used for providing an
  *   administrative user interface. To enable the UI at least the path must be
- *   given. Apart from that at least a loader function ENTITY_TYPE_load() has to
+ *   given. Apart from that, the 'access callback' (see below) is required for
+ *   the entity, and at least a loader function ENTITY_TYPE_load() has to
  *   be defined, as well as the 'ENTITY_TYPE_form' for editing, adding and
  *   cloning. The form gets the entity and the operation ('edit', 'add' or
- *   'clone') passed. Also the 'access callback' (see below) is required for the
- *   UI. See entity_ui_get_form() for more details.
+ *   'clone') passed. See entity_ui_get_form() for more details.
  *   Known keys are:
  *   - path: a path where the UI should show up as expected by hook_menu().
  *   - controller class: An optional controller class name for providing the
@@ -82,7 +82,8 @@
  *   operations 'create', 'updated', 'delete' and 'view'. The callback gets
  *   optionally the entity and the user account to check for passed. See
  *   entity_metadata_no_hook_node_access() for an example.
- *   Optional, but suggested for the Rules integration.
+ *   Optional, but suggested for the Rules integration, and required for the
+ *   admin ui (see above).
  *
  * @see hook_entity_info()
  */
