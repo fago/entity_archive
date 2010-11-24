@@ -4,10 +4,8 @@ Entity APIs
 ------------
 by Wolfgang Ziegler, nuppla@zites.net
 
-
-This are API modules, so only install them if you are instructed to do so, you
-want to run the tests or to force using modules to use the latest version of the
-entity CRUD API.
+This are API modules. You only need to enable them, if a module depends on one
+of them or you are interested in using them for development.
 
 
 This README is for interested developers. If you are not interested in developing,
@@ -20,17 +18,30 @@ you may stop reading now.
 
  * To use the API you have to introduce a dependency on the "entity" module.
 
- * The provided controller implements full CRUD functionality. To leverage that
-   you may use the EntityDB or EntityDBExtendable as a class or a base class
-   for your entities. The latter is extendable via the Extendable Object Faces
-   API (http://drupal.org/project/faces).
-   As an alternative you may just rely on the provided entity_save(), entity_delete()
-   and entity_create() functions and/or add your own ENTITY_TYPE_(save|delete|create)
-   API functions.
+ * The provided controller implements full CRUD functionality, which may be used
+   via the provided helpers entity_create(), entity_save(), entity_delete().
    
- * The provided controller does not yet support revisions.
-
- * Check out the documentation in the drupal.org handbook:
+   Alternatively you may specify a class to use for your entities, for which the
+   "Entity" class is provided. In particular, it is useful to extend this class
+   in order to apply any necessary customizations. 
+   
+   Next, there is also the class EntityExtendable, which is extendable via the
+   Extendable Object Faces API (http://drupal.org/project/faces) - however it is
+   *not* recommened to make use of that if there are no specific reasons to do
+   so.
+   
+ * The controller supports fieldable entities as well as exportable entities,
+   however it does not yet support revisions.
+   
+ * The Entity CRUD API helps with providing addition module integration too,
+   e.g. exportable entities are automatically integrate with the Features
+   module. These module integrations are implemented in separate controller
+   classes, which may be overridden and deactivated on their own.
+   
+ * There is also an optional ui controller class, which assits with providing an
+   administrative UI for managing entities of a certain type.
+   
+ * For more details check out the documentation in the drupal.org handbook:
    http://drupal.org/node/878804
  
 
@@ -47,13 +58,13 @@ you may stop reading now.
   
   * Implement hook_entity_info() for your entity. At least specifiy the
     controller class of this API, your db table and your object's primary key
-    field. Optionally also set the 'entity class' to EntityDB, EntityDBExtendable
-    or your extended class.
+    field. Optionally also set the 'entity class' to Entity or your extended
+    class.
     Again just look at "entity_test.module"'s hook_entity_info() for guidance.
     
-  * If you want your entity to be fieldable just set 'fieldable' in hook_entity_info
-    to TRUE. The field API attachers are called automatically in the entities
-    CRUD functions then.
+  * If you want your entity to be fieldable just set 'fieldable' in
+    hook_entity_info() to TRUE. The field API attachers are called automatically
+    in the entity CRUD functions then.
     
   * The entity API is able to deal with bundle objects too (e.g. the node type
     object). For that just specify an entity type for the bundle objects and
@@ -72,23 +83,23 @@ you may stop reading now.
                               Entity Metadata
 --------------------------------------------------------------------------------
 
-  * This module introduces a unique place for metadata about entity properties.
-    For that hook_entity_info() already used by core is extended, for details
-    have a look at the doxygen documentation.
+  * This module introduces a unique place for metadata about entities and their
+    properties. For that hook_entity_info() already used by core is extended,
+    and hook_entity_property_info() got introduced, whereas hook_entity_property_info()
+    may be placed in your module's {YOUR_MODULE}.info.inc include file. For details
+    have a look at the doxygen documentation and at http://drupal.org/node/878876.
+    
+  * The module provides API functions allowing modules to create, save, delete
+    or to determine access for entities based on any entity type, for which the
+    necessary metadata is available. The module comes with metadata for all
+    core entity types, contrib modules are supposed to provide metadata on their
+    own.
 
   * The metadata about entity properties contains information about the
     data type and callbacks for how to get and set the data of property. That
     way the data of an entity can be easily reused, e.g. to export into other
     data formats like XML.
-
-  * The module provides this metadata for all core modules, contrib modules
-    should provide the data on their own.
-    To do so hook_entity_property_info() has to be implemented, what may be done
-    in your module's {YOUR_MODULE}.info.inc include file, which is automatically
-    included once this module is active and the hook is invoked.
-    
-    Read more about providing metadata at http://drupal.org/node/878876.
-
+ 
   * For making use of this metadata the module provides some wrapper classes
     which ease getting and setting values. The wrapper support chained usage for
     retrieving wrappers of entity properties, e.g. to get a node author's mail

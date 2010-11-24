@@ -101,8 +101,8 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
 }
 
 /**
- * A controller implementing EntityAPIControllerInterface and being able to
- * deal with exportable entities.
+ * A controller implementing EntityAPIControllerInterface for the database and
+ * being able to deal with exportable entities.
  */
 class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
