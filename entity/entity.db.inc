@@ -47,7 +47,7 @@ class Entity {
    *
    * For exportable entities, this differs to the uniform identifier returned
    * by Entity::identifier(). The internal identifier is supposed to be used
-   * internally in order to refer to the a specify, stored (ENTITY_IN_DB)
+   * internally in order to refer to a specify, stored (ENTITY_IN_DB)
    * entity. For referring to entities which might not live in the DB, use the
    * uniform identifier.
    * If unsure, use Entity:identifier().
@@ -83,6 +83,53 @@ class Entity {
    */
   public function entityType() {
     return $this->entityType;
+  }
+
+  /**
+   * Returns the label of the entity.
+   *
+   * Modules may alter the label by specifying another 'label callback' using
+   * hook_entity_info_alter().
+   *
+   * @see entity_label()
+   */
+  public function label() {
+    if (isset($this->entityInfo['label callback']) && $this->entityInfo['label callback'] == 'entity_class_label') {
+      return $this->defaultLabel();
+    }
+    return entity_label($entity_type, $entity);
+  }
+
+  /**
+   * Override this in order to implement a custom default label and specify
+   * 'entity_class_label' as 'label callback' hook_entity_info(). As an
+   * alternative to that the label key may be provided in hook_entity_info().
+   */
+  protected function defaultLabel() {
+    return 'unlabelled';
+  }
+
+  /**
+   * Returns the uri of the entity just as entity_uri().
+   *
+   * Modules may alter the uri by specifying another 'uri callback' using
+   * hook_entity_info_alter().
+   *
+   * @see entity_uri()
+   */
+  public function uri() {
+    if (isset($this->entityInfo['uri callback']) && $this->entityInfo['uri callback'] == 'entity_class_uri') {
+      return $this->defaultUri();
+    }
+    return entity_uri($entity_type, $entity);
+  }
+
+  /**
+   * Override this in order to implement a custom default URI and specify
+   * 'entity_class_uri' as 'uri callback' hook_entity_info().
+   */
+  protected function defaultUri() {
+    return array('path' => 'default/' . $entity->identifier());
   }
 
   /**
