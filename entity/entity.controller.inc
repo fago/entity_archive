@@ -120,7 +120,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     parent::__construct($entityType);
     // Use the name key as primary identifier.
     $this->nameKey = isset($this->entityInfo['entity keys']['name']) ? $this->entityInfo['entity keys']['name'] : $this->idKey;
-    if (isset($this->entityInfo['exportable'])) {
+    if (!empty($this->entityInfo['exportable'])) {
       $this->entityInfo['entity keys'] += array('module' => 'module', 'status' => 'status');
       $this->statusKey = $this->entityInfo['entity keys']['status'];
       $this->moduleKey = $this->entityInfo['entity keys']['module'];
@@ -267,22 +267,17 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   protected function getDefaults($ids, $conditions = array()) {
     if (!isset($this->defaultEntities)) {
       $this->defaultEntities = array();
-      if (!empty($this->entityInfo['exportable'])) {
-        $this->entityInfo += array('export' => array());
-        $this->entityInfo['export'] += array('default hook' => 'default_' . $this->entityType);
-        if ($hook = $this->entityInfo['export']['default hook']) {
-          // Invoke the hook and collect default entities.
-          foreach (module_implements($hook) as $module) {
-            foreach ((array) module_invoke($module, $hook) as $id => $entity) {
-              $entity->{$this->statusKey} |= ENTITY_IN_CODE;
-              $entity->{$this->nameKey} = $id;
-              $entity->{$this->moduleKey} = $module;
-              $this->defaultEntities[$id] = $entity;
-            }
-          }
-          drupal_alter($hook, $this->defaultEntities);
+      $hook = isset($this->entityInfo['export']['default hook']) ? $this->entityInfo['export']['default hook'] : 'default_' . $this->entityType;
+      // Invoke the hook and collect default entities.
+      foreach (module_implements($hook) as $module) {
+        foreach ((array) module_invoke($module, $hook) as $id => $entity) {
+          $entity->{$this->statusKey} |= ENTITY_IN_CODE;
+          $entity->{$this->nameKey} = $id;
+          $entity->{$this->moduleKey} = $module;
+          $this->defaultEntities[$id] = $entity;
         }
       }
+      drupal_alter($hook, $this->defaultEntities);
     }
     $entities = is_array($ids) ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
     if (!$this->defaultsFiltered && $conditions && $entities) {
@@ -382,8 +377,15 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         ->condition($this->nameKey, $ids, 'IN')
         ->execute();
 
-      foreach ($entities as $entity) {
+      foreach ($entities as $id => $entity) {
         $this->invoke('delete', $entity);
+        if (!empty($this->entityInfo['exportable']) && !($entity->{$this->statusKey} & ENTITY_IN_CODE)) {
+          $disabled_entities[$id] = $entity;
+        }
+      }
+      if (!empty($disabled_entities)) {
+        module_invoke_all($this->entityType . '_disabled', $disabled_entities);
+        module_invoke_all('entity_disabled', $disabled_entities, $this->entityType);
       }
       // Ignore slave server temporarily.
       db_ignore_slave();
@@ -415,6 +417,11 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         $return = drupal_write_record($this->entityInfo['base table'], $entity);
         $this->invoke('insert', $entity);
         unset($entity->is_new);
+        if (!empty($this->entityInfo['exportable']) && !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+          $entities = array($entity->{$this->nameKey} => $entity);
+          module_invoke_all($this->entityType . '_enabled', $entities);
+          module_invoke_all('entity_enabled', $entities, $this->entityType);
+        }
       }
       // Ignore slave server temporarily.
       db_ignore_slave();

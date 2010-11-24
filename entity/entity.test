@@ -27,6 +27,8 @@ class EntityAPITestCase extends DrupalWebTestCase {
    * Tests CRUD.
    */
   function testCRUD() {
+    module_enable(array('entity_feature'));
+
     $user1 = $this->drupalCreateUser();
     // Create test entities for the user1 and unrelated to a user.
     $entity = new EntityClass(array('name' => 'test', 'uid' => $user1->uid));
@@ -62,6 +64,8 @@ class EntityAPITestCase extends DrupalWebTestCase {
    * Tests CRUD API functions: entity_(create|delete|save)
    */
   function testCRUDAPIfunctions() {
+    module_enable(array('entity_feature'));
+
     $user1 = $this->drupalCreateUser();
     // Create test entities for the user1 and unrelated to a user.
     $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
@@ -97,6 +101,8 @@ class EntityAPITestCase extends DrupalWebTestCase {
    * Test loading entities defined in code.
    */
   function testExportables() {
+    module_enable(array('entity_feature'));
+
     $types = entity_load('entity_test_type', array('test', 'test2'));
     $this->assertEqual($types['test']->label, 'label', 'Default type loaded.');
     $this->assertTrue($types['test']->status & ENTITY_IN_CODE && !($types['test']->status & ENTITY_IN_DB), 'Default type status is correct.');
@@ -140,9 +146,62 @@ class EntityAPITestCase extends DrupalWebTestCase {
   }
 
   /**
+   * Tests hook_entity_enabled() and hook_entity_disabled().
+   */
+  function testExportablesActivation() {
+    $_SESSION['entity_hook_test'] = array();
+    // Enabling the module should invoke the enabled hook for the other
+    // entities provided in code.
+    module_enable(array('entity_feature'));
+
+    $all = array('main', 'test', 'test2');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_enabled'] == array($all), 'Hook entity_enabled has been invoked.');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_enabled'] == array($all), 'Hook entity_test_type_enabled has been invoked.');
+
+    // Add a new test entity in DB and make sure the hook is invoked too.
+    $test3 = new EntityDB(array(
+      'name' => 'test3',
+      'label' => 'label',
+      'weight' => 0,
+    ), 'entity_test_type');
+    $test3->save();
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_enabled'] == array($all, array('test3')), 'Hook entity_enabled has been invoked.');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_enabled'] == array($all, array('test3')), 'Hook entity_test_type_enabled has been invoked.');
+
+    // Now override the 'test' entity and make sure it doesn't invoke the
+    // enabling hook as it is already enabled. Then make sure it stays enabled
+    // when the feature module is disabled.
+    $result = entity_load('entity_test_type', array('test'));
+    $result['test']->label = 'modified';
+    $result['test']->save();
+
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_enabled'] == array($all, array('test3')), 'Hook entity_enabled has been invoked.');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_enabled'] == array($all, array('test3')), 'Hook entity_test_type_enabled has been invoked.');
+
+    // 'test' has to remain enabled, as it has been overridden.
+    $all = array('main', 'test2');
+    module_disable(array('entity_feature'));
+
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_disabled'] == array($all), 'Hook entity_disabled has been invoked.');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_disabled'] == array($all), 'Hook entity_test_type_disabled has been invoked.');
+
+    // Now make sure 'test' is not overridden any more, but custom.
+    $result = entity_load('entity_test_type', array('test'));
+    $this->assertTrue(!entity_has_status('entity_test_type', $result['test'], ENTITY_OVERRIDDEN), 'Entity is not marked as overridden any more.');
+
+    // Test disabled hook for deleting the remaining entities from DB.
+    entity_delete_multiple('entity_test_type', array('test', 'test3'));
+    $all2 = array('test', 'test3');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_disabled'] == array($all, $all2), 'Hook entity_disabled has been invoked.');
+    $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_disabled'] == array($all, $all2), 'Hook entity_test_type_disabled has been invoked.');
+  }
+
+  /**
    * Tests viewing entites.
    */
   function testRendering() {
+    module_enable(array('entity_feature'));
+
     $user1 = $this->drupalCreateUser();
     // Create test entities for the user1 and unrelated to a user.
     $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
