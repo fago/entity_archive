@@ -21,6 +21,9 @@ function entity_test_entity_info() {
         'id' => 'pid',
         'bundle' => 'name',
       ),
+      // Make use the class' label() and uri() implementation by default.
+      'label callback' => 'entity_class_label',
+      'uri callback' => 'entity_class_uri',
       'bundles' => array(),
       'bundle keys' => array(
         'bundle' => 'name',
@@ -109,7 +112,7 @@ function entity_test_entity_test_type_presave($type) {
 /**
  * Main class for test entities.
  */
-class EntityClass extends EntityDBExtendable {
+class EntityClass extends Entity {
 
   public function __construct(array $values = array(), $entityType = NULL) {
     parent::__construct($values, 'entity_test');
@@ -124,7 +127,31 @@ class EntityClass extends EntityDBExtendable {
     );
     return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode, $content);
   }
+
+  /**
+   * Specifies the default label, which is picked up by label() by default.
+   */
+  protected function defaultLabel() {
+    return "my custom label";
+  }
+
+  /**
+   * Specifies the default uri, which is picked up by uri() by default.
+   */
+  protected function defaultURI() {
+    return array('path' => 'custom/' . $this->identifier());
+  }
 }
+
+
+/**
+ *
+ *
+ * Some hook implementations used by the tests.
+ *
+ *
+ */
+
 
 /**
  * Implements hook_entity_enabled().
