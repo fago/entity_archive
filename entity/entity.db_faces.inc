@@ -3,17 +3,18 @@
 
 /**
  * @file
- * Provides an extendable base class for entities.
+ * Provides an extendable base class for entities based upon faces.
  */
 
 /**
- * A common class for db entities.
+ * A class for entities, which is extendable via the extendable object faces API.
  *
- * It is suggested to also implement the label() and uri() methods for the
- * respective callbacks in hook_entity_info(). For that case the provided
- * callbacks entity_class_label() and entity_class_uri() may be specified.
+ * If there is no specific reason to use the faces API, it is suggested to
+ * make use of the class Entity instead.
+ *
+ * @see Entity
  */
-class EntityDBExtendable extends FacesExtendable {
+class EntityExtendable extends FacesExtendable {
 
   protected $entityType;
   protected $entityInfo;
@@ -79,4 +80,11 @@ class EntityDBExtendable extends FacesExtendable {
   public function buildContent($view_mode = 'full', $langcode = NULL) {
     return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode);
   }
+}
+
+/**
+ * This class is deprecated by "EntityExtendable" and only here for backward compatibility reasons.
+ */
+class EntityDBExtendable extends EntityExtendable {
+
 }

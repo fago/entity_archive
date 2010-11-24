@@ -7,18 +7,26 @@
  */
 
 /**
- * A common class for db entities.
+ * A common class for entities.
+ *
+ * It's suggested, but not required, to extend this class and to override
+ * __construct() in order to specify a fixed entity type.
  *
  * It is suggested to also implement the label() and uri() methods for the
  * respective callbacks in hook_entity_info(). For that case the provided
  * callbacks entity_class_label() and entity_class_uri() may be specified.
  */
-class EntityDB {
+class Entity {
 
   protected $entityType;
   protected $entityInfo;
   protected $idKey, $nameKey;
 
+  /**
+   * Creates a new entity.
+   *
+   * @see entity_create()
+   */
   public function __construct(array $values = array(), $entityType = NULL) {
     if (empty($entityType)) {
       throw new Exception('Cannot created an instance of EntityDB without a specified entity type.');
@@ -34,26 +42,63 @@ class EntityDB {
     }
   }
 
+  /**
+   * Returns the internal, numeric identifier.
+   *
+   * For exportable entities, this differs to the uniform identifier returned
+   * by Entity::identifier(). The internal identifier is supposed to be used
+   * internally in order to refer to the a specify, stored (ENTITY_IN_DB)
+   * entity. For referring to entities which might not live in the DB, use the
+   * uniform identifier.
+   * If unsure, use Entity:identifier().
+   */
   public function internalIdentifier() {
     return isset($this->{$this->idKey}) ? $this->{$this->idKey} : NULL;
   }
 
+  /**
+   * Returns the unified identifer.
+   *
+   * @return
+   *   The identifier of the entity. For exportable entities, this is their
+   *   machine readable name.
+   *
+   * @see entity_id()
+   */
   public function identifier() {
     return isset($this->{$this->nameKey}) ? $this->{$this->nameKey} : NULL;
   }
 
+  /**
+   * Returns the info of the type of the entity.
+   *
+   * @see entity_get_info()
+   */
   public function entityInfo() {
     return $this->entityInfo;
   }
 
+  /**
+   * Returns the type of the entity.
+   */
   public function entityType() {
     return $this->entityType;
   }
 
+  /**
+   * Permanently saves the entity.
+   *
+   * @see entity_save()
+   */
   public function save() {
     return entity_get_controller($this->entityType)->save($this);
   }
 
+  /**
+   * Permanently deletes the entity.
+   *
+   * @see entity_delete()
+   */
   public function delete() {
     $id = $this->identifier();
     if (isset($id)) {
@@ -61,15 +106,37 @@ class EntityDB {
     }
   }
 
+  /**
+   * Exports the entity.
+   *
+   * @see entity_export()
+   */
   public function export($prefix = '') {
     return entity_get_controller($this->entityType)->export($this, $prefix);
   }
 
+  /**
+   * Generate an array for rendering the entity.
+   *
+   * @see entity_view()
+   */
   public function view($view_mode = 'full', $langcode = NULL) {
     return entity_get_controller($this->entityType)->view(array($this->identifier() => $this), $view_mode, $langcode);
   }
 
+  /**
+   * Builds a structured array representing the entity's content.
+   *
+   * @see entity_build_content()
+   */
   public function buildContent($view_mode = 'full', $langcode = NULL) {
     return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode);
   }
+}
+
+/**
+ * This class is deprecated by "Entity" and only here for backward compatibility reasons.
+ */
+class EntityDB extends Entity {
+
 }
