@@ -185,19 +185,18 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     // and we need to know if it's empty for this reason to avoid querying the
     // database when all requested entities are loaded from cache.
     $passed_ids = !empty($ids) ? array_flip($ids) : FALSE;
-    // Try to load entities from the static cache, if the entity type supports
-    // static caching.
-    if ($this->cache) {
+
+    // Add default entities defined in code to the cache.
+    if (!empty($this->entityInfo['exportable']) && !isset($this->defaultEntities)) {
+      $this->getDefaults($ids, $conditions);
+    }
+    // Try to load entities from the static cache.
+    if (!$revision_id) {
       $entities = $this->cacheGet($ids, $conditions);
       // If any entities were loaded, remove them from the ids still to load.
       if ($passed_ids) {
         $ids = array_keys(array_diff_key($passed_ids, $entities));
       }
-    }
-    // Add default entities defined in code. Once the defaults have been
-    // applied and filtered, they are already in the cache so we can skip this.
-    if (!empty($this->entityInfo['exportable']) && ($ids !== array() || !$passed_ids) && !$this->defaultsFiltered) {
-      $entities += $this->getDefaults($ids, $conditions);
     }
 
     // Load any remaining entities from the database. This is the case if $ids
@@ -227,7 +226,6 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
           if (isset($this->defaultEntities[$id])) {
             $record->{$this->statusKey} |= ENTITY_IN_CODE;
             $record->{$this->moduleKey} = $this->defaultEntities[$id]->{$this->moduleKey};
-            unset($entities[$id]);
           }
         }
         $queried_entities[$record->{$this->nameKey}] = $record;
@@ -262,38 +260,27 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   }
 
   /**
-   * For exportables call the hook to get all default entities.
+   * For exportables, incorporate defaults into the cache.
    */
-  protected function getDefaults($ids, $conditions = array()) {
-    if (!isset($this->defaultEntities)) {
-      $this->defaultEntities = array();
-      $hook = isset($this->entityInfo['export']['default hook']) ? $this->entityInfo['export']['default hook'] : 'default_' . $this->entityType;
-      // Invoke the hook and collect default entities.
-      foreach (module_implements($hook) as $module) {
-        foreach ((array) module_invoke($module, $hook) as $id => $entity) {
-          $entity->{$this->statusKey} |= ENTITY_IN_CODE;
-          $entity->{$this->nameKey} = $id;
-          $entity->{$this->moduleKey} = $module;
-          $this->defaultEntities[$id] = $entity;
-        }
+  protected function getDefaults() {
+    $this->defaultEntities = array();
+    $hook = isset($this->entityInfo['export']['default hook']) ? $this->entityInfo['export']['default hook'] : 'default_' . $this->entityType;
+    // Invoke the hook and collect default entities.
+    foreach (module_implements($hook) as $module) {
+      foreach ((array) module_invoke($module, $hook) as $id => $entity) {
+        $entity->{$this->statusKey} |= ENTITY_IN_CODE;
+        $entity->{$this->nameKey} = $id;
+        $entity->{$this->moduleKey} = $module;
+        $this->defaultEntities[$id] = $entity;
       }
-      drupal_alter($hook, $this->defaultEntities);
     }
-    $entities = is_array($ids) ? array_intersect_key($this->defaultEntities, array_flip($ids)) : $this->defaultEntities;
-    if (!$this->defaultsFiltered && $conditions && $entities) {
-      // Remove overridden entities. This is not necessary for pure id based
-      // lookups though, as in this case overridden entities would get
-      // incorporated later anyway.
-      $not_overridden_defaults = $this->defaultEntities;
-      foreach ($this->query(array_keys($this->defaultEntities), array()) as $record) {
-        unset($not_overridden_defaults[$record->{$this->nameKey}]);
-        unset($entities[$record->{$this->nameKey}]);
-      }
-      // For any further requests handle fetching defaults via the cache.
-      $this->cacheSet($not_overridden_defaults);
-      $this->defaultsFiltered = TRUE;
+    drupal_alter($hook, $this->defaultEntities);
+    // Remove any default entities that have been overridden.
+    foreach ($this->query(array_keys($this->defaultEntities), array()) as $record) {
+      $this->defaultEntities[$record->{$this->nameKey}] = FALSE;
     }
-    return $this->applyConditions($entities, $conditions);
+    // Handle fetching defaults via the cache.
+    $this->cacheSet(array_filter($this->defaultEntities));
   }
 
   protected function applyConditions($entities, $conditions = array()) {
@@ -319,10 +306,14 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     return $this->applyConditions(parent::cacheGet($ids), $conditions);
   }
 
-  public function resetCache() {
-    $this->entityCache = array();
+  public function resetCache($id = NULL) {
     unset($this->defaultEntities);
-    $this->defaultsFiltered = FALSE;
+    if (isset($id)) {
+      unset($this->entityCache[$id]);
+    }
+    else {
+      $this->entityCache = array();
+    }
   }
 
   /**
@@ -417,10 +408,13 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         $return = drupal_write_record($this->entityInfo['base table'], $entity);
         $this->invoke('insert', $entity);
         unset($entity->is_new);
-        if (!empty($this->entityInfo['exportable']) && !entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
-          $entities = array($entity->{$this->nameKey} => $entity);
-          module_invoke_all($this->entityType . '_enabled', $entities);
-          module_invoke_all('entity_enabled', $entities, $this->entityType);
+        if (!empty($this->entityInfo['exportable'])) {
+          $entity->{$this->statusKey} |= ENTITY_IN_DB;
+          if (!entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
+            $entities = array($entity->{$this->nameKey} => $entity);
+            module_invoke_all($this->entityType . '_enabled', $entities);
+            module_invoke_all('entity_enabled', $entities, $this->entityType);
+          }
         }
       }
       // Ignore slave server temporarily.
