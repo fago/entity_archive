@@ -1,0 +1,33 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Test module providing some entities in code.
+ */
+
+/**
+ * Implements hook_default_entity_test_type().
+ */
+function entity_feature_default_entity_test_type() {
+  $types['main'] = new EntityDB(array(
+      'name' => 'main',
+      'label' => t('Main test type'),
+      'weight' => 0,
+      'locked' => TRUE,
+  ), 'entity_test_type');
+
+  // Types used during CRUD testing.
+  $types['test'] = new EntityDB(array(
+    'name' => 'test',
+    'label' => 'label',
+    'weight' => 0,
+  ), 'entity_test_type');
+  $types['test2'] = new EntityDB(array(
+      'name' => 'test2',
+      'label' => 'label2',
+      'weight' => 2,
+  ), 'entity_test_type');
+
+  return $types;
+}

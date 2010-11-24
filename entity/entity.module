@@ -367,6 +367,66 @@ function entity_var_json_export($var, $prefix = '') {
 }
 
 /**
+ * Implements hook_modules_enabled().
+ *
+ * Invokes hook_entity_enabled() for new default entities.
+ */
+function entity_modules_enabled($modules) {
+  foreach (entity_crud_get_info() as $entity_type => $info) {
+    if (!empty($info['exportable']) && $entities = _entity_modules_get_defaults($entity_type, $modules)) {
+      module_invoke_all($entity_type . '_enabled', $entities);
+      module_invoke_all('entity_enabled', $entities, $entity_type);
+    }
+  }
+}
+
+/**
+ * Implements hook_modules_disabled().
+ *
+ * Invokes hook_entity_disabled() for new default entities.
+ */
+function entity_modules_disabled($modules) {
+  foreach (entity_crud_get_info() as $entity_type => $info) {
+    if (!empty($info['exportable']) && $entities = _entity_modules_get_defaults($entity_type, $modules)) {
+      module_invoke_all($entity_type . '_disabled', $entities);
+      module_invoke_all('entity_disabled', $entities, $entity_type);
+      // Make sure the cache is cleared afterwards, so removed default entities
+      // are not left there.
+      entity_get_controller($entity_type)->resetCache();
+    }
+  }
+}
+
+function _entity_modules_get_defaults($entity_type, $modules) {
+  $info = entity_get_info($entity_type);
+  $entities = array();
+  $hook = isset($info['export']['default hook']) ? $info['export']['default hook'] : 'default_' . $entity_type;
+  $module_key = isset($info['entity keys']['module']) ? $info['entity keys']['module'] : 'module';
+  // Collect the ids of all new entities.
+  foreach ($modules as $module) {
+    if (module_hook($module, $hook)) {
+      $result = module_invoke($module, $hook);
+      if ($result && is_array($result)) {
+        $entities += $result;
+      }
+    }
+  }
+  if ($ids = array_keys($entities)) {
+    // To make sure the new default entities are retrieved, make sure the cache
+    // is cleared.
+    entity_get_controller($entity_type)->resetCache();
+    // Check whether some of the new entities are already overridden.
+    $entities = array();
+    foreach (entity_load($entity_type, $ids) as $id => $entity) {
+      if (!entity_has_status($entity_type, $entity, ENTITY_OVERRIDDEN)) {
+        $entities[$id] = $entity;
+      }
+    }
+    return $entities;
+  }
+}
+
+/**
  * Implements hook_theme().
  */
 function entity_theme() {

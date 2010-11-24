@@ -112,5 +112,42 @@ function entity_hook_entity_info() {
 }
 
 /**
+ * Act when exportable entities are enabled.
+ *
+ * This hook is invoked for exportable entities regardless of their export
+ * status as soon as new enabled entities are available to the system - either
+ * as a new entity has been saved to the database or modules with entities in
+ * code have been enabled.
+ *
+ * Note that there is no reliable way to react on configuration changes, as
+ * entities in code may be updated anytime.
+ *
+ * @param $entities
+ *   The entities keyed by entity ID.
+ * @param $entity_type
+ *   The type of entities being enabled (i.e. profile2_type, rules_config, ..).
+ */
+function hook_entity_enabled($entities, $entity_type) {
+  mymodule_initialize($entities, $entity_type);
+}
+
+/**
+ * Act when exportable entities are disabled.
+ *
+ * This hook is invoked for exportable entities regardless of their export
+ * status as soon as entities are unavailable to the system - either as an
+ * customly created entity has been deleted from the database or modules with
+ * entities in code have been disabled.
+ *
+ * @param $entities
+ *   The entities keyed by entity ID.
+ * @param $entity_type
+ *   The type of entities being disabled (i.e. profile2_type, rules_config, ..).
+ */
+function hook_entity_disabled($entities, $entity_type) {
+  mymodule_deactivate($entities, $entity_type);
+}
+
+/**
  * @} End of "addtogroup hooks".
  */

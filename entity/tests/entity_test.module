@@ -106,33 +106,6 @@ function entity_test_entity_test_type_presave($type) {
   $type->data = $data;
 }
 
-
-/**
- * Implement hook_default_entity_test_type().
- */
-function entity_test_default_entity_test_type() {
-  $types['main'] = new EntityDB(array(
-      'name' => 'main',
-      'label' => t('Main test type'),
-      'weight' => 0,
-      'locked' => TRUE,
-  ), 'entity_test_type');
-
-  // Types used during CRUD testing.
-  $types['test'] = new EntityDB(array(
-    'name' => 'test',
-    'label' => 'label',
-    'weight' => 0,
-  ), 'entity_test_type');
-  $types['test2'] = new EntityDB(array(
-      'name' => 'test2',
-      'label' => 'label2',
-      'weight' => 2,
-  ), 'entity_test_type');
-
-  return $types;
-}
-
 /**
  * Main class for test entities.
  */
@@ -151,4 +124,32 @@ class EntityClass extends EntityDBExtendable {
     );
     return entity_get_controller($this->entityType)->buildContent($this, $view_mode, $langcode, $content);
   }
+}
+
+/**
+ * Implements hook_entity_enabled().
+ */
+function entity_test_entity_enabled($entities) {
+  $_SESSION['entity_hook_test']['entity_enabled'][] = array_keys($entities);
+}
+
+/**
+ * Implements hook_entity_disabled().
+ */
+function entity_test_entity_disabled($entities) {
+  $_SESSION['entity_hook_test']['entity_disabled'][] = array_keys($entities);
+}
+
+/**
+ * Implements hook_entity_test_type_enabled().
+ */
+function entity_test_entity_test_type_enabled($entities) {
+  $_SESSION['entity_hook_test']['entity_test_type_enabled'][] = array_keys($entities);
+}
+
+/**
+ * Implements hook_entity_test_type_disabled().
+ */
+function entity_test_entity_test_type_disabled($entities) {
+  $_SESSION['entity_hook_test']['entity_test_type_disabled'][] = array_keys($entities);
 }
