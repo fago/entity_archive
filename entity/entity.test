@@ -138,9 +138,11 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $result = entity_load('entity_test_type', array($types['test']->id));
     $this->assertTrue(isset($result['test']), 'Exportable entity loaded by the numeric id.');
 
-    // Test exporting an entity to code.
-    $code = $types['test']->export();
-    $import = eval('return ' . $code . ';');
+    // Test exporting an entity to JSON.
+    $serialized_string = $types['test']->export();
+    $data = drupal_json_decode($serialized_string);
+    $this->assertNotNull($data, 'Exported entity is valid JSON.');
+    $import = entity_import('entity_test_type', $serialized_string);
     $this->assertTrue(get_class($import) == get_class($types['test']) && $types['test']->label == $import->label, 'Successfully exported entity to code.');
     $this->assertTrue(!isset($import->status), 'Exportable status has not been exported to code.');
   }

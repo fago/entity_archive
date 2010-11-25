@@ -101,11 +101,13 @@ class EntityDefaultFeaturesController {
    */
   function export_render($module, $data, $export = NULL) {
     $output = array();
-    $output[] = '  $items = array(';
+    $output[] = '  $items = array();';
     foreach (entity_load($this->type, $data) as $name => $entity) {
-      $output[] = "    '$name' => " . entity_export($this->type, $entity, '    ') . ',';
+      $output[] = '  $export = <<<EXPORT';
+      $output[] = '  ' . entity_export($this->type, $entity, '  ');
+      $output[] = 'EXPORT;';
+      $output[] = '  $items[' . "'$name'" . '] = entity_import(' . "'$this->type', " . '$export);';
     }
-    $output[] = '  );';
     $output[] = '  return $items;';
     $output = implode("\n", $output);
 

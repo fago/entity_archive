@@ -132,7 +132,7 @@ function entity_delete_multiple($entity_type, $ids) {
  *   A new instance of the entity type or FALSE if the given entity type isn't
  *   compatible to the CRUD API.
  */
-function entity_create($entity_type, $values) {
+function entity_create($entity_type, array $values) {
   $info = entity_get_info($entity_type);
   if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->create($values);
@@ -150,15 +150,35 @@ function entity_create($entity_type, $values) {
  * @param $prefix
  *   An optional prefix for each line.
  * @return
- *   The exported entity as code.
+ *   The exported entity as serialized string. The format is determined by the
+ *   respective entity controller, e.g. it is JSON for the EntityAPIController.
+ *   The output is suitable for entity_import().
  */
 function entity_export($entity_type, $entity, $prefix = '') {
-  $info = entity_get_info($entity_type);
   if (method_exists($entity, 'export')) {
     return $entity->export($prefix);
   }
-  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->export($entity, $prefix);
+  }
+}
+
+/**
+ * Imports an entity.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param string $export
+ *   The string containing the serialized entity as produced by
+ *   entity_export().
+ * @return
+ *   The imported entity object not yet saved.
+ */
+function entity_import($entity_type, $export) {
+  $info = entity_get_info($entity_type);
+  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+    return entity_get_controller($entity_type)->import($export);
   }
 }
 
@@ -205,10 +225,10 @@ function entity_build_content($entity_type, $entity, $view_mode = 'full', $langc
  * @see entity_extract_ids()
  */
 function entity_id($entity_type, $entity) {
-  $info = entity_get_info($entity_type);
-  if (isset($info['entity class']) && method_exists($info['entity class'], 'identifier')) {
+  if (method_exists($entity, 'identifier')) {
     return $entity->identifier();
   }
+  $info = entity_get_info($entity_type);
   $key = isset($info['entity keys']['name']) ? $info['entity keys']['name'] : $info['entity keys']['id'];
   return isset($entity->$key) ? $entity->$key : NULL;
 }
@@ -622,7 +642,7 @@ function entity_forms($form_id, $args) {
  *   initialized with empty values using entity_create(). Thus entities, for
  *   which this is problematic have to care to pass in an initialized entity.
  * @param $op
- *   One of 'edit', 'add' or 'clone. Defaults to edit.
+ *   One of 'edit', 'add' or 'clone'. Defaults to edit.
  *
  * @return
  *   The fully built and processed form, ready to be rendered.
