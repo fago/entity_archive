@@ -45,15 +45,15 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
   /**
    * Create a new entity.
    *
-   * @param $values
+   * @param array $values
    *   An array of values to set, keyed by property name.
    * @return
    *   A new instance of the entity type.
    */
-  public function create($values = array());
+  public function create(array $values = array());
 
   /**
-   * Exports an entity.
+   * Exports an entity as serialized string.
    *
    * @param $entity
    *   The entity to export.
@@ -61,10 +61,22 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
    *   An optional prefix for each line.
    *
    * @return
-   *   The exported entity as code.
+   *   The exported entity as serialized string. The format is determined by
+   *   the controller and has to be compatible with the format that is accepted
+   *   by the import() method.
    */
   public function export($entity, $prefix = '');
 
+  /**
+   * Imports an entity from a string.
+   *
+   * @param string $export
+   *   An exported entity as serialized string.
+   *
+   * @return
+   *   An entity object not yet saved.
+   */
+  public function import($export);
 
   /**
    * Builds a structured array representing the entity's content.
@@ -437,7 +449,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   /**
    * Implements EntityAPIControllerInterface.
    */
-  public function create($values = array()) {
+  public function create(array $values = array()) {
     if (isset($this->entityInfo['entity class']) && $class = $this->entityInfo['entity class']) {
       // Add is_new property if it is not set.
       $values += array('is_new' => TRUE);
@@ -448,6 +460,9 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   /**
    * Implements EntityAPIControllerInterface.
+   *
+   * @return
+   *   A serialized string in JSON format suitable for the import() method.
    */
   public function export($entity, $prefix = '') {
     $vars = get_object_vars($entity);
@@ -455,7 +470,21 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     if ($this->nameKey != $this->idKey) {
       unset($vars[$this->idKey]);
     }
-    return "entity_create('$this->entityType', " . entity_var_export($vars, $prefix) . ")";
+    return entity_var_json_export($vars, $prefix);
+  }
+
+  /**
+   * Implements EntityAPIControllerInterface.
+   *
+   * @param $export
+   *   A serialized string in JSON format as produced by the export() method.
+   */
+  public function import($export) {
+    $vars = drupal_json_decode($export);
+    if (is_array($vars)) {
+      return $this->create($vars);
+    }
+    return FALSE;
   }
 
   /**
