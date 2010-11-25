@@ -188,7 +188,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
     // Add default entities defined in code to the cache.
     if (!empty($this->entityInfo['exportable']) && !isset($this->defaultEntities)) {
-      $this->getDefaults($ids, $conditions);
+      $this->getDefaults();
     }
     // Try to load entities from the static cache.
     if (!$revision_id) {
@@ -277,10 +277,10 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     drupal_alter($hook, $this->defaultEntities);
     // Remove any default entities that have been overridden.
     foreach ($this->query(array_keys($this->defaultEntities), array()) as $record) {
-      $this->defaultEntities[$record->{$this->nameKey}] = FALSE;
+      $overridden[$record->{$this->nameKey}] = TRUE;
     }
     // Handle fetching defaults via the cache.
-    $this->cacheSet(array_filter($this->defaultEntities));
+    $this->cacheSet(isset($overridden) ? array_diff_key($this->defaultEntities, $overridden) : $this->defaultEntities);
   }
 
   protected function applyConditions($entities, $conditions = array()) {
@@ -303,7 +303,12 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
    * overrides cacheGet() to respect that when applying $conditions.
    */
   protected function cacheGet($ids, $conditions = array()) {
-    return $this->applyConditions(parent::cacheGet($ids), $conditions);
+    if (!empty($this->entityCache)) {
+      // First get the entities by ids, then apply the conditions.
+      $entities = $ids ? array_intersect_key($this->entityCache, array_flip($ids)) : $this->entityCache;
+      return $this->applyConditions($entities, $conditions);
+    }
+    return array();
   }
 
   public function resetCache($id = NULL) {
