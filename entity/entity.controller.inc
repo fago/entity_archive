@@ -386,6 +386,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       db_delete($this->entityInfo['base table'])
         ->condition($this->nameKey, $ids, 'IN')
         ->execute();
+      // Reset the cache as soon as the changes have been applied.
+      $this->resetCache($ids);
 
       foreach ($entities as $id => $entity) {
         $this->invoke('delete', $entity);
@@ -405,7 +407,6 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       watchdog_exception($this->entityType, $e);
       throw $e;
     }
-    $this->resetCache();
   }
 
   /**
@@ -421,6 +422,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       $this->invoke('presave', $entity);
       if (!empty($entity->{$this->idKey}) && empty($entity->is_new)) {
         $return = drupal_write_record($this->entityInfo['base table'], $entity, $this->idKey);
+        $this->resetCache(array($entity->{$this->nameKey}));
         $this->invoke('update', $entity);
       }
       else {
@@ -429,6 +431,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
         unset($entity->is_new);
         if (!empty($this->entityInfo['exportable'])) {
           $entity->{$this->statusKey} |= ENTITY_IN_DB;
+          $this->resetCache(array($entity->{$this->nameKey}));
           if (!entity_has_status($this->entityType, $entity, ENTITY_IN_CODE)) {
             $entities = array($entity->{$this->nameKey} => $entity);
             module_invoke_all($this->entityType . '_enabled', $entities);
