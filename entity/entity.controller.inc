@@ -323,10 +323,12 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     return array();
   }
 
-  public function resetCache($id = NULL) {
+  public function resetCache(array $ids = NULL) {
     unset($this->defaultEntities);
-    if (isset($id)) {
-      unset($this->entityCache[$id]);
+    if (isset($ids)) {
+      foreach ($ids as $id) {
+        unset($this->entityCache[$id]);
+      }
     }
     else {
       $this->entityCache = array();
