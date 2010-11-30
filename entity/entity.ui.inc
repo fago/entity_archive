@@ -130,18 +130,16 @@ class EntityDefaultUIController {
       'wrapper_callback' => 'entity_ui_form_defaults',
     );
 
-    // This is the main form for editing, adding and cloning.
-    $forms[$this->entityType . '_form'] = array(
-      'callback' => $this->entityType . '_form',
-      'wrapper_callback' => 'entity_ui_main_form_defaults',
-    );
-
-    // If there are bundles, use a form id including the bundle name to ease
-    // per bundle alterations for the edit form. In that case the general form
-    // id needs to be defined too as done above, as it is invoked during 'add'.
+    // The entity form (ENTITY_TYPE_form) handles editing, adding and cloning.
+    // For that form, the wrapper callback entity_ui_main_form_defaults() gets
+    // directly invoked via entity_ui_get_form().
+    // If there are bundles though, we use form ids that include the bundle name
+    // (ENTITY_TYPE_edit_BUNDLE_NAME_form) to enable per bundle alterations
+    // as well as alterations based upon the base form id (ENTITY_TYPE_form).
     if (!(count($this->entityInfo['bundles']) == 1 && isset($this->entityInfo['bundles'][$this->entityType]))) {
       foreach ($this->entityInfo['bundles'] as $bundle => $bundle_info) {
         $forms[$this->entityType . '_edit_' . $bundle . '_form']['callback'] = $this->entityType . '_form';
+        // Again the wrapper callback is invoked by entity_ui_get_form() anyway.
       }
     }
     return $forms;
