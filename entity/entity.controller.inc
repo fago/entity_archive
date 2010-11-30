@@ -118,7 +118,7 @@ interface EntityAPIControllerInterface extends DrupalEntityControllerInterface {
  */
 class EntityAPIController extends DrupalDefaultEntityController implements EntityAPIControllerInterface {
 
-  protected $defaultEntities, $defaultsFiltered = FALSE;
+  protected $defaultEntities, $cacheComplete = FALSE;
   protected $nameKey, $statusKey, $bundleKey, $moduleKey;
 
   /**
@@ -214,10 +214,15 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     // Load any remaining entities from the database. This is the case if $ids
     // is set to FALSE (so we load all entities), if there are any ids left to
     // load, if loading a revision, or if $conditions was passed without $ids.
-    if ($ids === FALSE || $ids || $revision_id || ($conditions && !$passed_ids)) {
+    if (!$this->cacheComplete && ($ids === FALSE || $ids || $revision_id || ($conditions && !$passed_ids))) {
       $schema = drupal_get_schema($this->entityInfo['base table']);
       $queried_entities = array();
       foreach ($this->query($ids, $conditions, $revision_id) as $record) {
+        // Skip entities already retrieved from cache.
+        if (isset($entities[$record->{$this->nameKey}])) {
+          continue;
+        }
+
         // Care for serialized columns.
         foreach ($schema['fields'] as $field => $info) {
           if (!empty($info['serialize']) && isset($record->$field)) {
@@ -256,15 +261,18 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       // Add entities to the cache if we are not loading a revision.
       if (!empty($queried_entities) && !$revision_id) {
         $this->cacheSet($queried_entities);
+
+        // Remember we have cached all entities now.
+        if (!$conditions && $ids === FALSE) {
+          $this->cacheComplete = TRUE;
+        }
       }
     }
     // Ensure that the returned array is ordered the same as the original
     // $ids array if this was passed in and remove any invalid ids.
-    if ($passed_ids) {
-      // Remove any invalid ids from the array.
-      $passed_ids = array_intersect_key($passed_ids, $entities);
-      foreach ($entities as $entity) {
-        $passed_ids[$entity->{$this->nameKey}] = $entity;
+    if ($passed_ids && $passed_ids = array_intersect_key($passed_ids, $entities)) {
+      foreach ($passed_ids as $id => $value) {
+        $passed_ids[$id] = $entities[$id];
       }
       $entities = $passed_ids;
     }
@@ -317,7 +325,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   protected function cacheGet($ids, $conditions = array()) {
     if (!empty($this->entityCache)) {
       // First get the entities by ids, then apply the conditions.
-      $entities = $ids ? array_intersect_key($this->entityCache, array_flip($ids)) : $this->entityCache;
+      $entities = is_array($ids) ? array_intersect_key($this->entityCache, array_flip($ids)) : $this->entityCache;
       return $this->applyConditions($entities, $conditions);
     }
     return array();
@@ -325,6 +333,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
 
   public function resetCache(array $ids = NULL) {
     unset($this->defaultEntities);
+    $this->cacheComplete = FALSE;
     if (isset($ids)) {
       foreach ($ids as $id) {
         unset($this->entityCache[$id]);
