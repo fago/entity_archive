@@ -3,7 +3,6 @@ name = Entity CRUD API
 description = CRUD API for entities.
 core = 7.x
 files[] = entity.controller.inc
-files[] = entity.db_faces.inc
 files[] = entity.db.inc
 files[] = entity.features.inc
 files[] = entity.info.inc
