@@ -331,6 +331,47 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     return array();
   }
 
+  /**
+   * Overridden.
+   * @see DrupalDefaultEntityController::attachLoad()
+   *
+   * Fixed to make attaching fields to entities having a name key work.
+   */
+  protected function attachLoad(&$queried_entities, $revision_id = FALSE) {
+    // Attach fields.
+    if ($this->entityInfo['fieldable']) {
+      $entities = $queried_entities;
+      if ($this->nameKey != $this->idKey) {
+        // Field API assumes queried entities are keyed by the idkey, thus
+        // adapt the array accordingly for it.
+        $entities = array();
+        foreach ($queried_entities as $entity) {
+          $entities[$entity->{$this->idKey}] = $entity;
+        }
+      }
+
+      if ($revision_id) {
+        field_attach_load_revision($this->entityType, $entities);
+      }
+      else {
+        field_attach_load($this->entityType, $entities);
+      }
+    }
+
+    // Call hook_entity_load().
+    foreach (module_implements('entity_load') as $module) {
+      $function = $module . '_entity_load';
+      $function($queried_entities, $this->entityType);
+    }
+    // Call hook_TYPE_load(). The first argument for hook_TYPE_load() are
+    // always the queried entities, followed by additional arguments set in
+    // $this->hookLoadArguments.
+    $args = array_merge(array($queried_entities), $this->hookLoadArguments);
+    foreach (module_implements($this->entityInfo['load hook']) as $module) {
+      call_user_func_array($module . '_' . $this->entityInfo['load hook'], $args);
+    }
+  }
+
   public function resetCache(array $ids = NULL) {
     unset($this->defaultEntities);
     $this->cacheComplete = FALSE;
