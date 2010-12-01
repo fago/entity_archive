@@ -23,12 +23,7 @@ you may stop reading now.
    
    Alternatively you may specify a class to use for your entities, for which the
    "Entity" class is provided. In particular, it is useful to extend this class
-   in order to apply any necessary customizations. 
-   
-   Next, there is also the class EntityExtendable, which is extendable via the
-   Extendable Object Faces API (http://drupal.org/project/faces) - however it is
-   *not* recommened to make use of that if there are no specific reasons to do
-   so.
+   in order to apply any necessary customizations.
    
  * The controller supports fieldable entities as well as exportable entities,
    however it does not yet support revisions.

@@ -182,8 +182,9 @@ class Entity {
 }
 
 /**
- * This class is deprecated by "Entity" and only here for backward compatibility reasons.
+ * These classes are deprecated by "Entity" and are only here for backward
+ * compatibility reasons.
  */
-class EntityDB extends Entity {
-
-}
+class EntityDB extends Entity {}
+class EntityExtendable extends Entity {}
+class EntityDBExtendable extends Entity {}
