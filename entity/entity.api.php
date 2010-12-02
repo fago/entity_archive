@@ -91,7 +91,7 @@ function entity_hook_entity_info() {
   $return = array(
     'entity_test' => array(
       'label' => t('Test Entity'),
-      'entity class' => 'EntityDB',
+      'entity class' => 'Entity',
       'controller class' => 'EntityAPIController',
       'base table' => 'entity_test',
       'module' => 'entity_test',

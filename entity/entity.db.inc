@@ -29,7 +29,7 @@ class Entity {
    */
   public function __construct(array $values = array(), $entityType = NULL) {
     if (empty($entityType)) {
-      throw new Exception('Cannot created an instance of EntityDB without a specified entity type.');
+      throw new Exception('Cannot created an instance of Entity without a specified entity type.');
     }
     $this->entityType = $entityType;
     $this->entityInfo = entity_get_info($entityType);

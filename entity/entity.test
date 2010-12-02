@@ -31,11 +31,11 @@ class EntityAPITestCase extends DrupalWebTestCase {
 
     $user1 = $this->drupalCreateUser();
     // Create test entities for the user1 and unrelated to a user.
-    $entity = new EntityClass(array('name' => 'test', 'uid' => $user1->uid));
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
     $entity->save();
-    $entity = new EntityClass(array('name' => 'test2', 'uid' => $user1->uid));
+    $entity = entity_create('entity_test', array('name' => 'test2', 'uid' => $user1->uid));
     $entity->save();
-    $entity = new EntityClass(array('name' => 'test', 'uid' => NULL));
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => NULL));
     $entity->save();
 
     $entities = array_values(entity_test_load_multiple(FALSE, array('name' => 'test')));
@@ -161,11 +161,11 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_enabled'] == array($all), 'Hook entity_test_type_enabled has been invoked.');
 
     // Add a new test entity in DB and make sure the hook is invoked too.
-    $test3 = new EntityDB(array(
+    $test3 = entity_create('entity_test_type', array(
       'name' => 'test3',
       'label' => 'label',
       'weight' => 0,
-    ), 'entity_test_type');
+    ));
     $test3->save();
     $this->assertTrue($_SESSION['entity_hook_test']['entity_enabled'] == array($all, array('test3')), 'Hook entity_enabled has been invoked.');
     $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_enabled'] == array($all, array('test3')), 'Hook entity_test_type_enabled has been invoked.');
@@ -250,7 +250,7 @@ class EntityAPIRulesIntegrationTestCase extends DrupalWebTestCase {
 
     // Let the events occur.
     $user1 = $this->drupalCreateUser();
-    $entity = new EntityClass(array('name' => 'test', 'uid' => $user1->uid));
+    $entity = entity_create('entity_test', array('name' => 'test', 'uid' => $user1->uid));
     $entity->save();
     $entity->name = 'update';
     $entity->save();
