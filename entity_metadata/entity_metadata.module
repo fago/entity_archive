@@ -220,22 +220,25 @@ function entity_metadata_get_list($data, array $options, $name) {
  * Defines default property types for core field types.
  */
 function entity_metadata_field_info_alter(&$field_info) {
-  // Field API lists are key/value pairs but not multiple valued by default.
-  $field_info['list']['property_type'] = 'integer';
-  $field_info['list_boolean']['property_type'] = 'boolean';
-  $field_info['list_number']['property_type'] = 'decimal';
-  $field_info['list_text']['property_type'] = 'text';
-  $field_info['number_integer']['property_type'] = 'integer';
-  $field_info['number_decimal']['property_type'] = 'decimal';
-  $field_info['number_float']['property_type'] = 'decimal';
-  $field_info['text']['property_type'] = 'text';
-  $field_info['text']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
-  $field_info['text_long']['property_type'] = 'text';
-  $field_info['text_long']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
-  $field_info['text_with_summary']['property_type'] = 'text';
-  $field_info['text_with_summary']['property_callbacks'] = array('entity_metadata_field_text_property_callback');
-  $field_info['taxonomy_term_reference']['property_type'] = 'taxonomy_term';
-  $field_info['taxonomy_term_reference']['property_callbacks'] = array('entity_metadata_field_term_reference_callback');
+  if (module_exists('number')) {
+    $field_info['number_integer']['property_type'] = 'integer';
+    $field_info['number_decimal']['property_type'] = 'decimal';
+    $field_info['number_float']['property_type'] = 'decimal';
+  }
+
+  if (module_exists('text')) {
+    $field_info['text']['property_type'] = 'text';
+    $field_info['text']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
+    $field_info['text_long']['property_type'] = 'text';
+    $field_info['text_long']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
+    $field_info['text_with_summary']['property_type'] = 'text';
+    $field_info['text_with_summary']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
+  }
+
+  if (module_exists('taxonomy')) {
+    $field_info['taxonomy_term_reference']['property_type'] = 'taxonomy_term';
+    $field_info['taxonomy_term_reference']['property_callbacks'][] = 'entity_metadata_field_term_reference_callback';
+  }
 }
 
 /**
