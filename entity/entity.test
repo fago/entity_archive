@@ -79,6 +79,10 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertEqual($entities[0]->name, 'test', 'Created and loaded entity.');
     $this->assertEqual($entities[1]->name, 'test', 'Created and loaded entity.');
 
+    // Test getting the entity label, which is the used test-type's label.
+    $label = entity_label('entity_test', $entities[0]);
+    $this->assertEqual($label, 'label', 'Default label returned.');
+
     $results = entity_test_load_multiple(array($entity->pid));
     $loaded = array_pop($results);
     $this->assertEqual($loaded->pid, $entity->pid, 'Loaded the entity unrelated to a user.');
@@ -197,6 +201,36 @@ class EntityAPITestCase extends DrupalWebTestCase {
     $this->assertTrue($_SESSION['entity_hook_test']['entity_disabled'] == array($all, $all2), 'Hook entity_disabled has been invoked.');
     $this->assertTrue($_SESSION['entity_hook_test']['entity_test_type_disabled'] == array($all, $all2), 'Hook entity_test_type_disabled has been invoked.');
   }
+
+  /**
+   * Tests determining changes.
+   */
+  function testChanges() {
+    module_enable(array('entity_feature'));
+    $types = entity_load('entity_test_type');
+
+    // Override the default entity, such it gets saved in the DB.
+    $types['test']->label ='test_changes';
+    $types['test']->save();
+
+    // Now test an update without applying any changes.
+    $types['test']->save();
+    $this->assertEqual($types['test']->label, 'test_changes', 'No changes have been determined.');
+
+    // Apply changes.
+    $types['test']->label = 'updated';
+    $types['test']->save();
+
+    // The hook implementations entity_test_entity_test_type_presave() and
+    // entity_test_entity_test_type_update() determine changes and change the
+    // label.
+    $this->assertEqual($types['test']->label, 'updated_presave_update', 'Changes have been determined.');
+
+    // Test the static load cache to be cleared.
+    $types = entity_load('entity_test_type');
+    $this->assertEqual($types['test']->label, 'updated_presave', 'Static cache has been cleared.');
+  }
+
 
   /**
    * Tests viewing entites.
