@@ -100,14 +100,6 @@ function entity_test_delete_multiple(array $pids) {
   entity_get_controller('entity_test')->delete($pids);
 }
 
-/**
- * Implement hook_entity_test_type_presave().
- */
-function entity_test_entity_test_type_presave($type) {
-  $data = get_object_vars($type);
-  unset($data['name'], $data['label'], $data['weight'], $data['locked'], $data['data'], $data['status']);
-  $type->data = $data;
-}
 
 /**
  * Main class for test entities.
@@ -132,7 +124,8 @@ class EntityClass extends Entity {
    * Specifies the default label, which is picked up by label() by default.
    */
   protected function defaultLabel() {
-    return "my custom label";
+    $type = entity_test_get_types($this->name);
+    return $type->label;
   }
 
   /**
@@ -179,4 +172,29 @@ function entity_test_entity_test_type_enabled($entities) {
  */
 function entity_test_entity_test_type_disabled($entities) {
   $_SESSION['entity_hook_test']['entity_test_type_disabled'][] = array_keys($entities);
+}
+
+
+/**
+ * Implements hook_entity_test_type_presave().
+ */
+function entity_test_entity_test_type_presave($entity) {
+  // Determine changes.
+  if (!empty($entity->original) && $entity->original->label == 'test_changes') {
+    if ($entity->original->label != $entity->label) {
+      $entity->label .= '_presave';
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_test_type_update().
+ */
+function entity_test_entity_test_type_update($entity) {
+  // Determine changes on update.
+  if (!empty($entity->original) && $entity->original->label == 'test_changes') {
+    if ($entity->original->label != $entity->label) {
+      $entity->label .= '_update';
+    }
+  }
 }

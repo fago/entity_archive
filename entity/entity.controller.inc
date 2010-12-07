@@ -469,7 +469,13 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
   public function save($entity, DatabaseTransaction $transaction = NULL) {
     $transaction = isset($transaction) ? $transaction : db_transaction();
     try {
+      // Load the stored entity, if any.
+      if (!empty($entity->{$this->nameKey}) && !isset($entity->original)) {
+        $entity->original = entity_load_unchanged($this->entityType, $entity->{$this->nameKey});
+      }
+
       $this->invoke('presave', $entity);
+
       if (!empty($entity->{$this->idKey}) && empty($entity->is_new)) {
         $return = drupal_write_record($this->entityInfo['base table'], $entity, $this->idKey);
         $this->resetCache(array($entity->{$this->nameKey}));
@@ -478,7 +484,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       else {
         $return = drupal_write_record($this->entityInfo['base table'], $entity);
         $this->invoke('insert', $entity);
-        unset($entity->is_new);
+
         if (!empty($this->entityInfo['exportable'])) {
           $entity->{$this->statusKey} |= ENTITY_IN_DB;
           $this->resetCache(array($entity->{$this->nameKey}));
@@ -491,6 +497,8 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       }
       // Ignore slave server temporarily.
       db_ignore_slave();
+      unset($entity->is_new);
+      unset($entity->original);
 
       return $return;
     }
