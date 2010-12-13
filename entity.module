@@ -448,7 +448,7 @@ function entity_theme() {
     ),
     'entity_ui_overview_item' => array(
       'variables' => array('label' => NULL, 'entity_type' => NULL, 'url' => FALSE, 'name' => FALSE),
-      'file' => 'entity.ui.inc'
+      'file' => 'includes/entity.ui.inc'
     ),
   );
 }
@@ -658,6 +658,6 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
   // which the module implementing the form constructor may safely ignore.
   // @see entity_forms()
   $form_state['build_info']['args'] = array($entity, $op, $entity_type);
-  module_load_include('inc', 'entity', 'entity.ui');
+  module_load_include('inc', 'entity', 'includes/entity.ui');
   return drupal_build_form($form_id, $form_state);
 }

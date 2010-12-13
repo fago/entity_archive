@@ -1,12 +1,13 @@
 ; $Id$
-name = Entity CRUD API
-description = CRUD API for entities.
+name = Entity API
+description = Enables modules to work with any entity type and to provide entities.
 core = 7.x
-files[] = entity.controller.inc
-files[] = entity.db.inc
+files[] = includes/entity.controller.inc
+files[] = includes/entity.inc
+files[] = includes/entity.ui.inc
+files[] = includes/entity.wrapper.inc
 files[] = entity.features.inc
 files[] = entity.info.inc
 files[] = entity.module
 files[] = entity.rules.inc
 files[] = entity.test
-files[] = entity.ui.inc
