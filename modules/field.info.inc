@@ -9,7 +9,8 @@
 /**
  * Implements hook_entity_property_info() on top of field module.
  *
- * @see entity_metadata_field_info_alter()
+ * @see entity_field_info_alter()
+ * @see entity_entity_property_info()
  */
 function entity_metadata_field_entity_property_info() {
   $info = array();
@@ -37,7 +38,7 @@ function entity_metadata_field_entity_property_info() {
 
 /**
  * Callback to add in property info defaults per field instance.
- * @see entity_metadata_field_entity_property_info_alter().
+ * @see entity_metadata_field_entity_property_info().
  */
 function entity_metadata_field_default_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($field_type['property_type'])) {
@@ -72,7 +73,7 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
  * filters are available too. For the text value the sanitized, thus processed
  * value is returned by default.
  *
- * @see entity_metadata_field_entity_property_info_alter().
+ * @see entity_metadata_field_entity_property_info().
  */
 function entity_metadata_field_text_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($instance['settings']['text_processing'])) {
@@ -89,7 +90,7 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
 
 /**
  * Additional callback to adapt the property info for term reference fields.
- * @see entity_metadata_field_entity_property_info_alter().
+ * @see entity_metadata_field_entity_property_info().
  */
 function entity_metadata_field_term_reference_callback(&$info, $entity_type, $field, $instance, $field_type) {
   $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];

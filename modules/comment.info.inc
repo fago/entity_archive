@@ -8,7 +8,7 @@
 
 /**
  * Implements hook_entity_property_info() on top of comment module.
- * @see entity_metadata_entity_property_info()
+ * @see entity_entity_property_info()
  */
 function entity_metadata_comment_entity_property_info() {
   $info = array();
@@ -104,7 +104,7 @@ function entity_metadata_comment_entity_property_info() {
 
 /**
  * Implements hook_entity_property_info_alter() on top of comment module.
- * @see entity_metadata_entity_property_info_alter()
+ * @see entity_entity_property_info_alter()
  */
 function entity_metadata_comment_entity_property_info_alter(&$info) {
   // Add info about comment module related properties to the node entity.

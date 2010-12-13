@@ -3,11 +3,13 @@
 
 /**
  * @file
- * Provides Entity metadata integration for entities provided via the CRUD API.
+ * Provides basic entity property info for entities provided via the CRUD API,
+ * as well as property info for all entity types defined by core. For that
+ * the respective modules/MODULE.info.inc files are included.
  */
 
 /**
- * Default controller for generating some basic metadata.
+ * Default controller for generating some basic metadata for CRUD entity types.
  */
 class EntityDefaultMetadataController {
 
@@ -74,6 +76,7 @@ class EntityDefaultMetadataController {
  */
 function entity_entity_property_info() {
   $items = array();
+  // Add in info about entities provided by the CRUD API.
   foreach (entity_crud_get_info() as $type => $info) {
     $info += array('metadata controller class' => 'EntityDefaultMetadataController');
     if ($info['metadata controller class']) {
@@ -81,5 +84,31 @@ function entity_entity_property_info() {
       $items += $controller->entityPropertyInfo();
     }
   }
+  // Add in info for all core entities.
+  foreach (_entity_metadata_core_modules() as $module) {
+    module_load_include('inc', 'entity', "modules/$module.info");
+    if (function_exists($function = "entity_metadata_{$module}_entity_property_info")) {
+      if ($return = $function()) {
+        $items = array_merge_recursive($items, $return);
+      }
+    }
+  }
   return $items;
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function entity_entity_property_info_alter(&$entity_info) {
+  // Add in info for all core entities.
+  foreach (_entity_metadata_core_modules() as $module) {
+    module_load_include('inc', 'entity', "modules/$module.info");
+    if (function_exists($function = "entity_metadata_{$module}_entity_property_info_alter")) {
+      $function($entity_info);
+    }
+  }
+}
+
+function _entity_metadata_core_modules() {
+  return array_filter(array('book', 'comment', 'field', 'node', 'taxonomy', 'user', 'system'), 'module_exists');
 }

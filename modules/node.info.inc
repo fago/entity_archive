@@ -8,7 +8,7 @@
 
 /**
  * Implements hook_entity_property_info() on top of node module.
- * @see entity_metadata_entity_property_info()
+ * @see entity_entity_property_info()
  */
 function entity_metadata_node_entity_property_info() {
   $info = array();

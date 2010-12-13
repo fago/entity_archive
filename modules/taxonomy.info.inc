@@ -8,7 +8,7 @@
 
 /**
  * Implements hook_entity_property_info() on top of taxonomy module.
- * @see entity_metadata_entity_property_info()
+ * @see entity_entity_property_info()
  */
 function entity_metadata_taxonomy_entity_property_info() {
   $info = array();
