@@ -74,8 +74,10 @@ function entity_type_supports($entity_type, $op) {
  *   For entity types provided by the CRUD API, SAVED_NEW or SAVED_UPDATED is
  *   returned depending on the operation performed. If there is no information
  *   how to save the entity, FALSE is returned.
+ *
+ * @see entity_type_supports()
  */
-function entity_save($entity_type, $entity) {
+function entity_save($entity_type, &$entity) {
   $info = entity_get_info($entity_type);
   if (method_exists($entity, 'save')) {
     return $entity->save();
@@ -103,6 +105,8 @@ function entity_save($entity_type, $entity) {
  *
  * @return
  *   FALSE, if there were no information how to delete the entity.
+ *
+ * @see entity_type_supports()
  */
 function entity_delete($entity_type, $id) {
   $info = entity_get_info($entity_type);
@@ -149,6 +153,8 @@ function entity_delete_multiple($entity_type, $ids) {
  * @return
  *   A new instance of the entity type or FALSE if there is no information for
  *   the given entity type.
+ *
+ * @see entity_type_supports()
  */
 function entity_create($entity_type, array $values) {
   $info = entity_get_info($entity_type);
@@ -307,6 +313,8 @@ function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = N
  * @return boolean
  *   Whether access is allowed or not. If the entity type does not specify any
  *   access information, NULL is returned.
+ *
+ * @see entity_type_supports()
  */
 function entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
   if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {

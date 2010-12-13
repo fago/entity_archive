@@ -551,7 +551,7 @@ function entity_metadata_create_comment($values = array()) {
  */
 function entity_metadata_create_node($values = array()) {
   $node = (object) array(
-    'type' => isset($values['type']) ? $values['type'] : NULL,
+    'type' => $values['type'],
     'language' => LANGUAGE_NONE,
     'is_new' => TRUE,
   );

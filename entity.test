@@ -856,7 +856,6 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
         }
       }
       $entity = entity_metadata_entity_create($entity_type, $values)->value();
-      debug($entity, $entity_type);
       $this->assertTrue($entity, "Created $entity_type and set all setable values.");
 
       // Save the new entity.
@@ -909,7 +908,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       case 'token':
         return drupal_strtolower($this->randomName(8));
       case 'text':
-        return $this->randomString(32);
+        return $this->randomName(32);
       case 'text_formatted':
         return array('value' => $this->randomName(16));
       case 'list<taxonomy_term>':
