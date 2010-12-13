@@ -3,8 +3,12 @@
 
 /**
  * @file
- * Module for the entity API.
+ * Module file for the entity API.
  */
+
+require_once DRUPAL_ROOT . '/modules/callbacks.inc';
+require_once DRUPAL_ROOT . '/includes/entity.property.inc';
+
 
 /**
  * Defines status codes used for exportable entities.
@@ -32,11 +36,6 @@ define('ENTITY_OVERRIDDEN', 0x03);
  * user.
  */
 define('ENTITY_FIXED', 0x04);
-
-
-require_once DRUPAL_ROOT . '/modules/callbacks.inc';
-require_once DRUPAL_ROOT . '/includes/entity.property.inc';
-
 
 /**
  * Permanently save an entity.
