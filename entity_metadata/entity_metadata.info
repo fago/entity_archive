@@ -5,3 +5,4 @@ core = 7.x
 files[] = entity_metadata.module
 files[] = entity_metadata.test
 files[] = entity_metadata.tokens.inc
+dependencies[] = entity

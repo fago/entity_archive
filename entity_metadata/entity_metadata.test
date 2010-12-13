@@ -20,7 +20,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp('entity_metadata');
+    parent::setUp('entity_metadata', 'entity');
     // Create a field having 4 values for testing multiple value support.
     $this->field_name = drupal_strtolower($this->randomName() . '_field_name');
     $this->field = array('field_name' => $this->field_name, 'type' => 'text', 'cardinality' => 4);
@@ -329,7 +329,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp('entity_metadata', 'book', 'statistics');
+    parent::setUp('entity_metadata', 'entity', 'book', 'statistics');
   }
 
 
