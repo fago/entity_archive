@@ -856,6 +856,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
         }
       }
       $entity = entity_metadata_entity_create($entity_type, $values)->value();
+      debug($entity, $entity_type);
       $this->assertTrue($entity, "Created $entity_type and set all setable values.");
 
       // Save the new entity.

@@ -9,6 +9,48 @@
  */
 
 /**
+ * Implements hook_entity_property_info().
+ */
+function entity_entity_property_info() {
+  $items = array();
+  // Add in info about entities provided by the CRUD API.
+  foreach (entity_crud_get_info() as $type => $info) {
+    $info += array('metadata controller class' => 'EntityDefaultMetadataController');
+    if ($info['metadata controller class']) {
+      $controller = new $info['metadata controller class']($type);
+      $items += $controller->entityPropertyInfo();
+    }
+  }
+  // Add in info for all core entities.
+  foreach (_entity_metadata_core_modules() as $module) {
+    module_load_include('inc', 'entity', "modules/$module.info");
+    if (function_exists($function = "entity_metadata_{$module}_entity_property_info")) {
+      if ($return = $function()) {
+        $items = array_merge_recursive($items, $return);
+      }
+    }
+  }
+  return $items;
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function entity_entity_property_info_alter(&$entity_info) {
+  // Add in info for all core entities.
+  foreach (_entity_metadata_core_modules() as $module) {
+    module_load_include('inc', 'entity', "modules/$module.info");
+    if (function_exists($function = "entity_metadata_{$module}_entity_property_info_alter")) {
+      $function($entity_info);
+    }
+  }
+}
+
+function _entity_metadata_core_modules() {
+  return array_filter(array('book', 'comment', 'field', 'node', 'taxonomy', 'user', 'system'), 'module_exists');
+}
+
+/**
  * Default controller for generating some basic metadata for CRUD entity types.
  */
 class EntityDefaultMetadataController {
@@ -72,43 +114,44 @@ class EntityDefaultMetadataController {
 }
 
 /**
- * Implements hook_entity_property_info().
+ * Converts the schema information available for the given table to property info.
+ *
+ * @param $table
+ *   The name of the table as used in hook_schema().
+ * @return
+ *   An array of property info as suiting for hook_entity_property_info().
  */
-function entity_entity_property_info() {
-  $items = array();
-  // Add in info about entities provided by the CRUD API.
-  foreach (entity_crud_get_info() as $type => $info) {
-    $info += array('metadata controller class' => 'EntityDefaultMetadataController');
-    if ($info['metadata controller class']) {
-      $controller = new $info['metadata controller class']($type);
-      $items += $controller->entityPropertyInfo();
-    }
-  }
-  // Add in info for all core entities.
-  foreach (_entity_metadata_core_modules() as $module) {
-    module_load_include('inc', 'entity', "modules/$module.info");
-    if (function_exists($function = "entity_metadata_{$module}_entity_property_info")) {
-      if ($return = $function()) {
-        $items = array_merge_recursive($items, $return);
+function entity_metadata_convert_schema($table) {
+  $schema = drupal_get_schema($table);
+  $properties = array();
+  foreach ($schema['fields'] as $name => $info) {
+    if ($type = _entity_metadata_convert_schema_type($info['type'])) {
+      $properties[$name] = array(
+        'type' => $type,
+        'label' => drupal_ucfirst($name),
+        'query callback' => 'entity_metadata_table_query',
+        // As we cannot know about any setter access, leave out the setter
+        // callback. For getting usually no further access callback is needed.
+      );
+      if ($type == 'serial') {
+        $properties[$name]['validation callback'] = 'entity_metadata_validate_integer_positive';
       }
     }
   }
-  return $items;
+  return $properties;
 }
 
-/**
- * Implements hook_entity_property_info_alter().
- */
-function entity_entity_property_info_alter(&$entity_info) {
-  // Add in info for all core entities.
-  foreach (_entity_metadata_core_modules() as $module) {
-    module_load_include('inc', 'entity', "modules/$module.info");
-    if (function_exists($function = "entity_metadata_{$module}_entity_property_info_alter")) {
-      $function($entity_info);
-    }
+function _entity_metadata_convert_schema_type($type) {
+  switch ($type) {
+    case 'int':
+    case 'serial':
+      return 'integer';
+    case 'float':
+    case 'numeric':
+      return 'decimal';
+    case 'char':
+    case 'varchar':
+    case 'text':
+      return 'text';
   }
-}
-
-function _entity_metadata_core_modules() {
-  return array_filter(array('book', 'comment', 'field', 'node', 'taxonomy', 'user', 'system'), 'module_exists');
 }

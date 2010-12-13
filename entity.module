@@ -37,6 +37,30 @@ define('ENTITY_OVERRIDDEN', 0x03);
  */
 define('ENTITY_FIXED', 0x04);
 
+
+
+/**
+ * Determines whether for the given entity type a given operation is available.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $op
+ *   One of 'create', 'view', 'save', 'delete' or 'access.
+ */
+function entity_type_supports($entity_type, $op) {
+  $info = entity_get_info($entity_type);
+  $keys = array(
+    'view' => 'view callback',
+    'create' => 'creation callback',
+    'delete' => 'deletion callback',
+    'save' => 'save callback',
+    'access' => 'access callback',
+  );
+  if (isset($info[$keys[$op]]) || ($op != 'access' && in_array('EntityAPIControllerInterface', class_implements($info['controller class'])))) {
+    return TRUE;
+  }
+}
+
 /**
  * Permanently save an entity.
  *
@@ -47,14 +71,17 @@ define('ENTITY_FIXED', 0x04);
  * @param $entity
  *   The entity to save.
  * @return
- *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation
- *   performed. If the given entity type isn't compatible to the CRUD API, FALSE
- *   is returned.
+ *   For entity types provided by the CRUD API, SAVED_NEW or SAVED_UPDATED is
+ *   returned depending on the operation performed. If there is no information
+ *   how to save the entity, FALSE is returned.
  */
 function entity_save($entity_type, $entity) {
   $info = entity_get_info($entity_type);
   if (method_exists($entity, 'save')) {
     return $entity->save();
+  }
+  elseif (isset($info['save callback'])) {
+    $info['save callback']($entity);
   }
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->save($entity);
@@ -73,14 +100,14 @@ function entity_save($entity_type, $entity) {
  *   The type of the entity.
  * @param $id
  *   The uniform identifier of the entity to delete.
+ *
  * @return
- *   FALSE if the given entity type isn't compatible to the CRUD API.
+ *   FALSE, if there were no information how to delete the entity.
  */
 function entity_delete($entity_type, $id) {
   $info = entity_get_info($entity_type);
-  if (isset($info['entity class']) && method_exists($info['entity class'], 'delete')) {
-    $entities = entity_load($entity_type, array($id));
-    reset($entities)->delete();
+  if (isset($info['deletion callback'])) {
+    $info['deletion callback']($id);
   }
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     entity_get_controller($entity_type)->delete(array($id));
@@ -92,6 +119,7 @@ function entity_delete($entity_type, $id) {
 
 /**
  * Permanently delete multiple entities.
+ * @todo: Add support for entity types not provided via the CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -111,7 +139,7 @@ function entity_delete_multiple($entity_type, $ids) {
 }
 
 /**
- * Create a new entity.
+ * Create a new entity object.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -119,12 +147,15 @@ function entity_delete_multiple($entity_type, $ids) {
  *   An array of values to set, keyed by property name. If the entity type has
  *   bundles the bundle key has to be specified.
  * @return
- *   A new instance of the entity type or FALSE if the given entity type isn't
- *   compatible to the CRUD API.
+ *   A new instance of the entity type or FALSE if there is no information for
+ *   the given entity type.
  */
 function entity_create($entity_type, array $values) {
   $info = entity_get_info($entity_type);
-  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+  if (isset($info['creation callback'])) {
+    return $info['creation callback']($values, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->create($values);
   }
   return FALSE;
@@ -132,6 +163,9 @@ function entity_create($entity_type, array $values) {
 
 /**
  * Exports an entity.
+ *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -157,6 +191,9 @@ function entity_export($entity_type, $entity, $prefix = '') {
 /**
  * Imports an entity.
  *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
+ *
  * @param $entity_type
  *   The type of the entity.
  * @param string $export
@@ -177,6 +214,9 @@ function entity_import($entity_type, $export) {
  *
  * The content built for the entity will vary depending on the $view_mode
  * parameter.
+ *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -204,8 +244,8 @@ function entity_build_content($entity_type, $entity, $view_mode = 'full', $langc
  * Returns the entity identifier.
  *
  * Unlike entity_extract_ids() this function returns the uniform identifier,
- * thus if a name key is defined, the name of the entity is returned. Otherwise
- * the usual numeric id is returned.
+ * thus if an exportable entity makes use of a name key, the name of the entity
+ * is returned. Otherwise the usual numeric id is returned.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -237,11 +277,15 @@ function entity_id($entity_type, $entity) {
  *   (optional) A language code to use for rendering. Defaults to the global
  *   content language of the current request.
  * @return
- *   The renderable array.
+ *   The renderable array, or FALSE if there is no information how to view an
+ *   entity.
  */
 function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
   $info = entity_get_info($entity_type);
-  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+  if (isset($info['view callback'])) {
+    return $info['view callback']($entities, $view_mode, $langcode, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->view($entities, $view_mode, $langcode);
   }
 }
@@ -284,7 +328,7 @@ function entity_crud_get_info() {
 }
 
 /**
- * Checks if a given entity has a certain status.
+ * Checks if a given entity has a certain exportable status.
  *
  * @param $entity_type
  *   The type of the entity.

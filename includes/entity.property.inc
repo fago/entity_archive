@@ -77,6 +77,29 @@ function entity_get_all_property_info($entity_type = NULL) {
 }
 
 /**
+ * Queries for entities having the given property value.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $property
+ *   The name of the property to query for.
+ * @param $value
+ *   A property value or an array of possible values to query for.
+ * @param $limit
+ *   Limit the numer of results. Defaults to 30.
+ *
+ * @return
+ *   An array of entity ids or NULL if there is no information how to query for
+ *   the given property.
+ */
+function entity_property_query($entity_type, $property, $value, $limit = 30) {
+  $properties = entity_get_all_property_info($entity_type);
+  if (isset($properties[$property]['query callback'])) {
+    return $properties[$property]['query callback']($entity_type, $property, $value, $limit);
+  }
+}
+
+/**
  * Resets the cached information of hook_entity_property_info().
  */
 function entity_property_info_cache_clear() {
@@ -148,6 +171,79 @@ function entity_field_delete_instance() {
 function entity_field_update_instance() {
   entity_property_info_cache_clear();
 }
+
+/**
+ * Verifies that the given data can be safely used as the given type regardless
+ * of the PHP variable type of $data. Example: the string "15" is a valid
+ * integer, but "15nodes" is not.
+ *
+ * @return
+ *   Whether the data is valid for the given type.
+ */
+function entity_property_verify_data_type($data, $type) {
+  // First off check for entities, which may be represented by their ids too.
+  $info = entity_get_info();
+  if (isset($info[$type])) {
+    $nameKey = isset($info[$type]['entity keys']['name']);
+    return is_object($data) || ($nameKey && entity_property_verify_data_type($data, 'token')) || (!$nameKey  && entity_property_verify_data_type($data, 'integer'));
+  }
+
+  switch ($type) {
+    case 'unknown':
+      return TRUE;
+    case 'date':
+    case 'duration':
+    case 'integer':
+      return is_numeric($data) && strpos($data, '.') === FALSE;
+    case 'decimal':
+      return is_numeric($data);
+    case 'text':
+      return is_scalar($data);
+    case 'token':
+      return is_scalar($data) && preg_match('!^[a-z][a-z0-9_]*$!', $data);
+    case 'boolean':
+      return is_scalar($data) && (is_bool($data) || $data == 0 || $data == 1);
+    case 'uri':
+      return valid_url($data, TRUE);
+    case 'list':
+      return (is_array($data) && array_values($data) == $data) || (is_object($data) && $data instanceof EntityMetadataArrayObject);
+    default:
+    case 'struct':
+      return is_object($data) || is_array($data);
+  }
+}
+
+/**
+ * Creates the entity object for an array of given property values.
+ *
+ * @param $entity_type
+ *   The entity type to create an entity for.
+ * @param $values
+ *   An array of values as described by the entity's property info. All entity
+ *   properties of the given entiy type that are marked as required, are
+ *   required.
+ *
+ * @return EntityDrupalWrapper
+ *   An EntityDrupalWrapper wrapping the newly created entity or FALSE, if
+ *   there were no information how to create the entity.
+ */
+function entity_property_values_create_entity($entity_type, $values = array()) {
+  if (entity_metadata_entity_type_supports($entity_type, 'create')) {
+    $info = entity_get_info($entity_type);
+    // Create the initial entity.
+    $entity = entity_create($entity_type, array_intersect_key($values, $info['entity keys']));
+    // Now set the remaining values using the wrapper.
+    $wrapper = entity_metadata_wrapper($entity_type, $entity);
+    foreach ($values as $key => $value) {
+      if (!in_array($key, $info['entity keys'])) {
+        $wrapper->$key->set($value);
+      }
+    }
+    return $wrapper;
+  }
+  return FALSE;
+}
+
 
 /**
  * Extracts the contained type for a list type string like list<date>.
@@ -223,4 +319,25 @@ function entity_property_validate_integer_positive($value) {
  */
 function entity_property_validate_integer_non_negative($value) {
   return $value >= 0;
+}
+
+/**
+ * Defines info for the properties of the text_formatted data structure.
+ */
+function entity_property_text_formatted_info() {
+  return array(
+    'value' => array(
+      'type' => 'text',
+      'label' => t('Text'),
+      'sanitized' => TRUE,
+      'getter callback' => 'entity_metadata_field_text_get',
+      'raw getter callback' => 'entity_property_verbatim_get',
+    ),
+    'format' => array(
+      'type' => 'token',
+      'label' => t('Text format'),
+      'options list' => 'entity_metadata_field_text_formats',
+      'getter callback' => 'entity_property_verbatim_get',
+    ),
+  );
 }
