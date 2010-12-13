@@ -6,8 +6,8 @@
  * Module file for the entity API.
  */
 
-require_once DRUPAL_ROOT . '/modules/callbacks.inc';
-require_once DRUPAL_ROOT . '/includes/entity.property.inc';
+module_load_include('inc', 'entity', 'modules/callbacks');
+module_load_include('inc', 'entity', 'includes/entity.property');
 
 
 /**
