@@ -598,7 +598,7 @@ function entity_menu() {
  */
 function entity_forms($form_id, $args) {
   // For efficiency only invoke an entity types controller, if a form of it is
-  // requrested. Thus if the first (overview and operation form) or the third
+  // requested. Thus if the first (overview and operation form) or the third
   // argument (edit form) is an entity type name, add in the types forms.
   if (isset($args[0]) && is_string($args[0]) && entity_get_info($args[0])) {
     $type = $args[0];
@@ -664,3 +664,115 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
   module_load_include('inc', 'entity', 'includes/entity.ui');
   return drupal_build_form($form_id, $form_state);
 }
+
+/**
+ * Returns a property wrapper for the given data.
+ *
+ * If an entity is wrapped, the wrapper can be used to retrieve further wrappers
+ * for the entitity properties. For that the wrapper support chaining, e.g. you
+ * can use a node wrapper to get the node authors mail address:
+ *
+ * @code
+ *   echo $wrappedNode->author->mail->value();
+ * @endcode
+ *
+ * @param $type
+ *   The type of the passed data.
+ * @param $data
+ *   The data to wrap. It may be set to NULL, so the wrapper can be used
+ *   without any data for getting information about properties.
+ * @param $info
+ *   (optional) Specify additional information for the passed data:
+ *    - langcode: (optional) If the data is language specific, its langauge
+ *      code. Defaults to NULL, what means language neutral.
+ *    - bundle: (optional) If an entity is wrapped but not passed, use this key
+ *      to specify the bundle to return a wrapper for.
+ *    - property info: (optional) May be used to use a wrapper with an arbitrary
+ *      data structure (type 'struct'). Use this key for specifying info about
+ *      properties in the same structure as used by hook_entity_property_info().
+ *    - property info alter: (optional) A callback for altering the property
+ *      info before it is utilized by the wrapper.
+ *    - property defaults: (optional) An array of defaults for the info of
+ *      each property of the wrapped data item.
+ * @return EntityMetadataWrapper
+ *   Dependend on the passed data the right wrapper is returned.
+ */
+function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
+  if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
+    return new EntityDrupalWrapper($type, $data, $info);
+  }
+  elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
+    return new EntityListWrapper($type, $data, $info);
+  }
+  elseif (isset($info['property info'])) {
+    return new EntityStructureWrapper($type, $data, $info);
+  }
+  else {
+    return new EntityValueWrapper($type, $data, $info);
+  }
+}
+
+/**
+ * Returns a metadata wrapper for accessing site-wide properties.
+ *
+ * Although there is no 'site' entity or such, modules may provide info about
+ * site-wide properties using hook_entity_property_info(). This function returns
+ * a wrapper for making use of this properties.
+ *
+ * @return EntityMetadataWrapper
+ *   A wrapper for accessing site-wide properties.
+ *
+ * @see entity_metadata_system_entity_property_info()
+ */
+function entity_metadata_site_wrapper() {
+  $site_info = entity_metadata_get_info('site');
+  $info['property info'] = $site_info['properties'];
+  return entity_metadata_wrapper('site', FALSE, $info);
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function entity_entity_info_alter(&$entity_info) {
+  // Set access callbacks.
+  $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
+  $entity_info['user']['access callback'] = 'entity_metadata_user_access';
+
+  // CRUD function callbacks.
+  $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
+  $entity_info['node']['save callback'] = 'node_save';
+  $entity_info['node']['deletion callback'] = 'node_delete';
+  $entity_info['user']['creation callback'] = 'entity_metadata_create_object';
+  $entity_info['user']['save callback'] = 'entity_metadata_user_save';
+  $entity_info['user']['deletion callback'] = 'user_delete';
+  $entity_info['file']['save callback'] = 'file_save';
+  $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
+
+  // View callbacks.
+  $entity_info['node']['view callback'] = 'entity_metadata_view_node';
+  $entity_info['user']['view callback'] = 'entity_metadata_view_single';
+
+  if (module_exists('comment')) {
+    $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
+    $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
+    $entity_info['comment']['save callback'] = 'comment_save';
+    $entity_info['comment']['deletion callback'] = 'comment_delete';
+    $entity_info['comment']['view callback'] = 'entity_metadata_view_single';
+  }
+  if (module_exists('taxonomy')) {
+    $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
+    $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
+    $entity_info['taxonomy_term']['view callback'] = 'entity_metadata_view_single';
+
+    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
+    $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
+    // Token type mapping.
+    $entity_info['taxonomy_term']['token type'] = 'term';
+    $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
+  }
+}
+

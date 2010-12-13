@@ -125,3 +125,102 @@ function entity_field_info_alter(&$field_info) {
   }
 }
 
+/**
+ * Implements hook_field_create_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_field_create_instance() {
+  entity_property_info_cache_clear();
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_field_delete_instance() {
+  entity_property_info_cache_clear();
+}
+
+/**
+ * Implements hook_field_update_instance().
+ * Clear the cache when a field instance changed.
+ */
+function entity_field_update_instance() {
+  entity_property_info_cache_clear();
+}
+
+/**
+ * Extracts the contained type for a list type string like list<date>.
+ *
+ * @return
+ *   The contained type or FALSE, if the given type string is no list.
+ */
+function entity_property_list_extract_type($type) {
+  if (strpos($type, 'list<') === 0 && $type[strlen($type)-1] == '>') {
+    return substr($type, 5, -1);
+  }
+  return FALSE;
+}
+
+/**
+ * Gets the property just as it is set in the data.
+ */
+function entity_property_verbatim_get($data, array $options, $name) {
+  if ((is_array($data) || (is_object($data) && $data instanceof ArrayAccess)) && isset($data[$name])) {
+    return $data[$name];
+  }
+  elseif (is_object($data) && isset($data->$name)) {
+    return $data->$name;
+  }
+  return NULL;
+}
+
+/**
+ * Sets the property to the given value. May be used as 'setter callback'.
+ */
+function entity_property_verbatim_set($data, $name, $value) {
+  if (is_object($data) && $data instanceof ArrayAccess) {
+    $data[$name] = $value;
+  }
+  elseif (is_object($data)) {
+    $data->$name = $value;
+  }
+}
+
+/**
+ * Gets the property using the getter method (named just like the property).
+ */
+function entity_property_getter_method($object, array $options, $name) {
+  return $object->$name();
+}
+
+/**
+ * Sets the property to the given value using the setter method. May be used as
+ * 'setter callback'.
+ */
+function entity_property_setter_method($object, $name, $value) {
+  $method = 'set' . $name;
+  // Invoke the setProperty() method where 'Property' is the property name.
+  $object->$method($value);
+}
+
+/**
+ * Getter callback for getting an array. Makes sure it's numerically indexed.
+ */
+function entity_property_get_list($data, array $options, $name) {
+  return isset($data->$name) ? array_values($data->$name) : array();
+}
+
+/**
+ * A validation callback ensuring the passed integer is positive.
+ */
+function entity_property_validate_integer_positive($value) {
+  return $value > 0;
+}
+
+/**
+ * A validation callback ensuring the passed integer is non-negative.
+ */
+function entity_property_validate_integer_non_negative($value) {
+  return $value >= 0;
+}
