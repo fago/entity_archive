@@ -103,10 +103,10 @@ class EntityDefaultFeaturesController {
     $output = array();
     $output[] = '  $items = array();';
     foreach (entity_load($this->type, $data) as $name => $entity) {
-      $output[] = '  $export = <<<EXPORT';
-      $output[] = '  ' . entity_export($this->type, $entity, '  ');
-      $output[] = 'EXPORT;';
-      $output[] = '  $items[' . "'$name'" . '] = entity_import(' . "'$this->type', " . '$export);';
+      $export  = "  \$items['$name'] = entity_import('{$this->type}', '";
+      $export .= addcslashes(entity_export($this->type, $entity, '  '), '\\\'');
+      $export .= "');";
+      $output[] = $export;
     }
     $output[] = '  return $items;';
     $output = implode("\n", $output);
