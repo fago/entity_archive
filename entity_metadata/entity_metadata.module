@@ -86,83 +86,34 @@ function entity_metadata_list_extract_type($type) {
 }
 
 /**
- * Get the entity property info array of an entity type.
- *
- * @see hook_entity_property_info()
- * @see hook_entity_property_info_alter()
- *
- * @param $entity_type
- *   The entity type, e.g. node, for which the info shall be returned, or NULL
- *   to return an array with info about all types.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_get_info($entity_type = NULL) {
-  // Use the advanced drupal_static() pattern, since this is called very often.
-  static $drupal_static = array();
-  isset($drupal_static[__FUNCTION__]) || ($drupal_static[__FUNCTION__] = &drupal_static(__FUNCTION__));
-  $info = &$drupal_static[__FUNCTION__];
-
-  // hook_entity_property_info() includes translated strings, so each language
-  // is cached separately.
-  $langcode = $GLOBALS['language']->language;
-
-  if (empty($info)) {
-    if ($cache = cache_get("entity_property_info:$langcode")) {
-      $info = $cache->data;
-    }
-    else {
-      $info = module_invoke_all('entity_property_info');
-      // Let other modules alter the entity info.
-      drupal_alter('entity_property_info', $info);
-      cache_set("entity_property_info:$langcode", $info);
-    }
-  }
-  return empty($entity_type) ? $info : (isset($info[$entity_type]) ? $info[$entity_type] : array());
+  return entity_get_property_info($entity_type);
 }
 
 /**
- * Gets an array of info about all properties of a given entity type. If the
- * type is ommitted, all known properties are returned.
- *
- * @param $entity_type
- *   The entity type.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_get_properties($entity_type = NULL) {
-  if (!isset($entity_type)) {
-    // Retrieve all known properties.
-    $properties = array();
-    foreach (entity_get_info() as $entity_type => $info) {
-      $properties += entity_metadata_get_properties($entity_type);
-    }
-    return $properties;
-  }
-  // Else retrieve the properties of the given entity type only.
-  $info = entity_metadata_get_info($entity_type);
-  $info += array('properties' => array(), 'bundles' => array());
-  // Add all bundle properties.
-  foreach ($info['bundles'] as $bundle => $bundle_info) {
-    $bundle_info += array('properties' => array());
-    $info['properties'] += $bundle_info['properties'];
-  }
-  return $info['properties'];
+  return entity_get_all_property_info($entity_type);
 }
 
 /**
- * Resets the cached information of hook_entity_property_info().
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_info_cache_clear() {
-  drupal_static_reset('entity_metadata_get_info');
-  // Clear all languages.
-  cache_clear_all('entity_property_info:', 'cache', TRUE);
+  entity_property_info_cache_clear();
 }
 
-/**
- * Implements hook_hook_info_alter().
- */
-function entity_metadata_hook_info_alter(&$hook_info) {
-  $hook_info['entity_property_info'] = array(
-    'group' => 'info',
-  );
-}
+
+
+
+
+
 
 /**
  * Gets the property just as it is set in the data.

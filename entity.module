@@ -35,6 +35,7 @@ define('ENTITY_FIXED', 0x04);
 
 
 require_once DRUPAL_ROOT . '/modules/callbacks.inc';
+require_once DRUPAL_ROOT . '/includes/entity.property.inc';
 
 
 /**
