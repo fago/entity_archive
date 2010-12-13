@@ -71,12 +71,6 @@ function entity_metadata_system_entity_property_info() {
     'type' => 'integer',
     'validation callback' => 'entity_metadata_validate_integer_positive',
   );
-  $properties['uid'] = array(
-    'label' => t("User ID"),
-    'description' => t("The unique ID of the user who owns the file."),
-    'type' => 'integer',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
   $properties['name'] = array(
     'label' => t("File name"),
     'description' => t("The name of the file on disk."),

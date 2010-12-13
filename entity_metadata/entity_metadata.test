@@ -62,7 +62,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $wrapper = entity_metadata_wrapper('node', $node);
 
     $this->assertEqual('<b>Is it bold?<b>', $wrapper->title->value(), 'Getting a field value.');
-    $this->assertEqual(node_type_get_name($node->type), $wrapper->{'type_name'}->raw(), 'Getting a raw property value.');
+    $this->assertEqual($node->title, $wrapper->title->raw(), 'Getting a raw property value.');
 
     // Test chaining
     $this->assertEqual($account->mail, $wrapper->author->mail->value(), 'Testing chained usage.');
@@ -83,8 +83,8 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     }
 
     // Test setting.
-    $wrapper->uid = 0;
-    $this->assertEqual(0, $wrapper->uid->value(), 'Setting a property.');
+    $wrapper->author = 0;
+    $this->assertEqual(0, $wrapper->author->uid->value(), 'Setting a property.');
     try {
       $wrapper->url = 'dummy';
       $this->fail('Setting an unsupported property.');
@@ -366,7 +366,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     // Test whether the properties work.
     $wrapper = entity_metadata_wrapper('node', $node2);
     $this->assertEqual("Book 1", $wrapper->book->title->value(), "Book title returned.");
-    $this->assertEqual($node->nid, $wrapper->{'book_id'}->value(), "Book id returned.");
+    $this->assertEqual($node->nid, $wrapper->book->nid->value(), "Book id returned.");
 
     // Try using book properties for no book nodes.
     $wrapper = entity_metadata_wrapper('node', $node3);
@@ -409,12 +409,13 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $node = $this->drupalCreateNode(array('title' => $title, 'type' => 'page'));
     $wrapper = entity_metadata_wrapper('node', $node);
     foreach ($wrapper as $key => $value) {
-      if ($key != 'book' && $key != 'book_id') {
+      if ($key != 'book' && $key != 'source') {
         $this->assertValue($wrapper, $key);
       }
     }
     $this->assertException($wrapper, 'book');
-    $this->assertException($wrapper, 'book_id');
+    $this->assertException($wrapper, 'source');
+    $this->assertException($wrapper->source, 'title');
   }
 
   /**

@@ -21,24 +21,11 @@ function entity_metadata_taxonomy_entity_property_info() {
     'type' => 'integer',
     'validation callback' => 'entity_metadata_validate_integer_positive',
   );
-  $properties['vid'] = array(
-    'label' => t("Vocabulary ID"),
-    'description' => t("The unique ID of the vocabulary the term belongs to."),
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'type' => 'integer',
-    'clear' => array('vocabulary'),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
   $properties['name'] = array(
     'label' => t("Name"),
     'description' => t("The name of the taxonomy term."),
     'setter callback' => 'entity_metadata_verbatim_set',
     'required' => TRUE,
-  );
-  $properties['vocabulary_machine_name'] = array(
-    'label' => t("Vocabulary machine name"),
-    'type' => 'token',
-    'description' => t("The machine readable name of the term's vocabulary."),
   );
   $properties['description'] = array(
     'label' => t("Description"),
@@ -73,7 +60,6 @@ function entity_metadata_taxonomy_entity_property_info() {
     'setter callback' => 'entity_metadata_taxonomy_term_setter',
     'type' => 'taxonomy_vocabulary',
     'required' => TRUE,
-    'clear' => array('vid'),
   );
   $properties['parent'] = array(
     'label' => t("Parent terms"),
