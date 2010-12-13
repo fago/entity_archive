@@ -48,7 +48,7 @@ function entity_metadata_user_entity_property_info() {
     'getter callback' => 'entity_metadata_user_get_properties',
     'type' => 'uri',
   );
-  $properties['last-login'] = array(
+  $properties['last_login'] = array(
     'label' => t("Last login"),
     'description' => t("The date the user last logged in to the site."),
     'getter callback' => 'entity_metadata_user_get_properties',

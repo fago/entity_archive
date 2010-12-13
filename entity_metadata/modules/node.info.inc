@@ -29,23 +29,6 @@ function entity_metadata_node_entity_property_info() {
     'query callback' => 'entity_metadata_table_query',
     'validation callback' => 'entity_metadata_validate_integer_positive',
   );
-  $properties['tnid'] = array(
-    'label' => t("Translation set ID"),
-    'type' => 'integer',
-    'description' => t("The unique ID of the original-language version of this node, if one exists."),
-    'query callback' => 'entity_metadata_table_query',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
-  $properties['uid'] = array(
-    'label' => t("User ID"),
-    'type' => 'integer',
-    'description' => t("The unique ID of the author of the node."),
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'setter permission' => 'administer nodes',
-    'clear' => array('author'),
-    'query callback' => 'entity_metadata_table_query',
-    'validation callback' => 'entity_metadata_validate_integer_non_negative',
-  );
   $properties['is_new'] = array(
     'label' => t("Is new"),
     'type' => 'boolean',
@@ -61,11 +44,6 @@ function entity_metadata_node_entity_property_info() {
     'options list' => 'node_type_get_names',
     'required' => TRUE,
     'query callback' => 'entity_metadata_table_query',
-  );
-  $properties['type_name'] = array(
-    'label' => t("Content type name"),
-    'description' => t("The human-readable name of the node type."),
-    'getter callback' => 'entity_metadata_node_get_properties',
   );
   $properties['title'] = array(
     'label' => t("Title"),
@@ -140,7 +118,12 @@ function entity_metadata_node_entity_property_info() {
     'setter callback' => 'entity_metadata_node_set_properties',
     'setter permission' => 'administer nodes',
     'required' => TRUE,
-    'clear' => array('uid'),
+  );
+  $properties['source'] = array(
+    'label' => t("Translation source node"),
+    'type' => 'node',
+    'description' => t("The original-language version of this node, if one exists."),
+    'getter callback' => 'entity_metadata_node_get_properties',
   );
   $properties['log'] = array(
     'label' => t("Revision log message"),

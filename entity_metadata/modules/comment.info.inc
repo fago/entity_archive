@@ -21,30 +21,6 @@ function entity_metadata_comment_entity_property_info() {
     'description' => t("The unique ID of the comment."),
     'validation callback' => 'entity_metadata_validate_integer_positive',
   );
-  $properties['pid'] = array(
-    'label' => t("Parent ID"),
-    'type' => 'integer',
-    'description' => t("The unique ID of the comment's parent, if comment threading is active."),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
-  $properties['nid'] = array(
-    'label' => t("Node ID"),
-    'type' => 'integer',
-    'description' => t("The unique ID of the node the comment was posted to."),
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'setter permission' => 'administer comments',
-    'clear' => array('node'),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
-  $properties['uid'] = array(
-    'label' => t("User ID"),
-    'type' => 'integer',
-    'description' => t("The unique ID of the user who posted the comment."),
-    'setter callback' => 'entity_metadata_verbatim_set',
-    'setter permission' => 'administer comments',
-    'clear' => array('user'),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
-  );
   $properties['hostname'] = array(
     'label' => t("IP Address"),
     'description' => t("The IP address of the computer the comment was posted from."),
@@ -113,7 +89,6 @@ function entity_metadata_comment_entity_property_info() {
     'setter callback' => 'entity_metadata_comment_setter',
     'setter permission' => 'administer comments',
     'required' => TRUE,
-    'clear' => array('nid'),
   );
   $properties['author'] = array(
     'label' => t("Author"),
@@ -123,7 +98,6 @@ function entity_metadata_comment_entity_property_info() {
     'setter callback' => 'entity_metadata_comment_setter',
     'setter permission' => 'administer comments',
     'required' => TRUE,
-    'clear' => array('uid'),
   );
   return $info;
 }

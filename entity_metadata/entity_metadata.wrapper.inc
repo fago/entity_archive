@@ -72,7 +72,7 @@ abstract class EntityMetadataWrapper {
       $this->data = $this->info['parent']->getPropertyValue($this->info['name'], $this->info);
     }
     elseif (!isset($this->data)) {
-      throw new EntityMetadataWrapperException('There is no data set, so you cannot retrieve any values.');
+      throw new EntityMetadataWrapperException('Missing data values.');
     }
     return $this->data;
   }
@@ -589,7 +589,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function value(array $options = array()) {
     if (!$this->dataAvailable()) {
-      throw new EntityMetadataWrapperException('There is no data set, thus there are no values to retrieve.');
+      throw new EntityMetadataWrapperException('Missing data values.');
     }
     elseif (!$this->data && $this->id !== FALSE) {
       // Lazy load the entity if necessary.

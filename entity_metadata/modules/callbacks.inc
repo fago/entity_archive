@@ -38,13 +38,7 @@ function entity_metadata_book_get_properties($node, array $options, $name, $enti
   if (!isset($node->book['bid'])) {
     throw new EntityMetadataWrapperException('This node is no book page.');
   }
-  switch ($name) {
-    case 'book_id':
-      return $node->book['bid'];
-
-    case 'book':
-      return $node->book['bid'];
-  }
+  return $node->book['bid'];
 }
 
 /**
@@ -121,8 +115,11 @@ function entity_metadata_node_get_properties($node, array $options, $name, $enti
     case 'is_new':
       return empty($node->nid) || !empty($node->is_new);
 
-    case 'type_name':
-      return node_type_get_name($node->type);
+    case 'source':
+      if (!empty($node->tnid) && $source = node_load($node->tnid)) {
+        return $source;
+      }
+      return NULL;
 
     case 'edit_url':
       return url('node/' . $node->nid . '/edit', $options);
@@ -306,7 +303,7 @@ function entity_metadata_taxonomy_vocabulary_get_properties($vocabulary, array $
  */
 function entity_metadata_user_get_properties($account, array $options, $name, $entity_type) {
   switch ($name) {
-    case 'last-login':
+    case 'last_login':
       return $account->login;
 
     case 'name':
