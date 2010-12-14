@@ -19,7 +19,6 @@ function entity_metadata_user_entity_property_info() {
     'label' => t("User ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the user account."),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['name'] = array(
     'label' => t("Name"),

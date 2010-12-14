@@ -20,14 +20,12 @@ function entity_metadata_node_entity_property_info() {
     'type' => 'integer',
     'description' => t("The unique ID of the node."),
     'query callback' => 'entity_metadata_table_query',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['vid'] = array(
     'label' => t("Revision ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the node's revision."),
     'query callback' => 'entity_metadata_table_query',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['is_new'] = array(
     'label' => t("Is new"),

@@ -19,7 +19,6 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Comment ID"),
     'type' => 'integer',
     'description' => t("The unique ID of the comment."),
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['hostname'] = array(
     'label' => t("IP Address"),
@@ -29,7 +28,7 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Name"),
     'description' => t("The name left by the comment author."),
     'getter callback' => 'entity_metadata_comment_get_properties',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
     'sanitize' => 'filter_xss',
   );
@@ -37,7 +36,7 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Email address"),
     'description' => t("The email address left by the comment author."),
     'getter callback' => 'entity_metadata_comment_get_properties',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
     'validation callback' => 'valid_email_address',
   );
@@ -45,13 +44,13 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Home page"),
     'description' => t("The home page URL left by the comment author."),
     'sanitize' => 'filter_xss_bad_protocol',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
   );
   $properties['subject'] = array(
     'label' => t("Subject"),
     'description' => t("The subject of the comment."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
     'sanitize' => 'filter_xss',
     'required' => TRUE,
@@ -72,7 +71,7 @@ function entity_metadata_comment_entity_property_info() {
     'label' => t("Date created"),
     'description' => t("The date the comment was posted."),
     'type' => 'date',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
   );
   $properties['parent'] = array(
@@ -112,7 +111,7 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
   $properties['comment'] = array(
     'label' => t("Comments allowed"),
     'description' => t("Whether comments are allowed on this node: 0 = no, 1 = closed (read only), 2 = open (read/write)."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer comments',
     'type' => 'integer',
   );

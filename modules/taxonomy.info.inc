@@ -19,27 +19,26 @@ function entity_metadata_taxonomy_entity_property_info() {
     'label' => t("Term ID"),
     'description' => t("The unique ID of the taxonomy term."),
     'type' => 'integer',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['name'] = array(
     'label' => t("Name"),
     'description' => t("The name of the taxonomy term."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'required' => TRUE,
   );
   $properties['description'] = array(
     'label' => t("Description"),
     'description' => t("The optional description of the taxonomy term."),
     'sanitized' => TRUE,
-    'raw getter callback' => 'entity_metadata_verbatim_get',
+    'raw getter callback' => 'entity_property_verbatim_get',
     'getter callback' => 'entity_metadata_taxonomy_term_get_properties',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
   );
   $properties['weight'] = array(
     'label' => t("Weight"),
     'type' => 'integer',
     'description' => t('The weight of the term, which is used for ordering terms during display.'),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
   );
   $properties['node_count'] = array(
     'label' => t("Node count"),
@@ -77,7 +76,6 @@ function entity_metadata_taxonomy_entity_property_info() {
     'label' => t("Vocabulary ID"),
     'description' => t("The unique ID of the taxonomy vocabulary."),
     'type' => 'integer',
-    'validation callback' => 'entity_metadata_validate_integer_positive',
   );
   $properties['name'] = array(
     'label' => t("Name"),
