@@ -341,3 +341,75 @@ function entity_property_text_formatted_info() {
     ),
   );
 }
+
+
+/**
+ * Previously, hook_entity_property_info() has been provided by the removed
+ * entity metadata module. To provide backward compatibility for provided
+ * helpers that may be specified in hook_entity_property_info(), the following
+ * (deprecated) functions are provided.
+ */
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_verbatim_get($data, array $options, $name) {
+  return entity_property_verbatim_get($data, $options, $name);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_verbatim_set($data, $name, $value) {
+  return entity_property_verbatim_set($data, $name, $value);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_getter_method($object, array $options, $name) {
+  return entity_property_getter_method($object, $options, $name);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_setter_method($object, $name, $value) {
+  entity_property_setter_method($object, $name, $value);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_get_list($data, array $options, $name) {
+  return entity_property_get_list($data, $options, $name);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_validate_integer_positive($value) {
+  return entity_property_validate_integer_positive($value);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_validate_integer_non_negative($value) {
+  return entity_property_validate_integer_non_negative($value);
+}
+
+/**
+ * Deprecated.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_text_formatted_properties() {
+  return entity_property_text_formatted_info();
+}

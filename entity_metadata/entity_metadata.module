@@ -8,6 +8,9 @@
  *
  * Modules should make use of the new functions only, as the deprecated
  * functions will be removed in the near future.
+ *
+ * @todo: Rename entity_metadata_no_hook_node_access() once this module is
+ * removed.
  */
 
 /**
@@ -41,74 +44,6 @@ function entity_metadata_info_cache_clear() {
 function entity_metadata_list_extract_type($type) {
   return entity_property_list_extract_type($type);
 }
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_verbatim_get($data, array $options, $name) {
-  return entity_property_verbatim_get($data, $options, $name);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_verbatim_set($data, $name, $value) {
-  return entity_property_verbatim_set($data, $name, $value);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_getter_method($object, array $options, $name) {
-  return entity_property_getter_method($object, $options, $name);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_setter_method($object, $name, $value) {
-  entity_property_setter_method($object, $name, $value);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_get_list($data, array $options, $name) {
-  return entity_property_get_list($data, $options, $name);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_validate_integer_positive($value) {
-  return entity_property_validate_integer_positive($value);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_validate_integer_non_negative($value) {
-  return entity_property_validate_integer_non_negative($value);
-}
-
-/**
- * Deprecated, but still here to ease upgrading.
- * Do not make use of this function, instead use the new one.
- */
-function entity_metadata_text_formatted_properties() {
-  return entity_property_text_formatted_info();
-}
-
-
-
-
 
 /**
  * Deprecated, but still here to ease upgrading.
