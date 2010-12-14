@@ -314,7 +314,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp('entity_metadata', 'entity');
+    parent::setUp('entity', 'entity_test');
     // Create a field having 4 values for testing multiple value support.
     $this->field_name = drupal_strtolower($this->randomName() . '_field_name');
     $this->field = array('field_name' => $this->field_name, 'type' => 'text', 'cardinality' => 4);
@@ -641,9 +641,8 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp('entity_metadata', 'book', 'statistics');
+    parent::setUp('entity', 'book', 'statistics');
   }
-
 
   protected function assertException($wrapper, $name, $text = NULL) {
     $this->assertTrue(isset($wrapper->$name), 'Property ' . check_plain($name) . ' exists.');
@@ -835,10 +834,10 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     $info = entity_get_info();
     foreach ($info as $entity_type => $entity_info) {
       // Test using access callback.
-      entity_metadata_entity_access('view', $entity_type);
-      entity_metadata_entity_access('update', $entity_type);
-      entity_metadata_entity_access('create', $entity_type);
-      entity_metadata_entity_access('delete', $entity_type);
+      entity_access('view', $entity_type);
+      entity_access('update', $entity_type);
+      entity_access('create', $entity_type);
+      entity_access('delete', $entity_type);
 
       // Test creating the entity.
       if (!isset($entity_info['creation callback'])) {
@@ -855,11 +854,11 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
           $values[$name] = $this->createValue($info['type'], $info);
         }
       }
-      $entity = entity_metadata_entity_create($entity_type, $values)->value();
+      $entity = entity_property_values_create_entity($entity_type, $values)->value();
       $this->assertTrue($entity, "Created $entity_type and set all setable values.");
 
       // Save the new entity.
-      $return = entity_metadata_entity_save($entity_type, $entity);
+      $return = entity_save($entity_type, $entity);
       if ($return === FALSE) {
         continue; // No support for saving.
       }
@@ -867,7 +866,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       $this->assertTrue($id, "$entity_type has been successfully saved.");
 
       // And delete it.
-      $return = entity_metadata_entity_delete($entity_type, $id);
+      $return = entity_delete($entity_type, $id);
       if ($return === FALSE) {
         continue; // No support for deleting.
       }
@@ -888,7 +887,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
 
     if (isset($info['options list'])) {
       $options = array_keys($info['options list']());
-      return entity_metadata_list_extract_type($type) ? array(reset($options)) : reset($options);
+      return entity_property_list_extract_type($type) ? array(reset($options)) : reset($options);
     }
 
     // For mail addresses properly pass an mail address.
@@ -920,13 +919,13 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
   }
 
   protected function createVocab() {
-    $vocab = entity_metadata_entity_create('taxonomy_vocabulary', array(
+    $vocab = entity_create('taxonomy_vocabulary', array(
       'name' => $this->randomName(),
       'machine_name' => drupal_strtolower($this->randomName()),
       'description' => $this->randomName(),
     ));
-    $vocab->save();
-    return $vocab->value();
+    entity_save('taxonomy_vocabulary', $vocab);
+    return $vocab;
   }
 }
 
