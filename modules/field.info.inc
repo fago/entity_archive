@@ -73,7 +73,8 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
  * filters are available too. For the text value the sanitized, thus processed
  * value is returned by default.
  *
- * @see entity_metadata_field_entity_property_info().
+ * @see entity_metadata_field_entity_property_info()
+ * @see entity_property_text_formatted_info()
  */
 function entity_metadata_field_text_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
   if (!empty($instance['settings']['text_processing'])) {
@@ -83,7 +84,7 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
     $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
     $property['getter callback'] = 'entity_metadata_field_verbatim_get';
     $property['setter callback'] = 'entity_metadata_field_verbatim_set';
-    $property['property info'] = entity_metadata_text_formatted_properties();
+    $property['property info'] = entity_property_text_formatted_info();
     unset($property['query callback']);
   }
 }
