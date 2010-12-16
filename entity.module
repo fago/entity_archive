@@ -3,8 +3,12 @@
 
 /**
  * @file
- * Module for the entity API.
+ * Module file for the entity API.
  */
+
+module_load_include('inc', 'entity', 'modules/callbacks');
+module_load_include('inc', 'entity', 'includes/entity.property');
+
 
 /**
  * Defines status codes used for exportable entities.
@@ -36,6 +40,28 @@ define('ENTITY_FIXED', 0x04);
 
 
 /**
+ * Determines whether for the given entity type a given operation is available.
+ *
+ * @param $entity_type
+ *   The type of the entity.
+ * @param $op
+ *   One of 'create', 'view', 'save', 'delete' or 'access.
+ */
+function entity_type_supports($entity_type, $op) {
+  $info = entity_get_info($entity_type);
+  $keys = array(
+    'view' => 'view callback',
+    'create' => 'creation callback',
+    'delete' => 'deletion callback',
+    'save' => 'save callback',
+    'access' => 'access callback',
+  );
+  if (isset($info[$keys[$op]]) || ($op != 'access' && in_array('EntityAPIControllerInterface', class_implements($info['controller class'])))) {
+    return TRUE;
+  }
+}
+
+/**
  * Permanently save an entity.
  *
  * In case of failures, an exception is thrown.
@@ -45,14 +71,19 @@ define('ENTITY_FIXED', 0x04);
  * @param $entity
  *   The entity to save.
  * @return
- *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation
- *   performed. If the given entity type isn't compatible to the CRUD API, FALSE
- *   is returned.
+ *   For entity types provided by the CRUD API, SAVED_NEW or SAVED_UPDATED is
+ *   returned depending on the operation performed. If there is no information
+ *   how to save the entity, FALSE is returned.
+ *
+ * @see entity_type_supports()
  */
-function entity_save($entity_type, $entity) {
+function entity_save($entity_type, &$entity) {
   $info = entity_get_info($entity_type);
   if (method_exists($entity, 'save')) {
     return $entity->save();
+  }
+  elseif (isset($info['save callback'])) {
+    $info['save callback']($entity);
   }
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->save($entity);
@@ -71,14 +102,16 @@ function entity_save($entity_type, $entity) {
  *   The type of the entity.
  * @param $id
  *   The uniform identifier of the entity to delete.
+ *
  * @return
- *   FALSE if the given entity type isn't compatible to the CRUD API.
+ *   FALSE, if there were no information how to delete the entity.
+ *
+ * @see entity_type_supports()
  */
 function entity_delete($entity_type, $id) {
   $info = entity_get_info($entity_type);
-  if (isset($info['entity class']) && method_exists($info['entity class'], 'delete')) {
-    $entities = entity_load($entity_type, array($id));
-    reset($entities)->delete();
+  if (isset($info['deletion callback'])) {
+    $info['deletion callback']($id);
   }
   elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     entity_get_controller($entity_type)->delete(array($id));
@@ -90,6 +123,7 @@ function entity_delete($entity_type, $id) {
 
 /**
  * Permanently delete multiple entities.
+ * @todo: Add support for entity types not provided via the CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -109,7 +143,7 @@ function entity_delete_multiple($entity_type, $ids) {
 }
 
 /**
- * Create a new entity.
+ * Create a new entity object.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -117,12 +151,17 @@ function entity_delete_multiple($entity_type, $ids) {
  *   An array of values to set, keyed by property name. If the entity type has
  *   bundles the bundle key has to be specified.
  * @return
- *   A new instance of the entity type or FALSE if the given entity type isn't
- *   compatible to the CRUD API.
+ *   A new instance of the entity type or FALSE if there is no information for
+ *   the given entity type.
+ *
+ * @see entity_type_supports()
  */
 function entity_create($entity_type, array $values) {
   $info = entity_get_info($entity_type);
-  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+  if (isset($info['creation callback'])) {
+    return $info['creation callback']($values, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->create($values);
   }
   return FALSE;
@@ -130,6 +169,9 @@ function entity_create($entity_type, array $values) {
 
 /**
  * Exports an entity.
+ *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -155,6 +197,9 @@ function entity_export($entity_type, $entity, $prefix = '') {
 /**
  * Imports an entity.
  *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
+ *
  * @param $entity_type
  *   The type of the entity.
  * @param string $export
@@ -175,6 +220,9 @@ function entity_import($entity_type, $export) {
  *
  * The content built for the entity will vary depending on the $view_mode
  * parameter.
+ *
+ * Note: Currently, this only works for entity types provided with the entity
+ * CRUD API.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -202,8 +250,8 @@ function entity_build_content($entity_type, $entity, $view_mode = 'full', $langc
  * Returns the entity identifier.
  *
  * Unlike entity_extract_ids() this function returns the uniform identifier,
- * thus if a name key is defined, the name of the entity is returned. Otherwise
- * the usual numeric id is returned.
+ * thus if an exportable entity makes use of a name key, the name of the entity
+ * is returned. Otherwise the usual numeric id is returned.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -235,11 +283,15 @@ function entity_id($entity_type, $entity) {
  *   (optional) A language code to use for rendering. Defaults to the global
  *   content language of the current request.
  * @return
- *   The renderable array.
+ *   The renderable array, or FALSE if there is no information how to view an
+ *   entity.
  */
 function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
   $info = entity_get_info($entity_type);
-  if (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+  if (isset($info['view callback'])) {
+    return $info['view callback']($entities, $view_mode, $langcode, $entity_type);
+  }
+  elseif (in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
     return entity_get_controller($entity_type)->view($entities, $view_mode, $langcode);
   }
 }
@@ -261,6 +313,8 @@ function entity_view($entity_type, $entities, $view_mode = 'full', $langcode = N
  * @return boolean
  *   Whether access is allowed or not. If the entity type does not specify any
  *   access information, NULL is returned.
+ *
+ * @see entity_type_supports()
  */
 function entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
   if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
@@ -282,7 +336,7 @@ function entity_crud_get_info() {
 }
 
 /**
- * Checks if a given entity has a certain status.
+ * Checks if a given entity has a certain exportable status.
  *
  * @param $entity_type
  *   The type of the entity.
@@ -448,7 +502,7 @@ function entity_theme() {
     ),
     'entity_ui_overview_item' => array(
       'variables' => array('label' => NULL, 'entity_type' => NULL, 'url' => FALSE, 'name' => FALSE),
-      'file' => 'entity.ui.inc'
+      'file' => 'includes/entity.ui.inc'
     ),
   );
 }
@@ -595,7 +649,7 @@ function entity_menu() {
  */
 function entity_forms($form_id, $args) {
   // For efficiency only invoke an entity types controller, if a form of it is
-  // requrested. Thus if the first (overview and operation form) or the third
+  // requested. Thus if the first (overview and operation form) or the third
   // argument (edit form) is an entity type name, add in the types forms.
   if (isset($args[0]) && is_string($args[0]) && entity_get_info($args[0])) {
     $type = $args[0];
@@ -658,6 +712,118 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit') {
   // which the module implementing the form constructor may safely ignore.
   // @see entity_forms()
   $form_state['build_info']['args'] = array($entity, $op, $entity_type);
-  module_load_include('inc', 'entity', 'entity.ui');
+  module_load_include('inc', 'entity', 'includes/entity.ui');
   return drupal_build_form($form_id, $form_state);
 }
+
+/**
+ * Returns a property wrapper for the given data.
+ *
+ * If an entity is wrapped, the wrapper can be used to retrieve further wrappers
+ * for the entitity properties. For that the wrapper support chaining, e.g. you
+ * can use a node wrapper to get the node authors mail address:
+ *
+ * @code
+ *   echo $wrappedNode->author->mail->value();
+ * @endcode
+ *
+ * @param $type
+ *   The type of the passed data.
+ * @param $data
+ *   The data to wrap. It may be set to NULL, so the wrapper can be used
+ *   without any data for getting information about properties.
+ * @param $info
+ *   (optional) Specify additional information for the passed data:
+ *    - langcode: (optional) If the data is language specific, its langauge
+ *      code. Defaults to NULL, what means language neutral.
+ *    - bundle: (optional) If an entity is wrapped but not passed, use this key
+ *      to specify the bundle to return a wrapper for.
+ *    - property info: (optional) May be used to use a wrapper with an arbitrary
+ *      data structure (type 'struct'). Use this key for specifying info about
+ *      properties in the same structure as used by hook_entity_property_info().
+ *    - property info alter: (optional) A callback for altering the property
+ *      info before it is utilized by the wrapper.
+ *    - property defaults: (optional) An array of defaults for the info of
+ *      each property of the wrapped data item.
+ * @return EntityMetadataWrapper
+ *   Dependend on the passed data the right wrapper is returned.
+ */
+function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
+  if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
+    return new EntityDrupalWrapper($type, $data, $info);
+  }
+  elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
+    return new EntityListWrapper($type, $data, $info);
+  }
+  elseif (isset($info['property info'])) {
+    return new EntityStructureWrapper($type, $data, $info);
+  }
+  else {
+    return new EntityValueWrapper($type, $data, $info);
+  }
+}
+
+/**
+ * Returns a metadata wrapper for accessing site-wide properties.
+ *
+ * Although there is no 'site' entity or such, modules may provide info about
+ * site-wide properties using hook_entity_property_info(). This function returns
+ * a wrapper for making use of this properties.
+ *
+ * @return EntityMetadataWrapper
+ *   A wrapper for accessing site-wide properties.
+ *
+ * @see entity_metadata_system_entity_property_info()
+ */
+function entity_metadata_site_wrapper() {
+  $site_info = entity_metadata_get_info('site');
+  $info['property info'] = $site_info['properties'];
+  return entity_metadata_wrapper('site', FALSE, $info);
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function entity_entity_info_alter(&$entity_info) {
+  // Set access callbacks.
+  $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
+  $entity_info['user']['access callback'] = 'entity_metadata_user_access';
+
+  // CRUD function callbacks.
+  $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
+  $entity_info['node']['save callback'] = 'node_save';
+  $entity_info['node']['deletion callback'] = 'node_delete';
+  $entity_info['user']['creation callback'] = 'entity_metadata_create_object';
+  $entity_info['user']['save callback'] = 'entity_metadata_user_save';
+  $entity_info['user']['deletion callback'] = 'user_delete';
+  $entity_info['file']['save callback'] = 'file_save';
+  $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
+
+  // View callbacks.
+  $entity_info['node']['view callback'] = 'entity_metadata_view_node';
+  $entity_info['user']['view callback'] = 'entity_metadata_view_single';
+
+  if (module_exists('comment')) {
+    $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
+    $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
+    $entity_info['comment']['save callback'] = 'comment_save';
+    $entity_info['comment']['deletion callback'] = 'comment_delete';
+    $entity_info['comment']['view callback'] = 'entity_metadata_view_single';
+  }
+  if (module_exists('taxonomy')) {
+    $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
+    $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
+    $entity_info['taxonomy_term']['view callback'] = 'entity_metadata_view_single';
+
+    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
+    $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
+    $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
+    $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
+    // Token type mapping.
+    $entity_info['taxonomy_term']['token type'] = 'term';
+    $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
+  }
+}
+

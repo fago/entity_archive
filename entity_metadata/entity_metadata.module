@@ -3,366 +3,80 @@
 
 /**
  * @file
- * Module file for the entity metadata module.
+ * Module file for the deprecated entity metadata module. It contains only
+ * deprecated functions, which are there to ease upgrading to the entity.module.
+ *
+ * Modules should make use of the new functions only, as the deprecated
+ * functions will be removed in the near future.
+ *
+ * @todo: Rename entity_metadata_no_hook_node_access() once this module is
+ * removed.
  */
 
-module_load_include('inc', 'entity_metadata', 'modules/callbacks');
-
 /**
- * Returns a property wrapper for the given data.
- *
- * If an entity is wrapped, the wrapper can be used to retrieve further wrappers
- * for the entitity properties. For that the wrapper support chaining, e.g. you
- * can use a node wrapper to get the node authors mail address:
- *
- * @code
- *   echo $wrappedNode->author->mail->value();
- * @endcode
- *
- * @param $type
- *   The type of the passed data.
- * @param $data
- *   The data to wrap. It may be set to NULL, so the wrapper can be used
- *   without any data for getting information about properties.
- * @param $info
- *   Optional. Specify additional information for the passed data:
- *    - langcode: If the data is language specific, its langauge code. Defaults
- *      to NULL, what means language neutral.
- *    - bundle: If an entity is wrapped but not passed, use this key to specify
- *      the bundle to return a wrapper for.
- *    - property info: May be used to use a wrapper with an arbitrary data
- *      structure (type 'struct'). Use this key for specifying info about
- *      properties in the same structure as used by hook_entity_property_info().
- *   - 'property info alter': Optionally, a callback for altering the property
- *     info before it is used.
- *   - 'property defaults': Optionally, an array of defaults for the info of
- *     each property of the wrapped data item.
- * @return EntityMetadataWrapper
- *   Dependend on the passed data the right wrapper is returned.
- */
-function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
-  if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
-    return new EntityDrupalWrapper($type, $data, $info);
-  }
-  elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
-    return new EntityListWrapper($type, $data, $info);
-  }
-  elseif (isset($info['property info'])) {
-    return new EntityStructureWrapper($type, $data, $info);
-  }
-  else {
-    return new EntityValueWrapper($type, $data, $info);
-  }
-}
-
-/**
- * Returns a metadata wrapper for accessing site-wide properties.
- *
- * Although there is no 'site' entity or such, modules may provide info about
- * site-wide properties using hook_entity_property_info(). This function returns
- * a wrapper for making use of this properties.
- *
- * @return EntityMetadataWrapper
- *   A wrapper for accessing site-wide properties.
- *
- * @see entity_metadata_system_entity_property_info()
- */
-function entity_metadata_site_wrapper() {
-  $site_info = entity_metadata_get_info('site');
-  $info['property info'] = $site_info['properties'];
-  return entity_metadata_wrapper('site', FALSE, $info);
-}
-
-/**
- * Extracts the contained type for a list type string like list<date>.
- *
- * @return
- *   The contained type or FALSE, if the given type string is no list.
- */
-function entity_metadata_list_extract_type($type) {
-  if (strpos($type, 'list<') === 0 && $type[strlen($type)-1] == '>') {
-    return substr($type, 5, -1);
-  }
-  return FALSE;
-}
-
-/**
- * Get the entity property info array of an entity type.
- *
- * @see hook_entity_property_info()
- * @see hook_entity_property_info_alter()
- *
- * @param $entity_type
- *   The entity type, e.g. node, for which the info shall be returned, or NULL
- *   to return an array with info about all types.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_get_info($entity_type = NULL) {
-  // Use the advanced drupal_static() pattern, since this is called very often.
-  static $drupal_static = array();
-  isset($drupal_static[__FUNCTION__]) || ($drupal_static[__FUNCTION__] = &drupal_static(__FUNCTION__));
-  $info = &$drupal_static[__FUNCTION__];
-
-  // hook_entity_property_info() includes translated strings, so each language
-  // is cached separately.
-  $langcode = $GLOBALS['language']->language;
-
-  if (empty($info)) {
-    if ($cache = cache_get("entity_property_info:$langcode")) {
-      $info = $cache->data;
-    }
-    else {
-      $info = module_invoke_all('entity_property_info');
-      // Let other modules alter the entity info.
-      drupal_alter('entity_property_info', $info);
-      cache_set("entity_property_info:$langcode", $info);
-    }
-  }
-  return empty($entity_type) ? $info : (isset($info[$entity_type]) ? $info[$entity_type] : array());
+  return entity_get_property_info($entity_type);
 }
 
 /**
- * Gets an array of info about all properties of a given entity type. If the
- * type is ommitted, all known properties are returned.
- *
- * @param $entity_type
- *   The entity type.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_get_properties($entity_type = NULL) {
-  if (!isset($entity_type)) {
-    // Retrieve all known properties.
-    $properties = array();
-    foreach (entity_get_info() as $entity_type => $info) {
-      $properties += entity_metadata_get_properties($entity_type);
-    }
-    return $properties;
-  }
-  // Else retrieve the properties of the given entity type only.
-  $info = entity_metadata_get_info($entity_type);
-  $info += array('properties' => array(), 'bundles' => array());
-  // Add all bundle properties.
-  foreach ($info['bundles'] as $bundle => $bundle_info) {
-    $bundle_info += array('properties' => array());
-    $info['properties'] += $bundle_info['properties'];
-  }
-  return $info['properties'];
+  return entity_get_all_property_info($entity_type);
 }
 
 /**
- * Resets the cached information of hook_entity_property_info().
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_info_cache_clear() {
-  drupal_static_reset('entity_metadata_get_info');
-  // Clear all languages.
-  cache_clear_all('entity_property_info:', 'cache', TRUE);
+  entity_property_info_cache_clear();
 }
 
 /**
- * Implements hook_hook_info_alter().
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
-function entity_metadata_hook_info_alter(&$hook_info) {
-  $hook_info['entity_property_info'] = array(
-    'group' => 'info',
-  );
+function entity_metadata_list_extract_type($type) {
+  return entity_property_list_extract_type($type);
 }
 
 /**
- * Gets the property just as it is set in the data.
- */
-function entity_metadata_verbatim_get($data, array $options, $name) {
-  if ((is_array($data) || (is_object($data) && $data instanceof ArrayAccess)) && isset($data[$name])) {
-    return $data[$name];
-  }
-  elseif (is_object($data) && isset($data->$name)) {
-    return $data->$name;
-  }
-  return NULL;
-}
-
-
-/**
- * Sets the property to the given value. May be used as 'setter callback'.
- */
-function entity_metadata_verbatim_set($data, $name, $value) {
-  if (is_object($data) && $data instanceof ArrayAccess) {
-    $data[$name] = $value;
-  }
-  elseif (is_object($data)) {
-    $data->$name = $value;
-  }
-}
-
-/**
- * Gets the property using the getter method (named just like the property).
- */
-function entity_metadata_getter_method($object, array $options, $name) {
-  return $object->$name();
-}
-
-/**
- * Sets the property to the given value using the setter method. May be used as
- * 'setter callback'.
- */
-function entity_metadata_setter_method($object, $name, $value) {
-  $method = 'set' . $name;
-  // Invoke the setProperty() method where 'Property' is the property name.
-  $object->$method($value);
-}
-
-/**
- * Getter callback for getting an array. Makes sure it's numerically indexed.
- */
-function entity_metadata_get_list($data, array $options, $name) {
-  return isset($data->$name) ? array_values($data->$name) : array();
-}
-
-/**
- * Implements hook_field_info_alter().
- * Defines default property types for core field types.
- */
-function entity_metadata_field_info_alter(&$field_info) {
-  if (module_exists('number')) {
-    $field_info['number_integer']['property_type'] = 'integer';
-    $field_info['number_decimal']['property_type'] = 'decimal';
-    $field_info['number_float']['property_type'] = 'decimal';
-  }
-  if (module_exists('text')) {
-    $field_info['text']['property_type'] = 'text';
-    $field_info['text']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
-    $field_info['text_long']['property_type'] = 'text';
-    $field_info['text_long']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
-    $field_info['text_with_summary']['property_type'] = 'text';
-    $field_info['text_with_summary']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
-  }
-  if (module_exists('list')) {
-    $field_info['list']['property_type'] = 'integer';
-    $field_info['list_boolean']['property_type'] = 'boolean';
-    $field_info['list_number']['property_type'] = 'decimal';
-    $field_info['list_text']['property_type'] = 'text';
-  }
-  if (module_exists('taxonomy')) {
-    $field_info['taxonomy_term_reference']['property_type'] = 'taxonomy_term';
-    $field_info['taxonomy_term_reference']['property_callbacks'][] = 'entity_metadata_field_term_reference_callback';
-  }
-}
-
-/**
- * Implements hook_entity_info_alter().
- */
-function entity_metadata_entity_info_alter(&$entity_info) {
-  // Set access callbacks.
-  $entity_info['node']['access callback'] = 'entity_metadata_no_hook_node_access';
-  $entity_info['user']['access callback'] = 'entity_metadata_user_access';
-
-  // CRUD function callbacks.
-  $entity_info['node']['creation callback'] = 'entity_metadata_create_node';
-  $entity_info['node']['save callback'] = 'node_save';
-  $entity_info['node']['deletion callback'] = 'node_delete';
-  $entity_info['user']['creation callback'] = 'entity_metadata_create_object';
-  $entity_info['user']['save callback'] = 'entity_metadata_user_save';
-  $entity_info['user']['deletion callback'] = 'user_delete';
-  $entity_info['file']['save callback'] = 'file_save';
-  $entity_info['file']['deletion callback'] = 'entity_metadata_delete_file';
-
-  // View callbacks.
-  $entity_info['node']['view callback'] = 'entity_metadata_view_node';
-  $entity_info['user']['view callback'] = 'entity_metadata_view_single';
-
-  if (module_exists('comment')) {
-    $entity_info['comment']['access callback'] = 'entity_metadata_comment_access';
-    $entity_info['comment']['creation callback'] = 'entity_metadata_create_comment';
-    $entity_info['comment']['save callback'] = 'comment_save';
-    $entity_info['comment']['deletion callback'] = 'comment_delete';
-    $entity_info['comment']['view callback'] = 'entity_metadata_view_single';
-  }
-  if (module_exists('taxonomy')) {
-    $entity_info['taxonomy_term']['access callback'] = 'entity_metadata_taxonomy_access';
-    $entity_info['taxonomy_term']['creation callback'] = 'entity_metadata_create_object';
-    $entity_info['taxonomy_term']['save callback'] = 'taxonomy_term_save';
-    $entity_info['taxonomy_term']['deletion callback'] = 'taxonomy_term_delete';
-    $entity_info['taxonomy_term']['view callback'] = 'entity_metadata_view_single';
-
-    $entity_info['taxonomy_vocabulary']['access callback'] = 'entity_metadata_taxonomy_access';
-    $entity_info['taxonomy_vocabulary']['creation callback'] = 'entity_metadata_create_object';
-    $entity_info['taxonomy_vocabulary']['save callback'] = 'taxonomy_vocabulary_save';
-    $entity_info['taxonomy_vocabulary']['deletion callback'] = 'taxonomy_vocabulary_delete';
-    // Token type mapping.
-    $entity_info['taxonomy_term']['token type'] = 'term';
-    $entity_info['taxonomy_vocabulary']['token type'] = 'vocabulary';
-  }
-}
-
-/**
- * Determines whether the given user has access to an entity.
- *
- * @param $op
- *   The operation being performed. One of 'view', 'update', 'create' or
- *   'delete'.
- * @param $entity_type
- *   The entity type of the entity to check for.
- * @param $entity
- *   Optionally an entity to check access for. If no entity is given, it will be
- *   determined whether access is allowed for all entities of the given type.
- * @param $account
- *   The user to check for. Leave it to NULL to check for the global user.
- * @return boolean
- *   Whether access is allowed or not. If no information is available, NULL is
- *   returned.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_entity_access($op, $entity_type, $entity = NULL, $account = NULL) {
-  if (($info = entity_get_info()) && isset($info[$entity_type]['access callback'])) {
-    return $info[$entity_type]['access callback']($op, $entity, $account, $entity_type);
-  }
+  return entity_access($op, $entity_type, $entity, $account);
 }
 
 /**
- * Permanently save the given entity.
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $entity
- *   The entity to save.
- * @return
- *   FALSE, if there were no information how to save the entity.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
+ */
+function entity_metadata_entity_type_supports($entity_type, $op) {
+  return entity_type_supports($entity_type, $op);
+}
+
+/**
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_entity_save($entity_type, &$entity) {
-  $info = entity_get_info($entity_type);
-  if (isset($info['save callback'])) {
-    $info['save callback']($entity);
-  }
-  elseif (entity_metadata_entity_type_supports($entity_type, 'save')) {
-    entity_save($entity_type, $entity);
-  }
-  else {
-    return FALSE;
-  }
+  return entity_save($entity_type, $entity);
 }
 
 /**
- * Permanently delete the given entity.
- *
- * Note: This is no hook_entity_delete() implementation. See
- * entity_metadata_module_implements_alter().
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $id
- *   The uniform identifier of the entity to delete.
- * @return
- *   FALSE, if there were no information how to delete the entity.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  *
  * @see entity_metadata_module_implements_alter()
  */
 function entity_metadata_entity_delete($entity_type, $id) {
-  $info = entity_get_info($entity_type);
-  if (isset($info['deletion callback'])) {
-    $info['deletion callback']($id);
-  }
-  elseif (entity_metadata_entity_type_supports($entity_type, 'delete')) {
-    entity_delete($entity_type, $id);
-  }
-  else {
-    return FALSE;
-  }
+  return entity_delete($entity_type, $id);
 }
 
 /**
@@ -378,229 +92,41 @@ function entity_metadata_module_implements_alter(&$implementations, $hook) {
 }
 
 /**
- * Creates a new entity instance of the given type.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use
+ * entity_property_values_create_entity() or just entity_create().
  *
- * @param $entity_type
- *   The type of the entity.
- * @param $values
- *   An array of values for properties to set for the new entity. At least the
- *   properties marked as 'required' in the property info have to be passed.
  * @return EntityDrupalWrapper
  *   An EntityDrupalWrapper wrapping the newly created entity or FALSE, if
  *   there were no information how to create the entity.
  */
 function entity_metadata_entity_create($entity_type, $values = array()) {
-  $info = entity_get_info($entity_type);
-  if (isset($info['creation callback'])) {
-    return $info['creation callback']($values, $entity_type);
-  }
-  elseif (entity_metadata_entity_type_supports($entity_type, 'create')) {
-    return entity_metadata_wrapper($entity_type, entity_create($entity_type, $values));
+  if (entity_metadata_entity_type_supports($entity_type, 'create')) {
+    return entity_property_values_create_entity($entity_type, $values);
   }
   return FALSE;
 }
 
 /**
- * Generate an array for rendering the given entities.
- *
- * Note: This is no hook_entity_view() implementation. See
- * entity_metadata_module_implements_alter().
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $entities
- *   An array of entities to render, keyed by their ids. E.g. as returned from
- *   entity_load().
- * @param $view_mode
- *   A view mode as used by this entity type, e.g. 'full', 'teaser'...
- * @param $langcode
- *   (optional) A language code to use for rendering. Defaults to the global
- *   content language of the current request.
- * @return
- *   The renderable array or FALSE if there were no information how to view the
- *   entity.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_entity_view($entity_type, $entities, $view_mode = 'full', $langcode = NULL) {
-  $info = entity_get_info($entity_type);
-  if (isset($info['view callback'])) {
-    return $info['view callback']($entities, $view_mode, $langcode, $entity_type);
-  }
-  elseif (entity_metadata_entity_type_supports($entity_type, 'view')) {
-    return entity_view($entity_type, $entities, $view_mode, $langcode);
-  }
-  return FALSE;
+  return entity_view($entity_type, $entities, $view_mode, $langcode);
 }
 
 /**
- * Determines whether for the given entity type a given operation is available.
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $op
- *   One of 'create', 'view', 'save', 'delete' or 'access.
- */
-function entity_metadata_entity_type_supports($entity_type, $op) {
-  $info = entity_get_info($entity_type);
-  $keys = array(
-    'view' => 'view callback',
-    'create' => 'creation callback',
-    'delete' => 'deletion callback',
-    'save' => 'save callback',
-    'access' => 'access callback',
-  );
-  if (isset($info[$keys[$op]]) || in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
-    return TRUE;
-  }
-}
-
-
-/**
- * Queries for entities having the given property value.
- *
- * @param $entity_type
- *   The type of the entity.
- * @param $property
- *   The name of the property to query for.
- * @param $value
- *   A property value or an array of possible values to query for.
- * @param $limit
- *   Limit the numer of results. Defaults to 30.
- * @return
- *   An array of entity ids or NULL if there is no information how to query for
- *   the given property.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_entity_query($entity_type, $property, $value, $limit = 30) {
-  $properties = entity_metadata_get_properties($entity_type);
-  if (isset($properties[$property]['query callback'])) {
-    return $properties[$property]['query callback']($entity_type, $property, $value, $limit);
-  }
+  return entity_property_query($entity_type, $property, $value, $limit);
 }
 
 /**
- * Implements hook_field_create_instance().
- * Clear the cache when a field instance changed.
- */
-function entity_metadata_field_create_instance() {
-  entity_metadata_info_cache_clear();
-}
-
-/**
- * Implements hook_field_delete_instance().
- * Clear the cache when a field instance changed.
- */
-function entity_metadata_field_delete_instance() {
-  entity_metadata_info_cache_clear();
-}
-
-/**
- * Implements hook_field_update_instance().
- * Clear the cache when a field instance changed.
- */
-function entity_metadata_field_update_instance() {
-  entity_metadata_info_cache_clear();
-}
-
-/**
- * Defines the properties for the text_formatted data structure.
- */
-function entity_metadata_text_formatted_properties() {
-  return array(
-    'value' => array(
-      'type' => 'text',
-      'label' => t('Text'),
-      'sanitized' => TRUE,
-      'getter callback' => 'entity_metadata_field_text_get',
-      'raw getter callback' => 'entity_metadata_verbatim_get',
-    ),
-    'format' => array(
-      'type' => 'token',
-      'label' => t('Text format'),
-      'options list' => 'entity_metadata_field_text_formats',
-      'getter callback' => 'entity_metadata_verbatim_get',
-    ),
-  );
-}
-
-/**
- * Verifies that the given data can be safely used as the given type regardless
- * of the PHP variable type of $data. Example: the string "15" is a valid
- * integer, but "15nodes" is not.
- *
- * @return
- *   Whether the data is valid for the given type.
+ * Deprecated, but still here to ease upgrading.
+ * Do not make use of this function, instead use the new one.
  */
 function entity_metadata_verify_data_type($data, $type) {
-  // First off check for entities, which may be represented by their ids too.
-  $info = entity_get_info();
-  if (isset($info[$type])) {
-    $nameKey = isset($info[$type]['entity keys']['name']);
-    return is_object($data) || ($nameKey && entity_metadata_verify_data_type($data, 'token')) || (!$nameKey  && entity_metadata_verify_data_type($data, 'integer'));
-  }
-
-  switch ($type) {
-    case 'unknown':
-      return TRUE;
-    case 'date':
-    case 'duration':
-    case 'integer':
-      return is_numeric($data) && strpos($data, '.') === FALSE;
-    case 'decimal':
-      return is_numeric($data);
-    case 'text':
-      return is_scalar($data);
-    case 'token':
-      return is_scalar($data) && preg_match('!^[a-z][a-z0-9_]*$!', $data);
-    case 'boolean':
-      return is_scalar($data) && (is_bool($data) || $data == 0 || $data == 1);
-    case 'uri':
-      return valid_url($data, TRUE);
-    case 'list':
-      return (is_array($data) && array_values($data) == $data) || (is_object($data) && $data instanceof EntityMetadataArrayObject);
-    default:
-    case 'struct':
-      return is_object($data) || is_array($data);
-  }
-}
-
-/**
- * Converts the schema information available for the given table to property info.
- *
- * @param $table
- *   The name of the table as used in hook_schema().
- * @return
- *   An array of property info as suiting for hook_entity_property_info().
- */
-function entity_metadata_convert_schema($table) {
-  $schema = drupal_get_schema($table);
-  $properties = array();
-  foreach ($schema['fields'] as $name => $info) {
-    if ($type = _entity_metadata_convert_schema_type($info['type'])) {
-      $properties[$name] = array(
-        'type' => $type,
-        'label' => drupal_ucfirst($name),
-        'query callback' => 'entity_metadata_table_query',
-        // As we cannot know about any setter access, leave out the setter
-        // callback. For getting usually no further access callback is needed.
-      );
-      if ($type == 'serial') {
-        $properties[$name]['validation callback'] = 'entity_metadata_validate_integer_positive';
-      }
-    }
-  }
-  return $properties;
-}
-
-function _entity_metadata_convert_schema_type($type) {
-  switch ($type) {
-    case 'int':
-    case 'serial':
-      return 'integer';
-    case 'float':
-    case 'numeric':
-      return 'decimal';
-    case 'char':
-    case 'varchar':
-    case 'text':
-      return 'text';
-  }
+  return entity_property_verify_data_type($data, $type);
 }

@@ -3,10 +3,7 @@
 
 /**
  * @file
- * Deprecated. This is only here to ease upgrading from previous versions of the
- * entity API, which shipped with this file. This is required, such that the
- * Entity class can be loaded during the drupal bootstrap when updating. After
- * updating, this file and its directory can be safely removed.
+ * Provides a base class for entities.
  */
 
 /**

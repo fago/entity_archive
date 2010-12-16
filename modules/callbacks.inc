@@ -7,20 +7,6 @@
  */
 
 /**
- * A validation callback ensuring the passed integer is positive.
- */
-function entity_metadata_validate_integer_positive($value) {
-  return $value > 0;
-}
-
-/**
- * A validation callback ensuring the passed integer is non-negative.
- */
-function entity_metadata_validate_integer_non_negative($value) {
-  return $value >= 0;
-}
-
-/**
  * Callback for getting properties of an entity.
  */
 function entity_metadata_entity_get_properties($entity, array $options, $name, $entity_type) {
@@ -531,65 +517,53 @@ function entity_metadata_field_access_callback($op, $name, $entity = NULL, $acco
  */
 function entity_metadata_create_object($values = array(), $entity_type) {
   $info = entity_get_info($entity_type);
-  $class = isset($info['entity class']) ? $info['entity class'] : 'stdClass';
-  $entity = new $class(array(), $entity_type);
-  // Support specifying the id of the entity for some entity types.
-  if (isset($info['entity keys']['id']) && ($id_key = $info['entity keys']['id']) && isset($values[$id_key])) {
-    $entity->$id_key = $values[$id_key];
-    $entity->is_new = TRUE;
-    unset($values[$id_key]);
+  // Make sure at least the bundle and label properties are set.
+  if (isset($info['entity keys']['bundle']) && $key = $info['entity keys']['bundle']) {
+    $values += array($key => NULL);
   }
-  // Make sure at least the bundle property is set.
-  if (isset($info['entity keys']['bundle']) && $bundle_key = $info['entity keys']['bundle']) {
-    $entity->$bundle_key = isset($values[$bundle_key]) ? $values[$bundle_key] : NULL;
+  if (isset($info['entity keys']['label']) && $key = $info['entity keys']['label']) {
+    $values += array($key => NULL);
   }
-  $wrapper = entity_metadata_wrapper($entity_type, $entity);
-  foreach ($values as $name => $value) {
-    $wrapper->$name->set($value);
-  }
-  return $wrapper;
+  $entity = (object) $values;
+  $entity->is_new = TRUE;
+  return $entity;
 }
 
 /**
  * Callback to create a new comment.
  */
 function entity_metadata_create_comment($values = array()) {
-  $comment = (object)array(
+  $comment = (object) ($values + array(
     'status' => COMMENT_PUBLISHED,
-    'cid' => FALSE,
     'pid' => 0,
+    'subject' => '',
+    'uid' => 0,
     'language' => LANGUAGE_NONE,
     'node_type' => NULL,
-  );
-  $wrapper = entity_metadata_wrapper('comment', $comment);
-  foreach ($values as $name => $value) {
-    $wrapper->$name->set($value);
-  }
-  return $wrapper;
+    'is_new' => TRUE,
+  ));
+  $comment->cid = FALSE;
+  return $comment;
 }
 
 /**
  * Callback to create a new node.
  */
 function entity_metadata_create_node($values = array()) {
-  $node = (object)array(
+  $node = (object) array(
     'type' => $values['type'],
     'language' => LANGUAGE_NONE,
     'is_new' => TRUE,
-    // Support specifying custom node ids.
-    'nid' => isset($values['nid']) ? $values['nid'] : FALSE,
   );
-  unset($values['nid']);
-  // Set some defaults
+  // Set some defaults.
   $node_options = variable_get('node_options_' . $node->type, array('status', 'promote'));
   foreach (array('status', 'promote', 'sticky') as $key) {
     $node->$key = (int) in_array($key, $node_options);
   }
-  $wrapper = entity_metadata_wrapper('node', $node);
-  foreach ($values as $name => $value) {
-    $wrapper->$name->set($value);
+  foreach ($values as $key => $value) {
+    $node->$key = $value;
   }
-  return $wrapper;
+  return $node;
 }
 
 /**

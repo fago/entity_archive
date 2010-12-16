@@ -36,7 +36,7 @@ class EntityDefaultUIController {
       'description' => 'Manage ' . $this->entityInfo['label'] . 's.',
       'access callback' => 'entity_access',
       'access arguments' => array('view', $this->entityType),
-      'file' => 'entity.ui.inc',
+      'file' => 'includes/entity.ui.inc',
     );
     $items[$this->path . '/add'] = array(
       'title callback' => 'entity_ui_get_action_title',
@@ -79,7 +79,7 @@ class EntityDefaultUIController {
       'load arguments' => array($this->entityType),
       'access callback' => 'entity_access',
       'access arguments' => array('delete', $this->entityType, $id_count + 1),
-      'file' => 'entity.ui.inc',
+      'file' => 'includes/entity.ui.inc',
     );
 
     if ($this->entityInfo['exportable']) {
@@ -91,7 +91,7 @@ class EntityDefaultUIController {
         'page arguments' => array($this->entityType . '_operation_form', $this->entityType, NULL, 'import'),
         'access callback' => 'entity_access',
         'access arguments' => array('create', $this->entityType),
-        'file' => 'entity.ui.inc',
+        'file' => 'includes/entity.ui.inc',
         'type' => MENU_LOCAL_ACTION,
       );
     }
