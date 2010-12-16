@@ -8,7 +8,7 @@
 
 /**
  * Implements hook_entity_property_info_alter() on top of book module.
- * @see entity_metadata_entity_property_info_alter()
+ * @see entity_entity_property_info_alter()
  */
 function entity_metadata_book_entity_property_info_alter(&$info) {
   // Add meta-data about the added node properties.

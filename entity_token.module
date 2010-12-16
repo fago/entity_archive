@@ -1,0 +1,7 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Module file for the entity tokens module. Drupal needs this file.
+ */

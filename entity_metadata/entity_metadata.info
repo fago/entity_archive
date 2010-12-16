@@ -1,9 +1,6 @@
 ; $Id$
 name = Entity Metadata
-description = Provides more metadata for entities and a useful API to allow modules making use of it.
+description = (deprecated) Provides more metadata for entities and a useful API to allow modules making use of it.
 core = 7.x
-files[] = entity_metadata.info.inc
 files[] = entity_metadata.module
-files[] = entity_metadata.test
-files[] = entity_metadata.tokens.inc
-files[] = entity_metadata.wrapper.inc
+dependencies[] = entity

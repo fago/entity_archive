@@ -9,8 +9,7 @@
 /**
  * Implements hook_entity_property_info() on top of system module.
  *
- * @see entity_metadata_entity_property_info()
- * @see entity_metadata_entity_info_alter()
+ * @see entity_entity_property_info()
  * @see entity_metadata_site_wrapper()
  */
 function entity_metadata_system_entity_property_info() {

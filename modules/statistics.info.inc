@@ -8,7 +8,7 @@
 
 /**
  * Implements hook_entity_property_info_alter() on top of statistics module.
- * @see entity_metadata_entity_property_info_alter()
+ * @see entity_entity_property_info_alter()
  */
 function entity_metadata_statistics_entity_property_info_alter(&$info) {
   $properties = &$info['node']['properties'];
