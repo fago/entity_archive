@@ -12,9 +12,12 @@
  * It's suggested, but not required, to extend this class and to override
  * __construct() in order to specify a fixed entity type.
  *
- * It is suggested to also implement the label() and uri() methods for the
- * respective callbacks in hook_entity_info(). For that case the provided
- * callbacks entity_class_label() and entity_class_uri() may be specified.
+ * For providing an entity label and URI it is suggested to override the
+ * defaultLabel() and defaultUri() methods, and to specify the
+ * entity_class_label() and entity_class_uri() as respective callbacks in
+ * hook_entity_info(). That way modules are able to override your defaults
+ * by altering the hook_entity_info() callbacks, while $entity->label() and
+ * $entity->uri() reflect this changes as well.
  */
 class Entity {
 
