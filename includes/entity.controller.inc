@@ -416,7 +416,7 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
       module_invoke_all($this->entityType . '_' . $hook, $entity);
     }
     // Invoke the respective entity level hook.
-    if ($hook == 'insert' || $hook == 'update' || $hook == 'delete') {
+    if ($hook == 'presave' || $hook == 'insert' || $hook == 'update' || $hook == 'delete') {
       module_invoke_all('entity_' . $hook, $entity, $this->entityType);
     }
   }
