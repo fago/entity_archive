@@ -82,7 +82,7 @@ class EntityDefaultUIController {
       'file' => 'includes/entity.ui.inc',
     );
 
-    if ($this->entityInfo['exportable']) {
+    if (!empty($this->entityInfo['exportable'])) {
       // Menu item for importing an entity.
       $items[$this->path . '/import'] = array(
         'title callback' => 'entity_ui_get_action_title',
