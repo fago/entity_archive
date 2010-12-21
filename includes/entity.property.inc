@@ -137,9 +137,9 @@ function entity_field_info_alter(&$field_info) {
     $field_info['text_with_summary']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
   }
   if (module_exists('list')) {
-    $field_info['list']['property_type'] = 'integer';
+    $field_info['list_integer']['property_type'] = 'integer';
     $field_info['list_boolean']['property_type'] = 'boolean';
-    $field_info['list_number']['property_type'] = 'decimal';
+    $field_info['list_float']['property_type'] = 'decimal';
     $field_info['list_text']['property_type'] = 'text';
   }
   if (module_exists('taxonomy')) {
