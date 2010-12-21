@@ -752,7 +752,7 @@ function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
   if (($entity_info = entity_get_info()) && isset($entity_info[$type])) {
     return new EntityDrupalWrapper($type, $data, $info);
   }
-  elseif ($type == 'list' || entity_metadata_list_extract_type($type)) {
+  elseif ($type == 'list' || entity_property_list_extract_type($type)) {
     return new EntityListWrapper($type, $data, $info);
   }
   elseif (isset($info['property info'])) {
@@ -776,7 +776,7 @@ function entity_metadata_wrapper($type, $data = NULL, array $info = array()) {
  * @see entity_metadata_system_entity_property_info()
  */
 function entity_metadata_site_wrapper() {
-  $site_info = entity_metadata_get_info('site');
+  $site_info = entity_get_property_info('site');
   $info['property info'] = $site_info['properties'];
   return entity_metadata_wrapper('site', FALSE, $info);
 }

@@ -24,14 +24,14 @@ function entity_metadata_user_entity_property_info() {
     'label' => t("Name"),
     'description' => t("The login name of the user account."),
     'getter callback' => 'entity_metadata_user_get_properties',
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'sanitize' => 'filter_xss',
     'required' => TRUE,
   );
   $properties['mail'] = array(
     'label' => t("Email"),
     'description' => t("The email address of the user account."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'validation callback' => 'valid_email_address',
     'required' => TRUE,
   );

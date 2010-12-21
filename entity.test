@@ -420,8 +420,8 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual($node->body[LANGUAGE_NONE][0]['value'], "<b>The second body.</b>", 'Update appears in the wrapped entity.');
     $this->assert(isset($node->body[LANGUAGE_NONE][0]['safe_value']), 'Formatted text has been processed.');
 
-    // Test iterator
-    $type_info = entity_metadata_get_info('node');
+    // Test iterator.
+    $type_info = entity_get_property_info('node');
     $this->assertFalse(array_diff_key($type_info['properties'], iterator_to_array($wrapper->getIterator())), 'Iterator is working.');
     foreach ($wrapper as $property) {
       $this->assertTrue($property instanceof EntityMetadataWrapper, 'Iterate over wrapper properties.');
@@ -505,13 +505,13 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
   function testAccess() {
     // Test without data.
     $account = $this->drupalCreateUser(array('bypass node access'));
-    $this->assertTrue(entity_metadata_entity_access('view', 'node', NULL, $account), 'Access without data checked.');
+    $this->assertTrue(entity_access('view', 'node', NULL, $account), 'Access without data checked.');
 
     // Test with actual data.
     $values[LANGUAGE_NONE][0] = array('value' => '<b>2009-09-05</b>');
     $values[LANGUAGE_NONE][1] = array('value' => '2009-09-05');
     $node = $this->drupalCreateNode(array('type' => 'page', $this->field_name => $values));
-    $this->assertTrue(entity_metadata_entity_access('delete', 'node', $node, $account), 'Access with data checked.');
+    $this->assertTrue(entity_access('delete', 'node', $node, $account), 'Access with data checked.');
 
     // Test per property access without data.
     $account2 = $this->drupalCreateUser(array('bypass node access', 'administer nodes'));
@@ -551,17 +551,17 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Tests using entity_metadata_entity_query().
+   * Tests using entity_property_query().
    */
   function testEntityQuery() {
     $title = '<b>Is it bold?<b>';
     $values[LANGUAGE_NONE][0] = array('value' => 'foo');
     $node = $this->drupalCreateNode(array($this->field_name => $values, 'title' => $title));
 
-    $results = entity_metadata_entity_query('node', 'title', array($title, 'another title'));
+    $results = entity_property_query('node', 'title', array($title, 'another title'));
     $this->assertEqual($results, array($node->nid), 'Queried nodes with a given title.');
 
-    $results = entity_metadata_entity_query('node', $this->field_name, 'foo');
+    $results = entity_property_query('node', $this->field_name, 'foo');
     $this->assertEqual($results, array($node->nid), 'Queried nodes with a given field value.');
   }
 
@@ -734,15 +734,15 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
    */
   function testTaxonomyProperties() {
     $vocab = $this->createVocab();
-    $term_parent = entity_metadata_entity_create('taxonomy_term', array(
+    $term_parent = entity_property_values_create_entity('taxonomy_term', array(
       'name' => $this->randomName(),
       'vocabulary' => $vocab,
     ))->save()->value();
-    $term_parent2 = entity_metadata_entity_create('taxonomy_term', array(
+    $term_parent2 = entity_property_values_create_entity('taxonomy_term', array(
       'name' => $this->randomName(),
       'vocabulary' => $vocab,
     ))->save()->value();
-    $term = entity_metadata_entity_create('taxonomy_term', array(
+    $term = entity_property_values_create_entity('taxonomy_term', array(
       'name' => $this->randomName(),
       'vocabulary' => $vocab,
       'description' => $this->randomString(),
