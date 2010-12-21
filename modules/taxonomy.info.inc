@@ -80,20 +80,20 @@ function entity_metadata_taxonomy_entity_property_info() {
   $properties['name'] = array(
     'label' => t("Name"),
     'description' => t("The name of the taxonomy vocabulary."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'required' => TRUE,
   );
   $properties['machine_name'] = array(
     'label' => t("Machine name"),
     'type' => 'token',
     'description' => t("The machine name of the taxonomy vocabulary."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'required' => TRUE,
   );
   $properties['description'] = array(
     'label' => t("Description"),
     'description' => t("The optional description of the taxonomy vocabulary."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'sanitize' => 'filter_xss',
   );
   $properties['term_count'] = array(

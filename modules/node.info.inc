@@ -37,7 +37,7 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Content type"),
     'type' => 'token',
     'description' => t("The type of the node."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer nodes',
     'options list' => 'node_type_get_names',
     'required' => TRUE,
@@ -46,14 +46,14 @@ function entity_metadata_node_entity_property_info() {
   $properties['title'] = array(
     'label' => t("Title"),
     'description' => t("The title of the node."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'query callback' => 'entity_metadata_table_query',
     'required' => TRUE,
   );
   $properties['language'] = array(
     'label' => t("Language"),
     'description' => t("The language the node is written in."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'options list' => 'entity_metadata_language_list',
     'query callback' => 'entity_metadata_table_query',
     'setter permission' => 'administer nodes',
@@ -73,7 +73,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['status'] = array(
     'label' => t("Published"),
     'description' => t("Whether the node is published."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer nodes',
     'query callback' => 'entity_metadata_table_query',
     'type' => 'boolean',
@@ -81,7 +81,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['promote'] = array(
     'label' => t("Promoted to frontpage"),
     'description' => t("Whether the node is promoted to the frontpage."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer nodes',
     'query callback' => 'entity_metadata_table_query',
     'type' => 'boolean',
@@ -89,7 +89,7 @@ function entity_metadata_node_entity_property_info() {
   $properties['sticky'] = array(
     'label' => t("Sticky in lists"),
     'description' => t("Whether the node is displayed at the top of lists in which it appears."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer nodes',
     'query callback' => 'entity_metadata_table_query',
     'type' => 'boolean',
@@ -98,7 +98,7 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Date created"),
     'type' => 'date',
     'description' => t("The date the node was posted."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'setter permission' => 'administer nodes',
     'query callback' => 'entity_metadata_table_query',
   );
@@ -127,14 +127,14 @@ function entity_metadata_node_entity_property_info() {
     'label' => t("Revision log message"),
     'type' => 'text',
     'description' => t("In case a new revision is to be saved, the log entry explaining the changes for this version."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'access callback' => 'entity_metadata_node_revision_access',
   );
   $properties['revision'] = array(
     'label' => t("Creates revision"),
     'type' => 'boolean',
     'description' => t("Whether saving this node creates a new revision."),
-    'setter callback' => 'entity_metadata_verbatim_set',
+    'setter callback' => 'entity_property_verbatim_set',
     'access callback' => 'entity_metadata_node_revision_access',
   );
   return $info;

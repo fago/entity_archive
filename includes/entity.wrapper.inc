@@ -126,7 +126,7 @@ abstract class EntityMetadataWrapper {
    * Returns whether $value is a valid value to set.
    */
   public function validate($value) {
-    if (!entity_metadata_verify_data_type($value, $this->type)) {
+    if (!entity_property_verify_data_type($value, $this->type)) {
       return FALSE;
     }
     return !isset($this->info['validation callback']) || call_user_func($this->info['validation callback'], $value);
@@ -233,7 +233,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
 
   protected $propertyInfoDefaults = array(
     'type' => 'text',
-    'getter callback' => 'entity_metadata_verbatim_get',
+    'getter callback' => 'entity_property_verbatim_get',
     'clear' => array(),
   );
 
@@ -515,7 +515,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   }
 
   protected function setUp() {
-    $this->propertyInfo = entity_metadata_get_info($this->type) + array('properties' => array());
+    $this->propertyInfo = entity_get_property_info($this->type) + array('properties' => array());
     $info = $this->info + array('property info' => array());
     $this->propertyInfo['properties'] += $info['property info'];
     $this->entityInfo = entity_get_info($this->type);
@@ -635,11 +635,11 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   /**
    * Checks whether the operation $op is allowed on the entity.
    *
-   * @see entity_metadata_entity_access()
+   * @see entity_access()
    */
   public function entityAccess($op, $account = NULL) {
     $entity = $this->dataAvailable() ? $this->value() : NULL;
-    return entity_metadata_entity_access($op, $this->type, $entity, $account);
+    return entity_access($op, $this->type, $entity, $account);
   }
 
   /**
@@ -649,7 +649,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function save() {
     if ($this->data) {
-      $return = entity_metadata_entity_save($this->type, $this->data);
+      $return = entity_save($this->type, $this->data);
       if ($return === FALSE) {
         throw new EntityMetadataWrapperException("There is no information about how to save entities of type " . check_plain($this->type) . '.');
       }
@@ -669,7 +669,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function delete() {
     if ($this->dataAvailable()) {
-      $return = entity_metadata_entity_delete($this->type, $this->id);
+      $return = entity_delete($this->type, $this->id);
       if ($return === FALSE) {
         throw new EntityMetadataWrapperException("There is no information about how to delete entities of type " . check_plain($this->type) . '.');
       }
@@ -731,7 +731,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   protected $data = NULL;
 
   protected function itemType() {
-    $type = entity_metadata_list_extract_type($this->type);
+    $type = entity_property_list_extract_type($this->type);
     return $type ? $type : 'unknown';
   }
 
