@@ -61,12 +61,12 @@ function entity_get_all_property_info($entity_type = NULL) {
     // Retrieve all known properties.
     $properties = array();
     foreach (entity_get_info() as $entity_type => $info) {
-      $properties += entity_metadata_get_properties($entity_type);
+      $properties += entity_get_all_property_info($entity_type);
     }
     return $properties;
   }
   // Else retrieve the properties of the given entity type only.
-  $info = entity_metadata_get_info($entity_type);
+  $info = entity_get_property_info($entity_type);
   $info += array('properties' => array(), 'bundles' => array());
   // Add all bundle properties.
   foreach ($info['bundles'] as $bundle => $bundle_info) {
@@ -228,7 +228,7 @@ function entity_property_verify_data_type($data, $type) {
  *   there were no information how to create the entity.
  */
 function entity_property_values_create_entity($entity_type, $values = array()) {
-  if (entity_metadata_entity_type_supports($entity_type, 'create')) {
+  if (entity_type_supports($entity_type, 'create')) {
     $info = entity_get_info($entity_type);
     // Create the initial entity.
     $entity = entity_create($entity_type, array_intersect_key($values, array_flip($info['entity keys'])));
