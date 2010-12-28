@@ -412,11 +412,9 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual("<p>The body &amp; nothing.</p>\n", $body_value->value(), "Getting processed value.");
     $this->assertEqual("The body & nothing.\n", $body_value->value(array('decode' => TRUE)), "Decoded value.");
     $this->assertEqual("<b>The body & nothing.</b>", $body_value->raw(), "Raw body returned.");
-    $info = $body_value->info();
 
     $wrapper->body->set(array('value' => "<b>The second body.</b>"));
     $this->assertEqual("<p>The second body.</p>\n", $wrapper->body->value->value(), "Setting a processed field value and reading it again.");
-    $node = $wrapper->value();
     $this->assertEqual($node->body[LANGUAGE_NONE][0]['value'], "<b>The second body.</b>", 'Update appears in the wrapped entity.');
     $this->assert(isset($node->body[LANGUAGE_NONE][0]['safe_value']), 'Formatted text has been processed.');
 
@@ -645,8 +643,8 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
   }
 
   protected function assertException($wrapper, $name, $text = NULL) {
-    $this->assertTrue(isset($wrapper->$name), 'Property ' . check_plain($name) . ' exists.');
-    $text = isset($text) ? $text : 'Getting the not set property ' . $name . ' throws exception.';
+    $this->assertTrue(isset($wrapper->$name), 'Property wrapper ' . check_plain($name) . ' exists.');
+    $text = isset($text) ? $text : 'Getting the not existing property ' . $name . ' throws exception.';
     try {
       $wrapper->$name->value();
       $this->fail($text);
@@ -654,6 +652,11 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     catch (EntityMetadataWrapperException $e) {
       $this->pass($text);
     }
+  }
+
+  protected function assertEmpty($wrapper, $name) {
+    $this->assertTrue(isset($wrapper->$name), 'Property ' . check_plain($name) . ' exists.');
+    $this->assertTrue($wrapper->$name->value() === NULL, 'Property ' . check_plain($name) . ' is empty.');
   }
 
   protected function assertValue($wrapper, $key) {
@@ -725,7 +728,7 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       }
     }
     $this->assertException($wrapper, 'book');
-    $this->assertException($wrapper, 'source');
+    $this->assertEmpty($wrapper, 'source');
     $this->assertException($wrapper->source, 'title');
   }
 
@@ -754,7 +757,6 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
     foreach ($wrapper as $key => $value) {
       $this->assertValue($wrapper, $key);
     }
-
     // Test setting another parent using the full object.
     $wrapper->parent[] = $term_parent2;
     $this->assertEqual($wrapper->parent[1]->getIdentifier(), $term_parent2->tid, 'Term parent added.');

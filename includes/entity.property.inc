@@ -274,8 +274,8 @@ function entity_property_verbatim_get($data, array $options, $name) {
 /**
  * Sets the property to the given value. May be used as 'setter callback'.
  */
-function entity_property_verbatim_set($data, $name, $value) {
-  if (is_object($data) && $data instanceof ArrayAccess) {
+function entity_property_verbatim_set(&$data, $name, $value) {
+  if (is_array($data) || (is_object($data) && $data instanceof ArrayAccess)) {
     $data[$name] = $value;
   }
   elseif (is_object($data)) {

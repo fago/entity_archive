@@ -252,7 +252,7 @@ function entity_metadata_hook_entity_info() {
  *       having the given property value. See entity_metadata_entity_query().
  *     - required: Optionally, this may be set to TRUE, if this property is
  *       required for the creation of a new instance of its entity. See
- *       entity_metadata_entity_create().
+ *       entity_property_values_create_entity().
  *     - field: Optionally, a boolean indicating whether a property is stemming
  *       from a field.
  *     - 'property info': Optionally, may be used to specify an array of info
@@ -262,6 +262,11 @@ function entity_metadata_hook_entity_info() {
  *       info before it is used.
  *     - 'property defaults': Optionally, an array of defaults for the info of
  *       each property of the wrapped data item.
+ *     - 'auto creation': (optional) Properties of type 'struct' may specify
+ *       this callback which is used to automatically create the data structure
+ *       if necessary, e.g. as the data structure is not created yet but one of
+ *       its properties is set. See entity_metadata_field_file_callback() for
+ *       an example.
  *   - bundles: An array keyed by bundle name containing further metadata
  *     related to the bundles only. This array may contain the key 'properties'
  *     with an array of info about the bundle specific properties, structured in

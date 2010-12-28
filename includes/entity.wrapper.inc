@@ -68,11 +68,11 @@ abstract class EntityMetadataWrapper {
    *     strips HTML tags and decodes HTML entities. Defaults to FALSE.
    */
   public function value(array $options = array()) {
+    if (!$this->dataAvailable()) {
+      throw new EntityMetadataWrapperException('Missing data values.');
+    }
     if (!isset($this->data) && isset($this->info['name'])) {
       $this->data = $this->info['parent']->getPropertyValue($this->info['name'], $this->info);
-    }
-    elseif (!isset($this->data)) {
-      throw new EntityMetadataWrapperException('Missing data values.');
     }
     return $this->data;
   }
@@ -83,6 +83,9 @@ abstract class EntityMetadataWrapper {
    * will return the unprocessed data in contrast to value().
    */
   public function raw() {
+    if (!$this->dataAvailable()) {
+      throw new EntityMetadataWrapperException('Missing data values.');
+    }
     if (isset($this->info['name']) && isset($this->info['parent'])) {
       return $this->info['parent']->getPropertyRaw($this->info['name'], $this->info);
     }
@@ -91,18 +94,13 @@ abstract class EntityMetadataWrapper {
   }
 
   /**
-   * Returns whether data is available to work with. Also if we wrap a property,
-   * it ensures the value of the property is loaded and so available.
+   * Returns whether data is available to work with.
    *
    * @return
    *   If we operate without any data FALSE, else TRUE.
    */
   protected function dataAvailable() {
-    if (!isset($this->data) && isset($this->info['name']) && $this->info['parent']->dataAvailable()) {
-      // Make sure it is loaded.
-      $this->data = $this->info['parent']->getPropertyValue($this->info['name'], $this->info);
-    }
-    return isset($this->data);
+    return isset($this->data) || (isset($this->info['parent']) && $this->info['parent']->dataAvailable());
   }
 
   /**
@@ -112,14 +110,19 @@ abstract class EntityMetadataWrapper {
     if (!$this->validate($value)) {
       throw new EntityMetadataWrapperException('Invalid data value given. Be sure it matches the required data type and format.');
     }
-    if (empty($this->info['parent'])) {
-      $this->clear();
-      $this->data = $value;
-    }
-    else {
+    $this->clear();
+    $this->data = $value;
+    $this->updateParent($value);
+    return $this;
+  }
+
+  /**
+   * Updates the parent data structure of a data property with the latest data value.
+   */
+  protected function updateParent($value) {
+    if (isset($this->info['parent'])) {
       $this->info['parent']->setProperty($this->info['name'], $value);
     }
-    return $this;
   }
 
   /**
@@ -129,7 +132,7 @@ abstract class EntityMetadataWrapper {
     if (!entity_property_verify_data_type($value, $this->type)) {
       return FALSE;
     }
-    return !isset($this->info['validation callback']) || call_user_func($this->info['validation callback'], $value);
+    return !isset($this->info['validation callback']) || call_user_func($this->info['validation callback'], $value, $this->info);
   }
 
   public function __toString() {
@@ -387,20 +390,25 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    * Gets the value of a property.
    */
   protected function getPropertyValue($name, &$info) {
-    if ($this->dataAvailable()) {
-      $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['getter callback']($this->value(), $options, $name, $this->type, $info);
+    $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
+    $data = $this->value();
+    if (!isset($data)) {
+      throw new EntityMetadataWrapperException('Unable to get the data property ' . check_plain($name) . ' as the parent data structure is not set.');
     }
-    throw new EntityMetadataWrapperException('Entity property ' . check_plain($name) . " isn't set.");
+    return $info['getter callback']($data, $options, $name, $this->type, $info);
   }
 
   /**
    * Gets the raw value of a property.
    */
   protected function getPropertyRaw($name, &$info) {
-    if (!empty($info['raw getter callback']) && $this->dataAvailable()) {
+    if (!empty($info['raw getter callback'])) {
       $options = array('language' => $this->getPropertyLanguage(), 'absolute' => TRUE);
-      return $info['raw getter callback']($this->value(), $options, $name, $this->type, $info);
+      $data = $this->value();
+      if (!isset($data)) {
+        throw new EntityMetadataWrapperException('Unable to get the data property ' . check_plain($name) . ' as the parent data structure is not set.');
+      }
+      return $info['raw getter callback']($data, $options, $name, $this->type, $info);
     }
     return $this->getPropertyValue($name, $info);
   }
@@ -410,9 +418,27 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
    */
   protected function setProperty($name, $value) {
     $info = $this->getPropertyInfo($name);
-    if (!empty($info['setter callback']) && $this->dataAvailable()) {
-      $info['setter callback']($this->value(), $name, $value, $this->langcode, $this->type);
-      $this->get($name)->clear();
+    if (!empty($info['setter callback'])) {
+      $data = $this->value();
+
+      // In case the data structure is not set, support simple auto-creation
+      // for arrays. Else an exception is thrown.
+      if (!isset($data)) {
+        if (!empty($this->info['auto creation']) && !($this instanceof EntityDrupalWrapper)) {
+          $data = $this->info['auto creation']($name, $this->info);
+        }
+        else {
+          throw new EntityMetadataWrapperException('Unable to set the data property ' . check_plain($name) . ' as the parent data structure is not set.');
+        }
+      }
+
+      // Invoke the setter callback for updating our data.
+      $info['setter callback']($data, $name, $value, $this->langcode, $this->type);
+
+      // If the setter has not thrown any exceptions, proceed and apply the
+      // update to the current and any parent wrappers as necessary.
+      $this->set($data);
+
       // Clear the cache of properties dependent on this value.
       foreach ($info['clear'] as $name) {
         if (isset($this->cache[$name])) {
@@ -548,8 +574,8 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     if (!isset($this->info['bundle']) || isset($bundle)) {
       $this->info['bundle'] = $bundle;
       // Detect the bundle if not set yet and add in properties from the bundle.
-      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable()) {
-        list($id, $vid, $bundle) = entity_extract_ids($this->type, $this->value());
+      if (!isset($this->info['bundle']) && !empty($this->entityInfo['fieldable']) && $this->dataAvailable() && $entity = $this->value()) {
+        list($id, $vid, $bundle) = entity_extract_ids($this->type, $entity);
         $this->info['bundle'] = $bundle;
       }
       // Like entity_extract_ids() assume the entity type if no key is given.
@@ -571,7 +597,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Returns the identifier of the wrapped entity.
    */
   public function getIdentifier() {
-    return $this->dataAvailable() ? $this->id : NULL;
+    return $this->dataAvailable() && $this->value() ? $this->id : NULL;
   }
 
   /**
@@ -588,10 +614,8 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    * Overridden.
    */
   public function value(array $options = array()) {
-    if (!$this->dataAvailable()) {
-      throw new EntityMetadataWrapperException('Missing data values.');
-    }
-    elseif (!$this->data && $this->id !== FALSE) {
+    $this->setEntity(parent::value());
+    if (!$this->data && !empty($this->id)) {
       // Lazy load the entity if necessary.
       $return = entity_load($this->type, array($this->id));
       $this->data = reset($return);
@@ -603,24 +627,21 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   }
 
   /**
-   * Overridden to support setting the entity by object and id.
-   */
-  protected function dataAvailable() {
-    if (!isset($this->data) && isset($this->info['name']) && parent::dataAvailable()) {
-      $this->setEntity($this->data);
-    }
-    return isset($this->data);
-  }
-
-  /**
    * Overridden to support setting the entity by either the object or the id.
    */
   public function set($value) {
+    if (!$this->validate($value)) {
+      throw new EntityMetadataWrapperException('Invalid data value given. Be sure it matches the required data type and format.');
+    }
+    $previous_id = $this->id;
     // Set value, so we get the identifier and pass it to the normal setter.
+    $this->clear();
     $this->setEntity($value);
-    parent::set($this->id);
-    // The parent implemented cleared the data, so set the value again.
-    $this->setEntity($value);
+    // For entities being referenced in a data property, it's only necessary
+    // to propagate the update to the parent if the id changed.
+    if ($previous_id != $this->id) {
+      $this->updateParent($this->id);
+    }
     return $this;
   }
 
@@ -746,7 +767,8 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
     if (!array_key_exists($delta, $this->cache)) {
       if (!isset($delta)) {
         // The [] operator has been used so point at a new entry.
-        $delta = max(array_keys($this->data)) + 1;
+        $values = parent::value();
+        $delta = $values ? max(array_keys($values)) + 1 : 0;
       }
       if (is_numeric($delta)) {
         $info = array('parent' => $this, 'name' => $delta) + $this->info;
@@ -759,25 +781,23 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
     return $this->cache[$delta];
   }
 
-  protected function &getPropertyValue($delta) {
-    if ($this->dataAvailable() && isset($this->data[$delta])) {
-      return $this->data[$delta];
+  protected function getPropertyValue($delta) {
+    // Make use parent::value() to easily by-pass any entity-loading.
+    $data = parent::value();
+    if (isset($data[$delta])) {
+      return $data[$delta];
     }
-    throw new EntityMetadataWrapperException('There is no item with a delta of ' . check_plain($delta) . " for this list.");
   }
 
   protected function getPropertyRaw($delta) {
-    $list = $this->raw();
-    if (isset($list[$delta])) {
-      return $list[$delta];
-    }
-    throw new EntityMetadataWrapperException('List entry ' . check_plain($delta) . " isn't set.");
+    return $this->getPropertyValue($delta);
   }
 
   protected function setProperty($delta, $value) {
-    if (is_numeric($delta) && $this->dataAvailable()) {
-      $this->data[$delta] = $value;
-      $this->set($this->data);
+    $data = parent::value();
+    if (is_numeric($delta)) {
+      $data[$delta] = $value;
+      $this->set($data);
     }
   }
 
@@ -794,7 +814,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   public function value(array $options = array()) {
     // For lists of entities fetch full entity objects before returning.
     if ($this->get(0) instanceof EntityDrupalWrapper && empty($options['identifier']) && $this->dataAvailable()) {
-      return array_values(entity_load($this->get(0)->type, $this->data));
+      return array_values(entity_load($this->get(0)->type, parent::value()));
     }
     return parent::value();
   }
@@ -815,7 +835,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
    */
   public function getIterator() {
     // In case there is no data available, just iterate over the first item.
-    return new EntityMetadataWrapperIterator($this, $this->dataAvailable() ? array_keys($this->data) : array(0));
+    return new EntityMetadataWrapperIterator($this, $this->dataAvailable() ? array_keys($this->value()) : array(0));
   }
 
   /**
@@ -826,7 +846,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   public function offsetExists($delta) {
-    return $this->dataAvailable() && isset($this->data[$delta]);
+    return $this->dataAvailable() && ($data = $this->value()) && isset($data[$delta]);
   }
 
   public function offsetSet($delta, $value) {
@@ -834,14 +854,22 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   public function offsetUnset($delta) {
-    if ($this->offsetExists($delta) && $this->dataAvailable()) {
+    if ($this->offsetExists($delta)) {
       unset($this->data[$delta]);
       $this->set($this->data);
     }
   }
 
   public function count() {
-    return $this->dataAvailable() ? count($this->data) : 0;
+    return $this->dataAvailable() ? count($this->value()) : 0;
+  }
+
+  /**
+   * Overridden to not invoke any validation callback, as those are for the
+   * list items.
+   */
+  public function validate($value) {
+    return entity_property_verify_data_type($value, $this->type);
   }
 }
 

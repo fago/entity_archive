@@ -394,16 +394,10 @@ function entity_metadata_field_verbatim_get($entity, array $options, $name, $ent
   $context['field'] = field_info_field($name);
 
   $langcode = field_language($entity_type, $entity, $name, isset($options['language']) ? $options['language']->language : NULL);
-  if (!isset($entity->{$name}[$langcode])) {
-    $entity->{$name}[$langcode] = array(0 => array());
-  }
-  // To avoid loosing the reference wrap the item into an array object. That
-  // way the changes through the wrapper are automatically reflected in the
-  // entity.
   if ($context['field']['cardinality'] == 1) {
-    return new EntityMetadataArrayObject($entity->{$name}[$langcode][0]);
+    return isset($entity->{$name}[$langcode][0]) ? $entity->{$name}[$langcode][0] : NULL;
   }
-  return new EntityMetadataArrayObject($entity->{$name}[$langcode]);
+  return isset($entity->{$name}[$langcode]) ? $entity->{$name}[$langcode] : array();
 }
 
 /**
@@ -418,14 +412,15 @@ function entity_metadata_field_verbatim_set($entity, $name, $items, $langcode) {
 
 /**
  * Callback for getting the sanitized text of 'text_formatted' properties.
- * Note that $item might be an ArrayObject.
  */
-function entity_metadata_field_text_get($item, array $options, $name, $type) {
+function entity_metadata_field_text_get($item, array $options, $name, $type, $context) {
   if (!isset($item['safe_value'])) {
     // Apply input formats.
     $langcode = isset($options['language']) ? $options['language']->language : '';
     $format = isset($item['format']) ? $item['format'] : filter_default_format();
     $item['safe_value'] = check_markup($item['value'], $format, $langcode);
+    // To speed up subsequent calls, update $item with the 'safe_value'.
+    $context['parent']->set($item);
   }
   return $item['safe_value'];
 }
