@@ -146,6 +146,19 @@ function entity_field_info_alter(&$field_info) {
     $field_info['taxonomy_term_reference']['property_type'] = 'taxonomy_term';
     $field_info['taxonomy_term_reference']['property_callbacks'][] = 'entity_metadata_field_term_reference_callback';
   }
+  if (module_exists('file')) {
+    // The callback specifies a custom data structure matching the file field
+    // items. We introduce a custom type name for this data structure.
+    $field_info['file']['property_type'] = 'field_item_file';
+    $field_info['file']['property_callbacks'][] = 'entity_metadata_field_file_callback';
+  }
+  if (module_exists('image')) {
+    // The callback specifies a custom data structure matching the image field
+    // items. We introduce a custom type name for this data structure.
+    $field_info['image']['property_type'] = 'field_item_image';
+    $field_info['image']['property_callbacks'][] = 'entity_metadata_field_file_callback';
+    $field_info['image']['property_callbacks'][] = 'entity_metadata_field_image_callback';
+  }
 }
 
 /**
@@ -340,6 +353,54 @@ function entity_property_text_formatted_info() {
       'getter callback' => 'entity_property_verbatim_get',
     ),
   );
+}
+
+/**
+ * Defines info for the properties of the file-field item data structure.
+ */
+function entity_property_field_item_file_info() {
+  $properties['file'] = array(
+    'type' => 'file',
+    'label' => t('The file.'),
+    'getter callback' => 'entity_metadata_field_file_get',
+    'setter callback' => 'entity_metadata_field_file_set',
+    'required' => TRUE,
+  );
+  $properties['description'] = array(
+    'type' => 'text',
+    'label' => t('The file description'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['display'] = array(
+    'type' => 'boolean',
+    'label' => t('Whether the file is being displayed.'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  return $properties;
+}
+
+/**
+ * Defines info for the properties of the image-field item data structure.
+ */
+function entity_property_field_item_image_info() {
+  $properties['file'] = array(
+    'type' => 'file',
+    'label' => t('The image file.'),
+    'getter callback' => 'entity_metadata_field_file_get',
+    'setter callback' => 'entity_metadata_field_file_set',
+    'required' => TRUE,
+  );
+  $properties['alt'] = array(
+    'type' => 'text',
+    'label' => t('The <em>Alt</em> attribute text'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  $properties['title'] = array(
+    'type' => 'text',
+    'label' => t('The <em>Title</em> attribute text'),
+    'setter callback' => 'entity_property_verbatim_set',
+  );
+  return $properties;
 }
 
 

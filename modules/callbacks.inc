@@ -436,6 +436,42 @@ function entity_metadata_field_text_formats() {
 }
 
 /**
+ * Callback for getting the file entity of file fields.
+ */
+function entity_metadata_field_file_get($item) {
+  return $item['fid'];
+}
+
+/**
+ * Callback for setting the file entity of file fields.
+ */
+function entity_metadata_field_file_set(&$item, $property_name, $value) {
+  $item['fid'] = $value;
+}
+
+/**
+ * Callback for auto-creating file field $items.
+ */
+function entity_metadata_field_file_create_item($property_name, $context) {
+  // 'fid' is required, so 'file' has to be set as initial property.
+  return array('display' => $context['field']['settings']['display_default']);
+}
+
+/**
+ * Callback for validating file field $items.
+ */
+function entity_metadata_field_file_validate_item($item, $context) {
+  // File-field items require a valid file.
+  if (!isset($item['fid']) || !file_load($item['fid'])) {
+    return FALSE;
+  }
+  if (isset($context['property info']['display']) && !isset($item['display'])) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
  * Access callback for the node entity.
  *
  * This function does not implement hook_node_access(), thus it may not be

@@ -102,3 +102,47 @@ function entity_metadata_field_term_reference_callback(&$info, $entity_type, $fi
   $property['options list'] = 'entity_metadata_field_options_list';
   unset($property['query callback']);
 }
+
+/**
+ * Additional callback to adapt the property info for file fields.
+ * @see entity_metadata_field_entity_property_info().
+ */
+function entity_metadata_field_file_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  // Define a data structure so it's possible to deal with files and their
+  // descriptions.
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+
+  // Auto-create the field $items as soon as a property is set.
+  $property['auto creation'] = 'entity_metadata_field_file_create_item';
+  $property['validation callback'] = 'entity_metadata_field_file_validate_item';
+
+  $property['property info'] = entity_property_field_item_file_info();
+
+  if (empty($instance['settings']['description_field'])) {
+    unset($property['property info']['description']);
+  }
+  if (empty($field['settings']['display_field'])) {
+    unset($property['property info']['display']);
+  }
+  unset($property['query callback']);
+}
+
+/**
+ * Additional callback to adapt the property info for image fields.
+ * This callback gets invoked after entity_metadata_field_file_callback().
+ * @see entity_metadata_field_entity_property_info().
+ */
+function entity_metadata_field_image_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  // Update the property info with the info for image fields.
+  $property['property info'] = entity_property_field_item_image_info();
+
+  if (empty($instance['settings']['alt_field'])) {
+    unset($property['property info']['alt']);
+  }
+  if (empty($field['settings']['title_field'])) {
+    unset($property['property info']['title']);
+  }
+}
