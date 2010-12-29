@@ -74,18 +74,33 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
  * value is returned by default.
  *
  * @see entity_metadata_field_entity_property_info()
+ * @see entity_field_info_alter()
  * @see entity_property_text_formatted_info()
  */
 function entity_metadata_field_text_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
-  if (!empty($instance['settings']['text_processing'])) {
+  if (!empty($instance['settings']['text_processing']) || $field['type'] == 'text_with_summary') {
+    // Define a data structure for dealing with text that is formatted or has
+    // a summary.
     $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
-    // Define a data structure so it's possible to deal with formatted text
-    // properly. For that use the else undefined type 'text_formatted'.
-    $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
+
     $property['getter callback'] = 'entity_metadata_field_verbatim_get';
     $property['setter callback'] = 'entity_metadata_field_verbatim_set';
-    $property['property info'] = entity_property_text_formatted_info();
     unset($property['query callback']);
+
+    if (empty($instance['settings']['text_processing'])) {
+      $property['property info'] =  entity_property_field_item_textsummary_info();
+      // Enable auto-creation of the item, so that it is possible to just set
+      // the textual or summary value.
+      $property['auto creation'] = 'entity_property_create_array';
+    }
+    else {
+      // For formatted text we use the type name 'text_formatted'.
+      $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
+      $property['property info'] = entity_property_text_formatted_info();
+    }
+    if ($field['type'] != 'text_with_summary') {
+      unset($property['property info']['summary']);
+    }
   }
 }
 

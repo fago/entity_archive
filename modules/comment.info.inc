@@ -128,13 +128,16 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
     'type' => 'integer',
   );
 
-  // The comment body field is available for all bundles, so add it directly
-  // to the comment entity.
-  $properties = &$info['comment']['properties'];
-  $bundle_info = reset($info['comment']['bundles']);
-  $properties['comment_body'] = $bundle_info['properties']['comment_body'];
-  foreach ($info['comment']['bundles'] as $bundle => $bundle_info) {
-    unset($bundle_info['properties']['comment_body']);
-  }
-  $properties['comment_body']['required'] = TRUE;
+  // The comment body field is usually available for all bundles, so add it
+  // directly to the comment entity.
+  $info['comment']['properties']['comment_body'] = array(
+    'type' => 'text_formatted',
+    'label' => t('The main body text'),
+    'getter callback' => 'entity_metadata_field_verbatim_get',
+    'setter callback' => 'entity_metadata_field_verbatim_set',
+    'property info' => entity_property_text_formatted_info(),
+    'field' => TRUE,
+    'required' => TRUE,
+  );
+  unset($info['comment']['properties']['comment_body']['property info']['summary']);
 }

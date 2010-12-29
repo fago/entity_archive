@@ -349,7 +349,7 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     // For testing sanitizing give the user a malicious user name
     $account = user_save($account, array('name' => '<b>BadName</b>'));
     $title = '<b>Is it bold?<b>';
-    $body[LANGUAGE_NONE][0] = array('value' => '<b>The body & nothing.</b>');
+    $body[LANGUAGE_NONE][0] = array('value' => '<b>The body & nothing.</b>', 'summary' => '<b>The body.</b>');
     $node = $this->drupalCreateNode(array('uid' => $account->uid, 'name' => $account->name, 'body' => $body, 'title' => $title, 'summary' => ''));
 
     // First test without sanitizing.
@@ -406,12 +406,14 @@ class EntityMetadataTestCase extends DrupalWebTestCase {
     $this->assertEqual($wrapper->author->uid->value(), $GLOBALS['user']->uid, 'Successfully set referenced entity using the entity.');
 
 
-    // Test getting by the field API processed values like the node body and
-    // whether auto-adding bundle properties works.
+    // Test getting by the field API processed values like the node body.
     $body_value = $wrapper->body->value;
     $this->assertEqual("<p>The body &amp; nothing.</p>\n", $body_value->value(), "Getting processed value.");
     $this->assertEqual("The body & nothing.\n", $body_value->value(array('decode' => TRUE)), "Decoded value.");
     $this->assertEqual("<b>The body & nothing.</b>", $body_value->raw(), "Raw body returned.");
+
+    // Test getting the summary.
+    $this->assertEqual("<p>The body.</p>\n", $wrapper->body->summary->value(), "Getting body summary.");
 
     $wrapper->body->set(array('value' => "<b>The second body.</b>"));
     $this->assertEqual("<p>The second body.</p>\n", $wrapper->body->value->value(), "Setting a processed field value and reading it again.");
@@ -864,6 +866,91 @@ class EntityMetadataIntegrationTestCase extends DrupalWebTestCase {
       $return = entity_load($entity_type, array($id));
       $this->assertFalse($return, "$entity_type has been successfully deleted.");
     }
+  }
+
+  /**
+   * Test making use of a text fields.
+   */
+  function testTextFields() {
+    // Create a simple text field without text processing.
+    $field = array(
+      'field_name' => 'field_text',
+      'type' => 'text',
+      'cardinality' => 2,
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'field_text',
+      'entity_type' => 'node',
+      'label' => 'test',
+      'bundle' => 'article',
+      'widget' => array(
+        'type' => 'text_textfield',
+        'weight' => -1,
+      ),
+    );
+    field_create_instance($instance);
+
+    $node = $this->drupalCreateNode(array('type' => 'article'));
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $wrapper->field_text[0] = 'the text';
+
+    // Try saving the node and make sure the information is still there after
+    // loading the node again, thus the correct data structure has been written.
+    node_save($node);
+    $node = node_load($node->nid, NULL, TRUE);
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $this->assertEqual('the text', $wrapper->field_text[0]->value(), 'Text has been specified.');
+
+    // Now activate text processing.
+    $instance['settings']['text_processing'] = 1;
+    field_update_instance($instance);
+
+    $node = $this->drupalCreateNode(array('type' => 'article'));
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $wrapper->field_text[0]->set(array('value' => "<b>The second body.</b>"));
+    $this->assertEqual("<p>The second body.</p>\n", $wrapper->field_text[0]->value->value(), "Setting a processed text field value and reading it again.");
+
+    // Assert the summary property is correctly removed.
+    $this->assertFalse(isset($wrapper->field_text[0]->summary), 'Processed text has no summary.');
+
+    // Create a text field with summary but without text processing.
+    $field = array(
+      'field_name' => 'field_text2',
+      'type' => 'text_with_summary',
+      'cardinality' => 1,
+    );
+    field_create_field($field);
+    $instance = array(
+      'field_name' => 'field_text2',
+      'entity_type' => 'node',
+      'label' => 'test',
+      'bundle' => 'article',
+      'settings' => array('text_processing' => 0),
+      'widget' => array(
+        'type' => 'text_textarea_with_summary',
+        'weight' => -1,
+      ),
+    );
+    field_create_instance($instance);
+
+    $node = $this->drupalCreateNode(array('type' => 'article'));
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $wrapper->field_text2->summary = 'the summary';
+    $wrapper->field_text2->value = 'the text';
+
+    // Try saving the node and make sure the information is still there after
+    // loading the node again, thus the correct data structure has been written.
+    node_save($node);
+    $node = node_load($node->nid, NULL, TRUE);
+    $wrapper = entity_metadata_wrapper('node', $node);
+
+    $this->assertEqual('the text', $wrapper->field_text2->value->value(), 'Text has been specified.');
+    $this->assertEqual('the summary', $wrapper->field_text2->summary->value(), 'Summary has been specified.');
   }
 
   /**

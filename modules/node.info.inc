@@ -147,12 +147,12 @@ function entity_metadata_node_entity_property_info() {
 function entity_metadata_node_entity_property_info_alter(&$info) {
   // Move the body property to the node by default, as its usually there this
   // makes dealing with it more convenient.
-  $properties = array();
-  foreach ($info['node']['bundles'] as $bundle => $bundle_info) {
-    $bundle_info += array('properties' => array());
-    $properties += $bundle_info['properties'];
-  }
-  if (!empty($properties['body'])) {
-    $info['node']['properties']['body'] = $properties['body'];
-  }
+  $info['node']['properties']['body'] = array(
+    'type' => 'text_formatted',
+    'label' => t('The main body text'),
+    'getter callback' => 'entity_metadata_field_verbatim_get',
+    'setter callback' => 'entity_metadata_field_verbatim_set',
+    'property info' => entity_property_text_formatted_info(),
+    'field' => TRUE,
+  );
 }

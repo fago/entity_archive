@@ -412,17 +412,19 @@ function entity_metadata_field_verbatim_set($entity, $name, $items, $langcode) {
 
 /**
  * Callback for getting the sanitized text of 'text_formatted' properties.
+ * This callback is used for both the 'value' and the 'summary'.
  */
 function entity_metadata_field_text_get($item, array $options, $name, $type, $context) {
-  if (!isset($item['safe_value'])) {
+  // $name is either 'value' or 'summary'.
+  if (!isset($item['safe_' . $name])) {
     // Apply input formats.
     $langcode = isset($options['language']) ? $options['language']->language : '';
     $format = isset($item['format']) ? $item['format'] : filter_default_format();
-    $item['safe_value'] = check_markup($item['value'], $format, $langcode);
+    $item['safe_' . $name] = check_markup($item[$name], $format, $langcode);
     // To speed up subsequent calls, update $item with the 'safe_value'.
     $context['parent']->set($item);
   }
-  return $item['safe_value'];
+  return $item['safe_' . $name];
 }
 
 /**

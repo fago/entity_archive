@@ -133,7 +133,7 @@ function entity_field_info_alter(&$field_info) {
     $field_info['text']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
     $field_info['text_long']['property_type'] = 'text';
     $field_info['text_long']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
-    $field_info['text_with_summary']['property_type'] = 'text';
+    $field_info['text_with_summary']['property_type'] = 'field_item_textsummary';
     $field_info['text_with_summary']['property_callbacks'][] = 'entity_metadata_field_text_property_callback';
   }
   if (module_exists('list')) {
@@ -335,6 +335,13 @@ function entity_property_validate_integer_non_negative($value) {
 }
 
 /**
+ * A simple auto-creation callback for array based data structures.
+ */
+function entity_property_create_array($property_name, $context) {
+  return array();
+}
+
+/**
  * Defines info for the properties of the text_formatted data structure.
  */
 function entity_property_text_formatted_info() {
@@ -346,11 +353,36 @@ function entity_property_text_formatted_info() {
       'getter callback' => 'entity_metadata_field_text_get',
       'raw getter callback' => 'entity_property_verbatim_get',
     ),
+    'summary' => array(
+      'type' => 'text',
+      'label' => t('Summary'),
+      'sanitized' => TRUE,
+      'getter callback' => 'entity_metadata_field_text_get',
+      'raw getter callback' => 'entity_property_verbatim_get',
+    ),
     'format' => array(
       'type' => 'token',
       'label' => t('Text format'),
       'options list' => 'entity_metadata_field_text_formats',
       'getter callback' => 'entity_property_verbatim_get',
+    ),
+  );
+}
+
+/**
+ * Defines info for the properties of the field_item_textsummary data structure.
+ */
+function entity_property_field_item_textsummary_info() {
+  return array(
+    'value' => array(
+      'type' => 'text',
+      'label' => t('Text'),
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'summary' => array(
+      'type' => 'text',
+      'label' => t('Summary'),
+      'setter callback' => 'entity_property_verbatim_set',
     ),
   );
 }
